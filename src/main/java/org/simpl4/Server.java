@@ -13,6 +13,7 @@ public class Server {
 	public static void main(String[] args) {
 
 		OrientGraphFactory f = new OrientDB().getFactory("camunda1", "root", "simpl4");
+f.setStandardElementConstraints(false);
 
 		ProcessEngine processEngine = new OrientdbProcessEngineConfiguration(f).buildProcessEngine();
 		System.err.println("orientdb.processEngine:" + processEngine);
