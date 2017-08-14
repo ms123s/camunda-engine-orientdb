@@ -56,13 +56,13 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	}
 
 	protected void insertEntity(DbEntityOperation operation) {
-		LOG.info("yyy.insertEntity1:" + operation.getEntity().getClass() + "/" + operation.getEntity());
+		LOG.info("insertEntity1:" + operation.getEntity().getClass() + "/" + operation.getEntity());
 
 		DbEntity entity = operation.getEntity();
 		Class entityClass = entity.getClass();
 		String entityName = entityClass.getSimpleName();
 		BaseEntityHandler handler = OrientdbSessionFactory.getEntityHandler(entityClass);
-		LOG.info("yyy.insertEntity.handler:" + handler.getFieldList());
+		LOG.info("insertEntity.handler:" + handler.getFieldList());
 
 		if (entity instanceof HasDbRevision) {
 			((HasDbRevision) entity).setRevision(1);
@@ -86,7 +86,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	}
 
 	protected void deleteEntity(DbEntityOperation operation) {
-		LOG.info("xxx.deleteEntity:" + operation.getEntity());
+		LOG.info("deleteEntity:" + operation.getEntity());
 		/*		BaseMap<String, AbstractPortableEntity<?>> map = getTransactionalMap(operation);
 
 		 DbEntity removedEntity = operation.getEntity();
@@ -106,7 +106,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	}
 
 	protected void updateEntity(DbEntityOperation operation) {
-		LOG.info("xxx.updateEntity:" + operation.getEntity());
+		LOG.info("updateEntity:" + operation.getEntity());
 		/*		BaseMap<String, AbstractPortableEntity<?>> map = getTransactionalMap(operation);
 		 DbEntity updatedEntity = operation.getEntity();
 
@@ -202,12 +202,12 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		if (parameter instanceof org.camunda.bpm.engine.impl.db.ListQueryParameterObject) {
 			Object p = ((org.camunda.bpm.engine.impl.db.ListQueryParameterObject) parameter).getParameter();
 			if (p != null) {
-				System.err.println("xxx.selectList1(" + statement + "):" + p);
+				LOG.info("selectList1(" + statement + "):" + p);
 			} else {
-				System.err.println("xxx.selectList2(" + statement + "):" + parameter);
+				LOG.info("selectList2(" + statement + "):" + parameter);
 			}
 		} else {
-			System.err.println("xxx.selectList3(" + statement + "):" + parameter);
+			LOG.info("selectList3(" + statement + "):" + parameter);
 		}
 		if (LOG.isLoggable(Level.FINE)) {
 			LOG.fine("executing selectList " + statement);
@@ -229,7 +229,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	}
 
 	public <T extends DbEntity> T selectById(Class<T> type, String id) {
-		System.err.println("xxx.selectById(" + type + "):" + id);
+		LOG.info("selectById(" + type + "):" + id);
 		/*AbstractPortableEntity<T> portable = (AbstractPortableEntity<T>) getTransactionalMap(type).get(id);
 		if(portable != null) {
 			T entity = portable.getEntity();
@@ -242,7 +242,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	}
 
 	public Object selectOne(String statement, Object parameter) {
-		System.err.println("xxx.selectOne(" + statement + "):" + parameter);
+		LOG.info("selectOne(" + statement + "):" + parameter);
 
 		/*SelectEntityStatementHandler statementHandler = HazelcastSessionFactory.getSelectEntityStatementHandler(statement);
 		if(statementHandler != null) {
@@ -265,7 +265,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	}
 
 	public void commit() {
-		System.err.println("COMMIT_SESSION:" + sessionId);
+		LOG.info("COMMIT_SESSION:" + sessionId);
 		orientGraph.commit();
 	}
 
@@ -280,7 +280,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	public void close() {
 		// nothing to do
 		if (this.isOpen) {
-			System.err.println("CLOSE_SESSION:" + sessionId);
+			LOG.info("CLOSE_SESSION:" + sessionId);
 			orientGraph.shutdown();
 		}
 		this.isOpen = false;

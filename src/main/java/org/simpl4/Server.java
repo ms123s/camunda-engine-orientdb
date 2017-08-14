@@ -16,25 +16,25 @@ import java.util.logging.*;
 public class Server {
 
 	public static void main(String[] args) {
-		Logger logger = LogManager.getLogManager().getLogger("");
-		logger.setUseParentHandlers(false);
+		Logger LOG = LogManager.getLogManager().getLogger("");
+		LOG.setUseParentHandlers(false);
 
 		LogFormatter formatter = new LogFormatter();
 		ConsoleHandler handler = new ConsoleHandler();
 		handler.setFormatter(formatter);
 
-		Handler[] handlers = logger.getHandlers();
+		Handler[] handlers = LOG.getHandlers();
 		for(Handler h : handlers) {
-			logger.removeHandler(h);
+			LOG.removeHandler(h);
 		}
-		logger.addHandler(handler);
+		LOG.addHandler(handler);
 
 
 		OrientGraphFactory f = new OrientDB().getFactory("camunda1", "root", "simpl4");
 		f.setStandardElementConstraints(false);
 
 		ProcessEngine processEngine = new OrientdbProcessEngineConfiguration(f).buildProcessEngine();
-		System.err.println("orientdb.processEngine:" + processEngine);
+		LOG.info("orientdb.processEngine:" + processEngine);
 
 		try {
 
@@ -50,7 +50,7 @@ public class Server {
 
 		} finally {
 			processEngine.close();
-			System.err.println("processEngine.close");
+			LOG.info("processEngine.close");
 		}
 
 	}
