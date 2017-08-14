@@ -28,6 +28,7 @@ import org.camunda.bpm.engine.impl.db.HasDbRevision;
 import org.camunda.bpm.engine.impl.db.entitymanager.operation.DbBulkOperation;
 import org.camunda.bpm.engine.impl.db.entitymanager.operation.DbEntityOperation;
 import org.camunda.bpm.engine.impl.persistence.entity.ExecutionEntity;
+import org.camunda.bpm.engine.impl.db.orientdb.handler.*;
 
 import static org.camunda.bpm.engine.impl.util.EnsureUtil.ensureNotNull;
 import com.tinkerpop.blueprints.impls.orient.OrientGraph;
@@ -56,22 +57,16 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 
 	protected void insertEntity(DbEntityOperation operation) {
 
-		//getMetaData( operation.getEntity().getClass());
 		System.err.println("yyy.insertEntity1:"+operation.getEntity().getClass()+"/"+operation.getEntity());
-		//String json = GroovyJsonWriter.objectToJson(operation.getEntity());
-		/*String json = null;
-		try{
-			json = JSON.toJSONString(operation.getEntity());
-		}catch( Exception e){
-			json = e.getMessage();
-		}
 
-		System.err.println("xxx.insertEntity2:"+json);
-		set revision to 1
 		DbEntity entity = operation.getEntity();
+		BaseEntityHandler handler = OrientdbSessionFactory.getEntityHandler( entity.getClass());
+		System.err.println("yyy.insertEntity.handler:"+handler);
+
+		//set revision to 1
 		if (entity instanceof HasDbRevision) {
 			((HasDbRevision) entity).setRevision(1);
-		}*/
+		}
 
 		// wrap as portable
 //		AbstractPortableEntity<?> portable = PortableSerialization.createPortableInstance(entity);

@@ -19,6 +19,9 @@ import org.camunda.bpm.engine.impl.db.DbEntity;
 import org.camunda.bpm.engine.impl.interceptor.Session;
 import org.camunda.bpm.engine.impl.interceptor.SessionFactory;
 import org.camunda.bpm.engine.impl.persistence.entity.*;
+import org.camunda.bpm.engine.impl.db.orientdb.handler.*;
+import org.camunda.bpm.engine.impl.persistence.entity.*;
+import com.tinkerpop.blueprints.impls.orient.OrientGraph;
 
 import com.tinkerpop.blueprints.impls.orient.OrientGraphFactory;
 
@@ -27,18 +30,39 @@ import com.tinkerpop.blueprints.impls.orient.OrientGraphFactory;
  */
 public class OrientdbSessionFactory implements SessionFactory {
 
-	protected OrientGraphFactory graphFactory;
+	private OrientGraphFactory graphFactory;
+	private static Map<Class, BaseEntityHandler> entityHandlerMap;
 
-  public OrientdbSessionFactory(OrientGraphFactory  f) {
-    this.graphFactory = f;
-  }
+	public OrientdbSessionFactory(OrientGraphFactory f) {
+		this.graphFactory = f;
+		initHandler();
+	}
 
-  public Class<?> getSessionType() {
-    return OrientdbPersistenceSession.class;
-  }
+	private void initHandler(){
+		OrientGraph orientGraph = this.graphFactory.getTx();
+		entityHandlerMap = new HashMap<Class,BaseEntityHandler>();
+		entityHandlerMap.put(TaskEntity.class, new TaskEntityHandler(orientGraph));
+		entityHandlerMap.put(ProcessDefinitionEntity.class,new ProcessDefinitionEntityHandler(orientGraph));
+		entityHandlerMap.put(ExecutionEntity.class,new ExecutionEntityHandler(orientGraph));
+		entityHandlerMap.put(PropertyEntity.class,new PropertyEntityHandler(orientGraph));
+		entityHandlerMap.put(VariableInstanceEntity.class,new VariableInstanceEntityHandler(orientGraph));
+		entityHandlerMap.put(ResourceEntity.class,new ResourceEntityHandler(orientGraph));
+		entityHandlerMap.put(ByteArrayEntity.class,new ByteArrayEntityHandler(orientGraph));
+		entityHandlerMap.put(DeploymentEntity.class,new DeploymentEntityHandler(orientGraph));
+		orientGraph.shutdown();
+	}
 
-  public Session openSession() {
-    return new OrientdbPersistenceSession(graphFactory.getTx(), true);
-  }
+	public static BaseEntityHandler getEntityHandler(Class entityClass){
+		return entityHandlerMap.get( entityClass);
+	}
+
+	public Class<?> getSessionType() {
+		return OrientdbPersistenceSession.class;
+	}
+
+	public Session openSession() {
+		return new OrientdbPersistenceSession(graphFactory.getTx(), true);
+	}
 
 }
+
