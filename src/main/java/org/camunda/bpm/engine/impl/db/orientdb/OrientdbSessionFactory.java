@@ -38,22 +38,22 @@ public class OrientdbSessionFactory implements SessionFactory {
 		initHandler();
 	}
 
-	private void initHandler(){
+	private void initHandler() {
 		OrientGraph orientGraph = this.graphFactory.getTx();
-		entityHandlerMap = new HashMap<Class,BaseEntityHandler>();
+		entityHandlerMap = new HashMap<Class, BaseEntityHandler>();
 		entityHandlerMap.put(TaskEntity.class, new TaskEntityHandler(orientGraph));
-		entityHandlerMap.put(ProcessDefinitionEntity.class,new ProcessDefinitionEntityHandler(orientGraph));
-		entityHandlerMap.put(ExecutionEntity.class,new ExecutionEntityHandler(orientGraph));
-		entityHandlerMap.put(PropertyEntity.class,new PropertyEntityHandler(orientGraph));
-		entityHandlerMap.put(VariableInstanceEntity.class,new VariableInstanceEntityHandler(orientGraph));
-		entityHandlerMap.put(ResourceEntity.class,new ResourceEntityHandler(orientGraph));
-		entityHandlerMap.put(ByteArrayEntity.class,new ByteArrayEntityHandler(orientGraph));
-		entityHandlerMap.put(DeploymentEntity.class,new DeploymentEntityHandler(orientGraph));
+		entityHandlerMap.put(ProcessDefinitionEntity.class, new ProcessDefinitionEntityHandler(orientGraph));
+		entityHandlerMap.put(ExecutionEntity.class, new ExecutionEntityHandler(orientGraph));
+		entityHandlerMap.put(PropertyEntity.class, new PropertyEntityHandler(orientGraph));
+		entityHandlerMap.put(VariableInstanceEntity.class, new VariableInstanceEntityHandler(orientGraph));
+		entityHandlerMap.put(ResourceEntity.class, new ResourceEntityHandler(orientGraph));
+		entityHandlerMap.put(ByteArrayEntity.class, new ByteArrayEntityHandler(orientGraph));
+		entityHandlerMap.put(DeploymentEntity.class, new DeploymentEntityHandler(orientGraph));
 		orientGraph.shutdown();
 	}
 
-	public static BaseEntityHandler getEntityHandler(Class entityClass){
-		return entityHandlerMap.get( entityClass);
+	public static BaseEntityHandler getEntityHandler(Class entityClass) {
+		return entityHandlerMap.get(entityClass);
 	}
 
 	public Class<?> getSessionType() {

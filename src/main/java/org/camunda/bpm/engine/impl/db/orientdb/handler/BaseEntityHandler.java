@@ -46,11 +46,14 @@ public abstract class BaseEntityHandler {
 		this.orientGraph = g;
 		this.entityFieldList = this.getSimpleFields(ec);
 		this.modifyFieldList(this.entityFieldList);
-		LOG.info(this.entityClass.getSimpleName() + ":" + this.entityFieldList);
+//		LOG.info(this.entityClass.getSimpleName() + ":" + this.entityFieldList);
 		createClassAndProperties();
 	}
 
 	public void modifyFieldList(List<Map<String, Object>> fl) {
+	}
+	public List<Map<String, Object>> getFieldList(){
+		return this.entityFieldList;
 	}
 
 	private List<Map<String, Object>> getSimpleFields(Class clazz) {

@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.lang.reflect.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -32,6 +33,7 @@ import org.camunda.bpm.engine.impl.db.orientdb.handler.*;
 
 import static org.camunda.bpm.engine.impl.util.EnsureUtil.ensureNotNull;
 import com.tinkerpop.blueprints.impls.orient.OrientGraph;
+import com.tinkerpop.blueprints.Vertex;
 
 /**
  * @author Manfred Sattler
@@ -39,7 +41,7 @@ import com.tinkerpop.blueprints.impls.orient.OrientGraph;
 @SuppressWarnings({ "unchecked", "rawtypes" })
 public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 
-	private final static Logger log = Logger.getLogger(OrientdbPersistenceSession.class.getName());
+	private final static Logger LOG = Logger.getLogger(OrientdbPersistenceSession.class.getName());
 	private boolean isOpen = false;
 	long sessionId;
 
@@ -47,81 +49,98 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 
 	public OrientdbPersistenceSession(OrientGraph g, boolean openTransaction) {
 		this.orientGraph = g;
-		if(openTransaction) {
+		if (openTransaction) {
 		}
-		this.isOpen=true;
+		this.isOpen = true;
 		sessionId = new java.util.Date().getTime();
-		System.err.println("OPEN_SESSION:"+sessionId);
+		System.err.println("OPEN_SESSION:" + sessionId);
 	}
-
 
 	protected void insertEntity(DbEntityOperation operation) {
 
-		System.err.println("yyy.insertEntity1:"+operation.getEntity().getClass()+"/"+operation.getEntity());
+		System.err.println("yyy.insertEntity1:" + operation.getEntity().getClass() + "/" + operation.getEntity());
 
 		DbEntity entity = operation.getEntity();
-		BaseEntityHandler handler = OrientdbSessionFactory.getEntityHandler( entity.getClass());
-		System.err.println("yyy.insertEntity.handler:"+handler);
+		Class entityClass = entity.getClass();
+		String entityName = entityClass.getSimpleName();
+		BaseEntityHandler handler = OrientdbSessionFactory.getEntityHandler(entityClass);
+		System.err.println("yyy.insertEntity.handler:" + handler.getFieldList());
 
 		//set revision to 1
 		if (entity instanceof HasDbRevision) {
 			((HasDbRevision) entity).setRevision(1);
 		}
 
-		// wrap as portable
-//		AbstractPortableEntity<?> portable = PortableSerialization.createPortableInstance(entity);
+		try {
+			Vertex v = this.orientGraph.addVertex("class:"+entityName);
+			List<Map<String, Object>> fields = handler.getFieldList();
+			for (Map<String, Object> f : fields) {
+				String pname = (String) f.get("name");
+				Field field = entityClass.getDeclaredField(pname);
+				field.setAccessible(true);
+				Object value = field.get(entity);
+				System.err.println("Field(" + pname + "):" + value);
+				v.setProperty(pname, value);
+			}
+		} catch (Exception e) {
+			LOG.throwing("OrientdbPersistenceSession", "insertEntity", e);
+			e.printStackTrace();
+		}
 
-//		getTransactionalMap(operation).put(entity.getId(), portable);
+		// wrap as portable
+		//		AbstractPortableEntity<?> portable = PortableSerialization.createPortableInstance(entity);
+
+		//		getTransactionalMap(operation).put(entity.getId(), portable);
 	}
 
 	protected void deleteEntity(DbEntityOperation operation) {
-		System.err.println("xxx.deleteEntity:"+operation.getEntity());
-/*		BaseMap<String, AbstractPortableEntity<?>> map = getTransactionalMap(operation);
+		System.err.println("xxx.deleteEntity:" + operation.getEntity());
+		/*		BaseMap<String, AbstractPortableEntity<?>> map = getTransactionalMap(operation);
 
-		DbEntity removedEntity = operation.getEntity();
+		 DbEntity removedEntity = operation.getEntity();
 
-		if (removedEntity instanceof HasDbRevision) {
-			HasDbRevision removedRevision = (HasDbRevision) removedEntity;
-			AbstractPortableEntity<?> dbPortable = map.remove(removedEntity.getId());
-			ensureNotNull(OptimisticLockingException.class, "dbRevision", dbPortable);
-			HasDbRevision dbRevision = (HasDbRevision) dbPortable.getEntity();
-			if (dbRevision.getRevision() != removedRevision.getRevision()) {
-				throw new OptimisticLockingException(removedEntity +  " was updated by another transaction concurrently");
-			}
-		}
-		else {
-			map.remove(removedEntity.getId());
-		}*/
+		 if (removedEntity instanceof HasDbRevision) {
+		 HasDbRevision removedRevision = (HasDbRevision) removedEntity;
+		 AbstractPortableEntity<?> dbPortable = map.remove(removedEntity.getId());
+		 ensureNotNull(OptimisticLockingException.class, "dbRevision", dbPortable);
+		 HasDbRevision dbRevision = (HasDbRevision) dbPortable.getEntity();
+		 if (dbRevision.getRevision() != removedRevision.getRevision()) {
+		 throw new OptimisticLockingException(removedEntity +  " was updated by another transaction concurrently");
+		 }
+		 }
+		 else {
+		 map.remove(removedEntity.getId());
+		 }*/
 	}
 
 	protected void updateEntity(DbEntityOperation operation) {
-		System.err.println("xxx.updateEntity:"+operation.getEntity());
-/*		BaseMap<String, AbstractPortableEntity<?>> map = getTransactionalMap(operation);
-		DbEntity updatedEntity = operation.getEntity();
+		System.err.println("xxx.updateEntity:" + operation.getEntity());
+		/*		BaseMap<String, AbstractPortableEntity<?>> map = getTransactionalMap(operation);
+		 DbEntity updatedEntity = operation.getEntity();
 
-		AbstractPortableEntity<?> portable = PortableSerialization.createPortableInstance(updatedEntity);
+		 AbstractPortableEntity<?> portable = PortableSerialization.createPortableInstance(updatedEntity);
 
-		if (updatedEntity instanceof HasDbRevision) {
-			HasDbRevision updatedRevision = (HasDbRevision) updatedEntity;
-			int oldRevision = updatedRevision.getRevision();
-			updatedRevision.setRevision(updatedRevision.getRevisionNext());
-			AbstractPortableEntity<?> dbPortable = map.put(updatedEntity.getId(), portable);
-			ensureNotNull(OptimisticLockingException.class, "dbRevision", dbPortable);
-			HasDbRevision dbRevision = (HasDbRevision) dbPortable.getEntity();
-			if (dbRevision.getRevision() != oldRevision) {
-				throw new OptimisticLockingException(updatedEntity + " was updated by another transaction concurrently");
-			}
-		}
-		else {
-			map.put(updatedEntity.getId(), portable);
-		}*/
+		 if (updatedEntity instanceof HasDbRevision) {
+		 HasDbRevision updatedRevision = (HasDbRevision) updatedEntity;
+		 int oldRevision = updatedRevision.getRevision();
+		 updatedRevision.setRevision(updatedRevision.getRevisionNext());
+		 AbstractPortableEntity<?> dbPortable = map.put(updatedEntity.getId(), portable);
+		 ensureNotNull(OptimisticLockingException.class, "dbRevision", dbPortable);
+		 HasDbRevision dbRevision = (HasDbRevision) dbPortable.getEntity();
+		 if (dbRevision.getRevision() != oldRevision) {
+		 throw new OptimisticLockingException(updatedEntity + " was updated by another transaction concurrently");
+		 }
+		 }
+		 else {
+		 map.put(updatedEntity.getId(), portable);
+		 }*/
 	}
 
 	protected void deleteBulk(DbBulkOperation operation) {
 		String statement = operation.getStatement();
 
-		if (log.isLoggable(Level.FINE)) {
-			log.fine("executing deleteBulk " + statement);
+		if (LOG.isLoggable(Level.FINE)) {
+			LOG.fine("executing deleteBulk " + statement);
 		}
 
 		Object parameter = operation.getParameter();
@@ -131,7 +150,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			statementHandler.execute(this, parameter);
 		}
 		else {
-			log.log(Level.WARNING, "Delete statement '{}' currently not supported", statement);
+			LOG.log(Level.WARNING, "Delete statement '{}' currently not supported", statement);
 		}*/
 
 	}
@@ -195,18 +214,18 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 
 	public List<?> selectList(String statement, Object parameter) {
 
-		if( parameter instanceof org.camunda.bpm.engine.impl.db.ListQueryParameterObject ){
-			Object p = ((org.camunda.bpm.engine.impl.db.ListQueryParameterObject)parameter).getParameter();
-			if( p !=null){
-				System.err.println("xxx.selectList1("+statement+"):"+p);
-			}else{
-				System.err.println("xxx.selectList2("+statement+"):"+parameter);
+		if (parameter instanceof org.camunda.bpm.engine.impl.db.ListQueryParameterObject) {
+			Object p = ((org.camunda.bpm.engine.impl.db.ListQueryParameterObject) parameter).getParameter();
+			if (p != null) {
+				System.err.println("xxx.selectList1(" + statement + "):" + p);
+			} else {
+				System.err.println("xxx.selectList2(" + statement + "):" + parameter);
 			}
-		}else{
-			System.err.println("xxx.selectList3("+statement+"):"+parameter);
+		} else {
+			System.err.println("xxx.selectList3(" + statement + "):" + parameter);
 		}
-		if(log.isLoggable(Level.FINE)) {
-			log.fine("executing selectList "+statement);
+		if (LOG.isLoggable(Level.FINE)) {
+			LOG.fine("executing selectList " + statement);
 		}
 
 		/*SelectEntitiesStatementHandler statementHandler = HazelcastSessionFactory.getSelectEntitiesStatementHandler(statement);
@@ -218,14 +237,14 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			return result;
 		}
 		else {
-			log.log(Level.WARNING, "SELECT many statement '{}' currently not supported:"+ statement);
+			LOG.log(Level.WARNING, "SELECT many statement '{}' currently not supported:"+ statement);
 			return Collections.emptyList();
 		}*/
 		return null;
 	}
 
 	public <T extends DbEntity> T selectById(Class<T> type, String id) {
-		System.err.println("xxx.selectById("+type+"):"+id);
+		System.err.println("xxx.selectById(" + type + "):" + id);
 		/*AbstractPortableEntity<T> portable = (AbstractPortableEntity<T>) getTransactionalMap(type).get(id);
 		if(portable != null) {
 			T entity = portable.getEntity();
@@ -238,7 +257,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	}
 
 	public Object selectOne(String statement, Object parameter) {
-		System.err.println("xxx.selectOne("+statement+"):"+parameter);
+		System.err.println("xxx.selectOne(" + statement + "):" + parameter);
 
 		/*SelectEntityStatementHandler statementHandler = HazelcastSessionFactory.getSelectEntityStatementHandler(statement);
 		if(statementHandler != null) {
@@ -249,7 +268,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			return dbEntity;
 		}
 		else {
-			log.log(Level.WARNING, "SELECT one statement '{}' currently not supported:"+ statement);
+			LOG.log(Level.WARNING, "SELECT one statement '{}' currently not supported:"+ statement);
 			return null;
 		}*/
 		return null;
@@ -261,7 +280,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	}
 
 	public void commit() {
-		System.err.println("COMMIT_SESSION:"+sessionId);
+		System.err.println("COMMIT_SESSION:" + sessionId);
 		orientGraph.commit();
 	}
 
@@ -275,28 +294,29 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 
 	public void close() {
 		// nothing to do
-		if( this.isOpen){
-		System.err.println("CLOSE_SESSION:"+sessionId);
+		if (this.isOpen) {
+			System.err.println("CLOSE_SESSION:" + sessionId);
 			orientGraph.shutdown();
 		}
-		this.isOpen=false;
+		this.isOpen = false;
 	}
 
 	public void dbSchemaCheckVersion() {
 		// TODO: implement
 	}
 
-	public int executeUpdate(String s,Object o){
-		return  0;
-	}
-	public int executeNonEmptyUpdateStmt(String s,Object o){
-		return  0;
+	public int executeUpdate(String s, Object o) {
+		return 0;
 	}
 
+	public int executeNonEmptyUpdateStmt(String s, Object o) {
+		return 0;
+	}
 
 	public void lock(String statement, Object parameter) {
 		// TODO: not implemented
 	}
+
 	protected void dbSchemaCreateDmnHistory() {
 		// not supported
 	}
@@ -309,7 +329,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		// not supported
 	}
 
-	protected void dbSchemaDropDmnHistory(){
+	protected void dbSchemaDropDmnHistory() {
 		// not supported
 	}
 
@@ -328,7 +348,8 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	public boolean isCmmnHistoryTablePresent() {
 		return false; // not supported
 	}
-	public boolean isDmnHistoryTablePresent(){
+
+	public boolean isDmnHistoryTablePresent() {
 		return false; // not supported
 	}
 
@@ -336,3 +357,4 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		return false; // not supported
 	}
 }
+
