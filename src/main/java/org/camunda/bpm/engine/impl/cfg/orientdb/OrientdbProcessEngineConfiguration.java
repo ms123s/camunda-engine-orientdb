@@ -26,186 +26,148 @@ import org.camunda.bpm.engine.impl.interceptor.CommandInterceptor;
 import org.camunda.bpm.engine.impl.interceptor.LogInterceptor;
 import org.camunda.bpm.engine.impl.persistence.StrongUuidGenerator;
 import org.camunda.bpm.engine.impl.interceptor.CommandContextFactory;
+import org.camunda.bpm.engine.ProcessEngineException;
+
+import com.orientechnologies.orient.client.remote.OServerAdmin;
+import com.orientechnologies.orient.core.command.OCommandRequest;
+import com.orientechnologies.orient.core.Orient;
+import com.orientechnologies.orient.core.sql.OCommandSQL;
+import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
+import com.orientechnologies.orient.server.OServer;
+import com.orientechnologies.orient.server.OServerMain;
+import com.orientechnologies.orient.server.security.OServerSecurity;
+import com.orientechnologies.orient.core.record.impl.ODocument;
+import com.tinkerpop.blueprints.impls.orient.OrientBaseGraph;
+import com.tinkerpop.blueprints.impls.orient.OrientGraph;
+import com.tinkerpop.blueprints.impls.orient.OrientGraphFactory;
+import com.orientechnologies.orient.server.config.OServerUserConfiguration;
 
 /**
- * @author Daniel Meyer
+ * @author Manfred Sattler
  *
  */
 public class OrientdbProcessEngineConfiguration extends ProcessEngineConfigurationImpl {
 
-  private static Logger LOG = Logger.getLogger(OrientdbProcessEngineConfiguration.class.getName());
+	private static Logger LOG = Logger.getLogger(OrientdbProcessEngineConfiguration.class.getName());
 
-  //protected Config hazelcastConfig;
+	//protected Config hazelcastConfig;
 
-  //protected HazelcastInstance hazelcastInstance;
+	//protected HazelcastInstance hazelcastInstance;
 
-  public static List<String> members = new ArrayList<String>();
+	protected OrientGraphFactory graphFactory;
 
-  public static String manager = null;
+	public static List<String> members = new ArrayList<String>();
 
-  public OrientdbProcessEngineConfiguration() {
-    super();
+	public static String manager = null;
 
-    // explicitly disable unsupported features
-    setHistory(HISTORY_NONE);
+	public OrientdbProcessEngineConfiguration(OrientGraphFactory f) {
+		super();
 
-    setCmmnEnabled(false);
-    setDmnEnabled(false);
-    setAuthorizationEnabled(false);
-    setMetricsEnabled(false);
-    setJobExecutorActivate(false);
-    setDbMetricsReporterActivate(false);
-    setDeploymentLockUsed(false);
-System.err.println("OrientdbProcessEngineConfiguration");
+		graphFactory = f;
+		// explicitly disable unsupported features
+		setHistory(HISTORY_NONE);
+
+		setCmmnEnabled(false);
+		setDmnEnabled(false);
+		setAuthorizationEnabled(false);
+		setMetricsEnabled(false);
+		setJobExecutorActivate(false);
+		setDbMetricsReporterActivate(false);
+		setDeploymentLockUsed(false);
+		System.err.println("OrientdbProcessEngineConfiguration");
 		CommandContextFactory ccf = createDefaultCommandContextFactory();
 		ccf.setProcessEngineConfiguration(this);
 		setCommandContextFactory(ccf);
-  }
+	}
 
- 	private CommandContextFactory createDefaultCommandContextFactory() {
-    return new CommandContextFactory();
-  }
-  protected void init() {
-    invokePreInit();
-    initHazelcast();
+	private CommandContextFactory createDefaultCommandContextFactory() {
+		return new CommandContextFactory();
+	}
+	protected void init() {
+		invokePreInit();
 
-    initDefaultCharset();
-    initHistoryLevel();
-    initHistoryEventProducer();
-    initCmmnHistoryEventProducer();
-    initHistoryEventHandler();
-    initExpressionManager();
-    initBeans();
-    initArtifactFactory();
-    initFormEngines();
-    initFormTypes();
-    initFormFieldValidators();
-    initScripting();
-//    initDmnEngine();
-    initBusinessCalendarManager();
-    initCommandContextFactory();
-    initTransactionContextFactory();
-    initCommandExecutors();
-    initServices();
-    initIdGenerator();
-    initDeployers();
-//    initJobProvider();
-//    initJobExecutor();
-//    initDataSource();
-//    initTransactionFactory();
-//    initSqlSessionFactory();
-    initIdentityProviderSessionFactory();
-    initSessionFactories();
-    initValueTypeResolver();
-    initSerialization();
-//    initJpa();
-    initDelegateInterceptor();
-    initEventHandlers();
-//    initFailedJobCommandFactory();
-    initProcessApplicationManager();
-    initCorrelationHandler();
-    initIncidentHandlers();
-    initPasswordDigest();
-    initDeploymentRegistration();
-    initResourceAuthorizationProvider();
-    initMetrics();
-// initCommandCheckers();
-	
+		initDefaultCharset();
+		initHistoryLevel();
+		initHistoryEventProducer();
+		initCmmnHistoryEventProducer();
+		initHistoryEventHandler();
+		initExpressionManager();
+		initBeans();
+		initArtifactFactory();
+		initFormEngines();
+		initFormTypes();
+		initFormFieldValidators();
+		initScripting();
+		//    initDmnEngine();
+		initBusinessCalendarManager();
+		initCommandContextFactory();
+		initTransactionContextFactory();
+		initCommandExecutors();
+		initServices();
+		initIdGenerator();
+		initDeployers();
+		//    initJobProvider();
+		//    initJobExecutor();
+		//    initDataSource();
+		//    initTransactionFactory();
+		//    initSqlSessionFactory();
+		initIdentityProviderSessionFactory();
+		initSessionFactories();
+		initValueTypeResolver();
+		initSerialization();
+		//    initJpa();
+		initDelegateInterceptor();
+		initEventHandlers();
+		//    initFailedJobCommandFactory();
+		initProcessApplicationManager();
+		initCorrelationHandler();
+		initIncidentHandlers();
+		initPasswordDigest();
+		initDeploymentRegistration();
+		initResourceAuthorizationProvider();
+		initMetrics();
+		// initCommandCheckers();
 
-    invokePostInit();
-  }
 
-  protected void initHazelcast() {
-    if(hazelcastInstance == null) {
-      if(hazelcastConfig == null) {
-        LOG.info("No Hazelcast configuration provided: using default configuration.");
+		invokePostInit();
+	}
 
-        MulticastConfig multicastConfig = new MulticastConfig().setEnabled(false);
+	protected void initTransactionContextFactory() {
+		if (transactionContextFactory==null) {
+			transactionContextFactory = new StandaloneTransactionContextFactory();
+		}
+	}
 
-        TcpIpConfig tcpIpConfig = new TcpIpConfig()
-          .setEnabled(true)
-          .setMembers(members);
+	protected Collection< ? extends CommandInterceptor> getDefaultCommandInterceptorsTxRequired() {
+		List<CommandInterceptor> defaultCommandInterceptorsTxRequired = new ArrayList<CommandInterceptor>();
+		defaultCommandInterceptorsTxRequired.add(new LogInterceptor());
+		defaultCommandInterceptorsTxRequired.add(new CommandContextInterceptor(commandContextFactory, this));
+		return defaultCommandInterceptorsTxRequired;
+	}
 
-        JoinConfig joinConfig = new JoinConfig()
-          .setMulticastConfig(multicastConfig)
-          .setTcpIpConfig(tcpIpConfig);
+	protected Collection< ? extends CommandInterceptor> getDefaultCommandInterceptorsTxRequiresNew() {
+		List<CommandInterceptor> defaultCommandInterceptorsTxRequired = new ArrayList<CommandInterceptor>();
+		defaultCommandInterceptorsTxRequired.add(new LogInterceptor());
+		defaultCommandInterceptorsTxRequired.add(new CommandContextInterceptor(commandContextFactory, this, true));
+		return defaultCommandInterceptorsTxRequired;
+	}
 
-        NetworkConfig networkConfig = new NetworkConfig()
-          .setJoin(joinConfig);
+	protected void initIdGenerator() {
+		if(idGenerator == null) {
+			// TODO: use hazelcast IdGenerator ?
+			idGenerator = new StrongUuidGenerator();
+		}
+	}
 
-        hazelcastConfig = new Config()
-          .setNetworkConfig(networkConfig);
+	@Override
+	protected void initPersistenceProviders() {
+		addSessionFactory(new OrientdbSessionFactory(graphFactory));
+		addSessionFactory(new OrientdbPersistenceProviderFactory());
+	}
 
-        SerializationConfig serializationConfig = PortableSerialization.defaultSerializationConfig();
 
-        hazelcastConfig.setSerializationConfig(serializationConfig);
-
-        if (manager != null) {
-          hazelcastConfig.setManagementCenterConfig(new ManagementCenterConfig()
-            .setUrl(manager)
-            .setEnabled(true)
-          );
-        }
-
-      }
-      hazelcastInstance = Hazelcast.newHazelcastInstance(hazelcastConfig);
-    }
-  }
-
-  protected void initTransactionContextFactory() {
-    if (transactionContextFactory==null) {
-      transactionContextFactory = new StandaloneTransactionContextFactory();
-    }
-  }
-
-  protected Collection< ? extends CommandInterceptor> getDefaultCommandInterceptorsTxRequired() {
-    List<CommandInterceptor> defaultCommandInterceptorsTxRequired = new ArrayList<CommandInterceptor>();
-    defaultCommandInterceptorsTxRequired.add(new LogInterceptor());
-    defaultCommandInterceptorsTxRequired.add(new CommandContextInterceptor(commandContextFactory, this));
-    return defaultCommandInterceptorsTxRequired;
-  }
-
-  protected Collection< ? extends CommandInterceptor> getDefaultCommandInterceptorsTxRequiresNew() {
-    List<CommandInterceptor> defaultCommandInterceptorsTxRequired = new ArrayList<CommandInterceptor>();
-    defaultCommandInterceptorsTxRequired.add(new LogInterceptor());
-    defaultCommandInterceptorsTxRequired.add(new CommandContextInterceptor(commandContextFactory, this, true));
-    return defaultCommandInterceptorsTxRequired;
-  }
-
-  protected void initIdGenerator() {
-    if(idGenerator == null) {
-      // TODO: use hazelcast IdGenerator ?
-      idGenerator = new StrongUuidGenerator();
-    }
-  }
-
-  @Override
-  protected void initPersistenceProviders() {
-    addSessionFactory(new OrientdbSessionFactory(orientdbInstance));
-    addSessionFactory(new OrientdbPersistenceProviderFactory());
-  }
-
-  public Config getHazelcastConfig() {
-    return hazelcastConfig;
-  }
-
-  public void setHazelcastConfig(Config hazelcastConfig) {
-    this.hazelcastConfig = hazelcastConfig;
-  }
-
-  public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-    this.hazelcastInstance = hazelcastInstance;
-  }
-
-  public HazelcastInstance getHazelcastInstance() {
-    return hazelcastInstance;
-  }
-
-  public void close() {
-    super.close();
-    if(hazelcastInstance != null) {
-      hazelcastInstance.shutdown();
-    }
-  }
+	public void close() {
+		super.close();
+	}
 
 }
