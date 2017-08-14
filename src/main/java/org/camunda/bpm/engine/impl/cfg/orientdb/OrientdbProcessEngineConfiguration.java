@@ -20,7 +20,6 @@ import org.camunda.bpm.engine.impl.cfg.ProcessEngineConfigurationImpl;
 import org.camunda.bpm.engine.impl.cfg.standalone.StandaloneTransactionContextFactory;
 import org.camunda.bpm.engine.impl.db.orientdb.OrientdbPersistenceProviderFactory;
 import org.camunda.bpm.engine.impl.db.orientdb.OrientdbSessionFactory;
-//import org.camunda.bpm.engine.impl.db.hazelcast.serialization.PortableSerialization;
 import org.camunda.bpm.engine.impl.interceptor.CommandContextInterceptor;
 import org.camunda.bpm.engine.impl.interceptor.CommandInterceptor;
 import org.camunda.bpm.engine.impl.interceptor.LogInterceptor;
@@ -49,10 +48,6 @@ import com.orientechnologies.orient.server.config.OServerUserConfiguration;
 public class OrientdbProcessEngineConfiguration extends ProcessEngineConfigurationImpl {
 
 	private static Logger LOG = Logger.getLogger(OrientdbProcessEngineConfiguration.class.getName());
-
-	//protected Config hazelcastConfig;
-
-	//protected HazelcastInstance hazelcastInstance;
 
 	protected OrientGraphFactory graphFactory;
 
@@ -126,7 +121,7 @@ public class OrientdbProcessEngineConfiguration extends ProcessEngineConfigurati
 		initDeploymentRegistration();
 		initResourceAuthorizationProvider();
 		initMetrics();
-		// initCommandCheckers();
+		initCommandCheckers();
 
 
 		invokePostInit();

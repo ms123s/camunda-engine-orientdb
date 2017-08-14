@@ -15,14 +15,12 @@ package org.camunda.bpm.engine.impl.db.orientdb;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.camunda.bpm.engine.impl.cmmn.entity.repository.CaseDefinitionEntity;
 import org.camunda.bpm.engine.impl.db.DbEntity;
 import org.camunda.bpm.engine.impl.interceptor.Session;
 import org.camunda.bpm.engine.impl.interceptor.SessionFactory;
 import org.camunda.bpm.engine.impl.persistence.entity.*;
 
 import com.tinkerpop.blueprints.impls.orient.OrientGraphFactory;
-import static org.camunda.bpm.engine.impl.util.EnsureUtil.ensureNotNull;
 
 /**
  * @author Manfred Sattler

@@ -57,7 +57,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	protected void insertEntity(DbEntityOperation operation) {
 
 		//getMetaData( operation.getEntity().getClass());
-		System.err.println("xxx.insertEntity1:"+operation.getEntity().getClass()+"/"+operation.getEntity());
+		System.err.println("yyy.insertEntity1:"+operation.getEntity().getClass()+"/"+operation.getEntity());
 		//String json = GroovyJsonWriter.objectToJson(operation.getEntity());
 		/*String json = null;
 		try{
