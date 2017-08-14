@@ -1,7 +1,7 @@
 apply plugin:'java'
 apply plugin:'groovy'
 
-ext.camunda_version='7.4.0'
+ext.camunda_version='7.7.0'
 ext.orientdb_version='2.2.11'
 dependencies {
  	compile files("/root/.m2/repository/com/hazelcast/hazelcast-all/3.2.1/hazelcast-all-3.2.1.jar")
