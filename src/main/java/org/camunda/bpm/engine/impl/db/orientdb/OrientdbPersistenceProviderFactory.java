@@ -28,7 +28,6 @@ public class OrientdbPersistenceProviderFactory implements SessionFactory {
   }
 
   public Session openSession() {
-		System.err.println("Orientdb.OPENSESSION");
     return Context.getCommandContext().getSession(OrientdbPersistenceSession.class);
   }
 

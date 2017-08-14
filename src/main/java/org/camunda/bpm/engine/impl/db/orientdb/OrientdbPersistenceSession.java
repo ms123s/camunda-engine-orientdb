@@ -18,7 +18,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.lang.reflect.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -41,6 +40,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 
 	private final static Logger log = Logger.getLogger(OrientdbPersistenceSession.class.getName());
 	private boolean isOpen = false;
+	long sessionId;
 
 	protected OrientGraph orientGraph;
 
@@ -49,6 +49,8 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		if(openTransaction) {
 		}
 		this.isOpen=true;
+		sessionId = new java.util.Date().getTime();
+		System.err.println("OPEN_SESSION:"+sessionId);
 	}
 
 
@@ -75,53 +77,6 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 //		AbstractPortableEntity<?> portable = PortableSerialization.createPortableInstance(entity);
 
 //		getTransactionalMap(operation).put(entity.getId(), portable);
-	}
-	protected Map getMetaData( Class clazz){
-		String name = clazz.getSimpleName();	
-		String ename = name.substring(0, name.length()-6);
-		System.err.println("yyy.getMetaData("+ename+"):"+clazz);
-		List fields = getSimpleFields( clazz);
-		//		boolean b = hasQuery( ename);
-		return null;
-	}
-
-	private String[] prefixes = new String[]{ "management", "task", "filter", "identity", "history", "runtime", "repository" };
-	private String[] ops = new String[]{ "In", "Like", "LessThanOrEqual", "LessThan", "GreaterThanOrEqual", "GreaterThan", "Equal", "NotEqual" };
-	private boolean hasQuery(String name){
-		for( String prefix : prefixes){
-			try{
-				Class clazz = Class.forName( "org.camunda.bpm.engine." + prefix +"." +name+ "Query" );
-				Method[] meths = clazz.getDeclaredMethods();
-				for( Method m : meths){
-					//				System.err.println("\tyyy.method("+name+"):"+m.getName());
-				}
-				return true;
-			}catch(Exception e){
-				//System.err.println("yyy.Exception("+name+"):"+e.getMessage());
-			}
-		}
-		return false;
-	}
-	private List getSimpleFields(Class clazz){
-		try{
-			Field[] fields = clazz.getDeclaredFields();
-			for( Field f : fields){
-				if( !Modifier.isStatic(f.getModifiers()) && isPrimitiveOrPrimitiveWrapperOrString(f.getType())){
-					System.err.println("\tyyy.field("+f.getType().getSimpleName()+"):"+f.getName());
-				}
-			}
-			return null;
-		}catch(Exception e){
-			//System.err.println("yyy.Exception("+name+"):"+e.getMessage());
-		}
-		return null;
-	}
-
-	public static boolean isPrimitiveOrPrimitiveWrapperOrString(Class<?> type) {
-		return (type.isPrimitive() && type != void.class) ||
-			type == Double.class || type == Float.class || type == Long.class ||
-			type == Integer.class || type == Short.class || type == Character.class ||
-			type == Byte.class || type == Boolean.class || type == String.class;
 	}
 
 	protected void deleteEntity(DbEntityOperation operation) {
@@ -311,7 +266,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	}
 
 	public void commit() {
-		System.err.println("commit");
+		System.err.println("COMMIT_SESSION:"+sessionId);
 		orientGraph.commit();
 	}
 
@@ -326,6 +281,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	public void close() {
 		// nothing to do
 		if( this.isOpen){
+		System.err.println("CLOSE_SESSION:"+sessionId);
 			orientGraph.shutdown();
 		}
 		this.isOpen=false;
