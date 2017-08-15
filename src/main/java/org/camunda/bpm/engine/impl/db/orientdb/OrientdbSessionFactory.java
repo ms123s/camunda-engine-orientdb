@@ -43,6 +43,7 @@ public class OrientdbSessionFactory implements SessionFactory {
 		entityHandlerMap = new HashMap<Class, BaseEntityHandler>();
 		entityHandlerMap.put(TaskEntity.class, new TaskEntityHandler(orientGraph));
 		entityHandlerMap.put(ProcessDefinitionEntity.class, new ProcessDefinitionEntityHandler(orientGraph));
+		entityHandlerMap.put(HistoricActivityInstanceEntity.class, new HistoricActivityInstanceEntityHandler(orientGraph));
 		entityHandlerMap.put(ExecutionEntity.class, new ExecutionEntityHandler(orientGraph));
 		entityHandlerMap.put(PropertyEntity.class, new PropertyEntityHandler(orientGraph));
 		entityHandlerMap.put(VariableInstanceEntity.class, new VariableInstanceEntityHandler(orientGraph));

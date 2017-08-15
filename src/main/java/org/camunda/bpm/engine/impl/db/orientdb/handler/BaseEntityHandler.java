@@ -76,10 +76,12 @@ public abstract class BaseEntityHandler {
 				map.put("type", returnType);
 				map.put("name", baseName);
 				map.put("prefix", prefix);
-				map.put("getter", m.getName());
+				map.put("getter", name);
 				map.put("setter", setter);
 				map.put("otype", OType.getTypeByClass(returnType));
-				fieldList.add(map);
+				if( !containsGetter(name,fieldList)){
+					fieldList.add(map);
+				}
 			}
 		}
 		return fieldList;
@@ -160,6 +162,15 @@ public abstract class BaseEntityHandler {
 				m.put("setter", setter);
 			}
 		}
+	}
+	protected boolean containsGetter( String getter, List<Map<String,Object>> list){
+		for (Iterator<Map<String,Object>> iter = list.listIterator(); iter.hasNext(); ) {
+			Map<String,Object> m = iter.next();
+			if ( getter.equals(m.get("getter"))) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private void executeUpdate(OrientGraph graph, String sql, Object... args) {
