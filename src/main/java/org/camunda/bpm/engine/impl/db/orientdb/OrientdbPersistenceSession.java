@@ -33,6 +33,7 @@ import org.camunda.bpm.engine.impl.db.entitymanager.operation.DbBulkOperation;
 import org.camunda.bpm.engine.impl.db.entitymanager.operation.DbEntityOperation;
 import org.camunda.bpm.engine.impl.persistence.entity.ExecutionEntity;
 import org.camunda.bpm.engine.impl.db.orientdb.handler.*;
+import org.camunda.bpm.engine.impl.db.ListQueryParameterObject;
 
 import static org.camunda.bpm.engine.impl.util.EnsureUtil.ensureNotNull;
 import com.tinkerpop.blueprints.impls.orient.OrientGraph;
@@ -68,7 +69,8 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		String prefix = getPrefix(statement);
 		String suffix = getSuffix(statement);
 		String entityName = getEntityName( statement, prefix, suffix);
-		LOG.info("selectOne(" + statement +","+ entityName+ "):" + parameter);
+		Map<String,Object> parameterMap = getParameterMap( parameter);
+		LOG.info("selectOne(" + statement +","+ entityName+ "):" + parameterMap);
 		return null;
 	}
 
@@ -76,18 +78,19 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		String prefix = getPrefix(statement);
 		String suffix = getSuffix(statement);
 		String entityName = getEntityName( statement, prefix, suffix);
-		if (parameter instanceof org.camunda.bpm.engine.impl.db.ListQueryParameterObject) {
-			Object p = ((org.camunda.bpm.engine.impl.db.ListQueryParameterObject) parameter).getParameter();
-			if (p != null) {
-				LOG.info("selectList1(" + statement +","+entityName+ "):" + p);
-			} else {
-				LOG.info("selectList2(" + statement +","+entityName+ "):" + parameter);
-			}
-		} else {
-			LOG.info("selectList3(" + statement +","+entityName+ "):" + parameter);
-		}
+		Map<String,Object> parameterMap = getParameterMap( parameter);
+		LOG.info("selectList(" + statement +","+entityName+ "):" + parameterMap);
 
 		return new ArrayList();
+	}
+
+
+	private Map<String,Object> getParameterMap( Object parameter){
+		if (parameter instanceof ListQueryParameterObject) {
+			return (Map<String, Object>) ((ListQueryParameterObject) parameter).getParameter();
+		} else {
+			return (Map<String, Object>) parameter;
+		}
 	}
 
 	public <T extends DbEntity> T selectById(Class<T> entityClass, String id) {
@@ -119,7 +122,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		return null;
 	}
 
-	private Map<String,Object> executeQueryOne( String entityName, String where, Object[] args){
+/*	private Map<String,Object> executeQueryOne( String entityName, String where, Object[] args){
 		LOG.info("->selectById(" + entityName + ").id:" + id);
 		OCommandRequest query = new OSQLSynchQuery("select  from "+entityName+" where id=?");
 		LOG.info("  - query:" + query);
@@ -134,7 +137,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			LOG.info("<-selectById("+entityName+").return:null");
 			return null;
 		}
-	}
+	}*/
 
 	private void setEntityValues( Class entityClass, Object entity, Map<String,Object> props) throws Exception{
 		BaseEntityHandler handler = OrientdbSessionFactory.getEntityHandler(entityClass);
