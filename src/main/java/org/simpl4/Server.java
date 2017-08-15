@@ -19,16 +19,15 @@ public class Server {
 		Logger LOG = LogManager.getLogManager().getLogger("");
 		LOG.setUseParentHandlers(false);
 
-		LogFormatter formatter = new LogFormatter();
-		ConsoleHandler handler = new ConsoleHandler();
-		handler.setFormatter(formatter);
-
 		Handler[] handlers = LOG.getHandlers();
-		for(Handler h : handlers) {
-			LOG.removeHandler(h);
+		for(Handler handler : handlers) {
+			LOG.removeHandler(handler);
 		}
-		LOG.addHandler(handler);
 
+		LogFormatter formatter = new LogFormatter();
+		ConsoleHandler newHandler = new ConsoleHandler();
+		newHandler.setFormatter(formatter);
+		LOG.addHandler(newHandler);
 
 		OrientGraphFactory f = new OrientDB().getFactory("camunda1", "root", "simpl4");
 		f.setStandardElementConstraints(false);

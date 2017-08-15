@@ -30,5 +30,12 @@ public class TaskEntityHandler extends BaseEntityHandler{
 		super( g, TaskEntity.class);
 	}
 
+	public void modifyMetadata() {
+//		removeByGetter( "getRevisionNext");
+//		removeByGetter( "getVariableScopeKey");
+//		removeByGetter( "getFormKey");
+//		removeByGetter( "getDeleteReason");
+//		removeByGetter( "isSuspended");
+	}
 
 }

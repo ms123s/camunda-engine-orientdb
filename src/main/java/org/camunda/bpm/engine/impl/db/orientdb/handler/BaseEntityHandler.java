@@ -17,6 +17,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.lang.reflect.*;
@@ -39,36 +41,85 @@ public abstract class BaseEntityHandler {
 	private final static Logger LOG = Logger.getLogger(BaseEntityHandler.class.getName());
 	protected OrientGraph orientGraph;
 	protected Class entityClass;
-	private List<Map<String, Object>> entityFieldList = new ArrayList<Map<String, Object>>();
+	private List<Map<String, Object>> entityMetadata = new ArrayList<Map<String, Object>>();
 
 	public BaseEntityHandler(OrientGraph g, Class ec) {
 		this.entityClass = ec;
 		this.orientGraph = g;
-		this.entityFieldList = this.getSimpleFields(ec);
-		this.modifyFieldList(this.entityFieldList);
-//		LOG.info(this.entityClass.getSimpleName() + ":" + this.entityFieldList);
+		this.entityMetadata = this.buildMetadata(ec);
+		this.modifyMetadata();
+		LOG.info("--> "+ this.entityClass.getSimpleName() );
+		for( Map<String, Object> m : this.entityMetadata){
+			LOG.info("  - "+ m );
+		}
 		createClassAndProperties();
 	}
 
-	public void modifyFieldList(List<Map<String, Object>> fl) {
+	public void modifyMetadata() {
 	}
-	public List<Map<String, Object>> getFieldList(){
-		return this.entityFieldList;
+	public List<Map<String, Object>> getMetadata(){
+		return this.entityMetadata;
 	}
 
-	private List<Map<String, Object>> getSimpleFields(Class clazz) {
+	private List<String> excludeList = new ArrayList<>(Arrays.asList("hashCode"));
+	private List<Map<String, Object>> buildMetadata(Class clazz) {
 		List<Map<String, Object>> fieldList = new ArrayList<Map<String, Object>>();
-		Field[] fields = clazz.getDeclaredFields();
-		for (Field f : fields) {
-			if (!Modifier.isStatic(f.getModifiers()) && isPrimitiveOrPrimitiveWrapperOrString(f.getType())) {
+		Method[] methods = clazz.getMethods();
+		for (Method m : methods) {
+			Class returnType = m.getReturnType();
+			String name = m.getName();
+			String baseName = getBaseName(name);
+			String setter = getSetter( clazz, baseName);
+			String prefix = getGetterPrefix(name);
+			if (setter!=null && !excludeList.contains(name) && !Modifier.isStatic(m.getModifiers()) && prefix != null && isPrimitiveOrPrimitiveWrapperOrString(returnType)) {
 				Map<String, Object> map = new HashMap<String, Object>();
-				map.put("type", f.getType());
-				map.put("name", f.getName());
-				map.put("otype", OType.getTypeByClass(f.getType()));
+				map.put("type", returnType);
+				map.put("name", baseName);
+				map.put("prefix", prefix);
+				map.put("getter", m.getName());
+				map.put("setter", setter);
+				map.put("otype", OType.getTypeByClass(returnType));
 				fieldList.add(map);
 			}
 		}
 		return fieldList;
+	}
+
+	private String getSetter(Class clazz, String baseName) {
+		Method[] methods = clazz.getMethods();
+		String setter = "set"+firstToUpper(baseName);
+		for (Method m : methods) {
+			Class returnType = m.getReturnType();
+			Class[] parameterTypes = m.getParameterTypes();
+			String name = m.getName();
+			if (name.equals(setter) && !Modifier.isStatic(m.getModifiers()) && returnType.equals(Void.TYPE) && parameterTypes.length == 1 && isPrimitiveOrPrimitiveWrapperOrString(parameterTypes[0])) {
+				return setter;
+			}
+		}
+		return null;
+	}
+
+	private String getBaseName( String methodName ){
+		if( methodName.startsWith("get")){
+			return firstToLower(methodName.substring(3));
+		}
+		if( methodName.startsWith("has")){
+			return firstToLower(methodName.substring(3));
+		}
+		if( methodName.startsWith("is")){
+			return firstToLower(methodName.substring(2));
+		}
+		return firstToLower(methodName);
+	}
+
+	private String[] getterPrefixes = new String[] { "is", "has", "get" };
+	private String getGetterPrefix( String mName){
+		for( String pre : getterPrefixes){
+			if( mName.startsWith( pre)){
+				return pre;
+			}
+		}
+		return null;
 	}
 
 	private void createClassAndProperties() {
@@ -79,7 +130,7 @@ public abstract class BaseEntityHandler {
 				return;
 			}
 			executeUpdate(this.orientGraph, "CREATE CLASS " + entityName + " EXTENDS V");
-			for (Map<String, Object> f : this.entityFieldList) {
+			for (Map<String, Object> f : this.entityMetadata) {
 				String pname = (String) f.get("name");
 				String ptype = (String) ((OType) f.get("otype")).toString();
 				String sql = "CREATE PROPERTY " + entityName + "." + pname + " " + ptype;
@@ -93,12 +144,45 @@ public abstract class BaseEntityHandler {
 		}
 	}
 
+	protected void removeByGetter( String getter){
+		for (Iterator<Map<String,Object>> iter = this.entityMetadata.listIterator(); iter.hasNext(); ) {
+			Map<String,Object> m = iter.next();
+			if ( getter.equals(m.get("getter"))) {
+				iter.remove();
+			}
+		}
+	}
+
+	protected void setSetterByGetter( String getter, String setter){
+		for (Iterator<Map<String,Object>> iter = this.entityMetadata.listIterator(); iter.hasNext(); ) {
+			Map<String,Object> m = iter.next();
+			if ( getter.equals(m.get("getter"))) {
+				m.put("setter", setter);
+			}
+		}
+	}
+
 	private void executeUpdate(OrientGraph graph, String sql, Object... args) {
 		OCommandRequest update = new OCommandSQL(sql);
 		graph.command(update).execute(args);
 	}
 
-	private String[] prefixes = new String[] { "management", "task", "filter", "identity", "history", "runtime", "repository" };
+	protected boolean isPrimitiveOrPrimitiveWrapperOrString(Class<?> type) {
+		return (type.isPrimitive() && type != void.class) || type == Double.class || type == Float.class || type == Long.class || type == Integer.class || type == Short.class || type == Character.class || type == Byte.class || type == Boolean.class || type == String.class;
+	}
+
+	protected String firstToLower( String s){
+		char c[] = s.toCharArray();
+		c[0] = Character.toLowerCase(c[0]);
+		return new String(c);
+	}
+	protected String firstToUpper( String s){
+		char c[] = s.toCharArray();
+		c[0] = Character.toUpperCase(c[0]);
+		return new String(c);
+	}
+
+/*	private String[] prefixes = new String[] { "management", "task", "filter", "identity", "history", "runtime", "repository" };
 	private String[] ops = new String[] { "In", "Like", "LessThanOrEqual", "LessThan", "GreaterThanOrEqual", "GreaterThan", "Equal", "NotEqual" };
 
 	private boolean hasQuery(String name) {
@@ -117,9 +201,6 @@ public abstract class BaseEntityHandler {
 		return false;
 	}
 
-	public static boolean isPrimitiveOrPrimitiveWrapperOrString(Class<?> type) {
-		return (type.isPrimitive() && type != void.class) || type == Double.class || type == Float.class || type == Long.class || type == Integer.class || type == Short.class || type == Character.class || type == Byte.class || type == Boolean.class || type == String.class;
-	}
 
 	protected Map getMetaData(Class clazz) {
 		String name = clazz.getSimpleName();
@@ -127,6 +208,21 @@ public abstract class BaseEntityHandler {
 		List fields = getSimpleFields(clazz);
 		//		boolean b = hasQuery( ename);
 		return null;
+	}*/
+
+	private List<Map<String, Object>> getSimpleFields(Class clazz) {
+		List<Map<String, Object>> fieldList = new ArrayList<Map<String, Object>>();
+		Field[] fields = clazz.getDeclaredFields();
+		for (Field f : fields) {
+			if (!Modifier.isStatic(f.getModifiers()) && isPrimitiveOrPrimitiveWrapperOrString(f.getType())) {
+				Map<String, Object> map = new HashMap<String, Object>();
+				map.put("type", f.getType());
+				map.put("name", f.getName());
+				map.put("otype", OType.getTypeByClass(f.getType()));
+				fieldList.add(map);
+			}
+		}
+		return fieldList;
 	}
 }
 

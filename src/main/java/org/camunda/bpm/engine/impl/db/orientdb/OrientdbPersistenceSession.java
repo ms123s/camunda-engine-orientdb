@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
+import java.lang.Iterable;
 import java.util.Map;
 import java.lang.reflect.*;
 import java.util.logging.Level;
@@ -35,7 +36,10 @@ import org.camunda.bpm.engine.impl.db.orientdb.handler.*;
 import static org.camunda.bpm.engine.impl.util.EnsureUtil.ensureNotNull;
 import com.tinkerpop.blueprints.impls.orient.OrientGraph;
 import com.tinkerpop.blueprints.Vertex;
-
+import com.orientechnologies.orient.core.command.OCommandRequest;
+import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
+import com.tinkerpop.blueprints.Element;
+	
 /**
  * @author Manfred Sattler
  */
@@ -52,32 +56,90 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		this.orientGraph = g;
 		this.isOpen = true;
 		sessionId = new java.util.Date().getTime();
-		LOG.info("OPEN_SESSION:" + sessionId);
+		LOG.info("openSession:" + sessionId);
+	}
+
+	public List<?> selectList(String statement, Object parameter) {
+		if (parameter instanceof org.camunda.bpm.engine.impl.db.ListQueryParameterObject) {
+			Object p = ((org.camunda.bpm.engine.impl.db.ListQueryParameterObject) parameter).getParameter();
+			if (p != null) {
+				LOG.info("selectList1(" + statement + "):" + p);
+			} else {
+				LOG.info("selectList2(" + statement + "):" + parameter);
+			}
+		} else {
+			LOG.info("selectList3(" + statement + "):" + parameter);
+		}
+		if (LOG.isLoggable(Level.FINE)) {
+			LOG.fine("executing selectList " + statement);
+		}
+
+		return new ArrayList();
+	}
+
+	public <T extends DbEntity> T selectById(Class<T> type, String id) {
+		String entityName = type.getSimpleName();
+		LOG.info("selectById(" + entityName + ").id:" + id);
+		OCommandRequest query = new OSQLSynchQuery("select  from "+entityName+" where id=?");
+		LOG.info("- query:" + query);
+		Iterable<Element> result = orientGraph.command(query).execute(id);
+		LOG.info("- result:"+result);
+		for (Element elem : result) {
+			LOG.info("-- :"+elem);
+		}
+		/*AbstractPortableEntity<T> portable = (AbstractPortableEntity<T>) getTransactionalMap(type).get(id);
+		if(portable != null) {
+			T entity = portable.getEntity();
+			fireEntityLoaded(entity);
+			return entity;
+		} else {
+			return null;
+		}*/
+		return null;
+	}
+
+	public Object selectOne(String statement, Object parameter) {
+		LOG.info("selectOne(" + statement + "):" + parameter);
+
+		/*SelectEntityStatementHandler statementHandler = HazelcastSessionFactory.getSelectEntityStatementHandler(statement);
+		if(statementHandler != null) {
+			DbEntity dbEntity = statementHandler.execute(this, parameter);
+			if(dbEntity != null) {
+				fireEntityLoaded(dbEntity);
+			}
+			return dbEntity;
+		}
+		else {
+			LOG.log(Level.WARNING, "SELECT one statement '{}' currently not supported:"+ statement);
+			return null;
+		}*/
+		return null;
 	}
 
 	protected void insertEntity(DbEntityOperation operation) {
-		LOG.info("insertEntity1:" + operation.getEntity().getClass() + "/" + operation.getEntity());
+		LOG.info("insertEntity:" + operation.getEntity().getClass().getSimpleName());
 
 		DbEntity entity = operation.getEntity();
 		Class entityClass = entity.getClass();
 		String entityName = entityClass.getSimpleName();
 		BaseEntityHandler handler = OrientdbSessionFactory.getEntityHandler(entityClass);
-		LOG.info("insertEntity.handler:" + handler.getFieldList());
+		//LOG.info("insertEntity.handler:" + handler.getMetadata());
 
 		if (entity instanceof HasDbRevision) {
 			((HasDbRevision) entity).setRevision(1);
 		}
 
+if( true) return;
 		try {
 			Vertex v = this.orientGraph.addVertex("class:"+entityName);
-			List<Map<String, Object>> fields = handler.getFieldList();
+			List<Map<String, Object>> fields = handler.getMetadata();
 			for (Map<String, Object> f : fields) {
-				String pname = (String) f.get("name");
-				Field field = entityClass.getDeclaredField(pname);
-				field.setAccessible(true);
-				Object value = field.get(entity);
-				LOG.info("Field(" + pname + "):" + value);
-				v.setProperty(pname, value);
+				String getter = (String) f.get("getter");
+				String name = (String) f.get("name");
+				Method method = entityClass.getDeclaredMethod(getter);
+				Object value = method.invoke(entity);
+				LOG.info("- Field(" + name + "):" + value);
+				v.setProperty(name, value);
 			}
 		} catch (Exception e) {
 			LOG.throwing("OrientdbPersistenceSession", "insertEntity", e);
@@ -198,74 +260,12 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		return true;
 	}
 
-	public List<?> selectList(String statement, Object parameter) {
-		if (parameter instanceof org.camunda.bpm.engine.impl.db.ListQueryParameterObject) {
-			Object p = ((org.camunda.bpm.engine.impl.db.ListQueryParameterObject) parameter).getParameter();
-			if (p != null) {
-				LOG.info("selectList1(" + statement + "):" + p);
-			} else {
-				LOG.info("selectList2(" + statement + "):" + parameter);
-			}
-		} else {
-			LOG.info("selectList3(" + statement + "):" + parameter);
-		}
-		if (LOG.isLoggable(Level.FINE)) {
-			LOG.fine("executing selectList " + statement);
-		}
-
-		/*SelectEntitiesStatementHandler statementHandler = HazelcastSessionFactory.getSelectEntitiesStatementHandler(statement);
-		if(statementHandler != null) {
-			List<?> result = statementHandler.execute(this, parameter);
-			for (Object object : result) {
-				fireEntityLoaded(object);
-			}
-			return result;
-		}
-		else {
-			LOG.log(Level.WARNING, "SELECT many statement '{}' currently not supported:"+ statement);
-			return Collections.emptyList();
-		}*/
-		return new ArrayList();
-	}
-
-	public <T extends DbEntity> T selectById(Class<T> type, String id) {
-		LOG.info("selectById(" + type + "):" + id);
-		/*AbstractPortableEntity<T> portable = (AbstractPortableEntity<T>) getTransactionalMap(type).get(id);
-		if(portable != null) {
-			T entity = portable.getEntity();
-			fireEntityLoaded(entity);
-			return entity;
-		} else {
-			return null;
-		}*/
-		return null;
-	}
-
-	public Object selectOne(String statement, Object parameter) {
-		LOG.info("selectOne(" + statement + "):" + parameter);
-
-		/*SelectEntityStatementHandler statementHandler = HazelcastSessionFactory.getSelectEntityStatementHandler(statement);
-		if(statementHandler != null) {
-			DbEntity dbEntity = statementHandler.execute(this, parameter);
-			if(dbEntity != null) {
-				fireEntityLoaded(dbEntity);
-			}
-			return dbEntity;
-		}
-		else {
-			LOG.log(Level.WARNING, "SELECT one statement '{}' currently not supported:"+ statement);
-			return null;
-		}*/
-		return null;
-	}
 
 	public void lock(String statement) {
-		// TODO: implement
-
 	}
 
 	public void commit() {
-		LOG.info("COMMIT_SESSION:" + sessionId);
+		LOG.info("commitSession:" + sessionId);
 		orientGraph.commit();
 	}
 
@@ -280,7 +280,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	public void close() {
 		// nothing to do
 		if (this.isOpen) {
-			LOG.info("CLOSE_SESSION:" + sessionId);
+			LOG.info("closeSession:" + sessionId);
 			orientGraph.shutdown();
 		}
 		this.isOpen = false;
