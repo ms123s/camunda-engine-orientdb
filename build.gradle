@@ -20,6 +20,9 @@ dependencies {
  	compile files("jars/concurrentlinkedhashmap-lru-1.4.1.jar")
   compile files("jars/slf4j-jdk14-1.7.5.jar")
  	compile files("jars/blueprints-core-2.6.0.jar")
+ 	compile files("jars/reflections-0.9.11.jar")
+ 	compile files("jars/javassist-3.21.0-GA.jar")
+ 	compile files("jars/guava-21.0.jar")
  	compile files("jars/orientdb-core-${orientdb_version}.jar")
  	compile files("jars/orientdb-server-${orientdb_version}.jar")
  	compile files("jars/orientdb-client-${orientdb_version}.jar")
@@ -37,4 +40,8 @@ task(runServer, dependsOn: 'classes', type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     args 'mrhaki'
     systemProperty 'simple.message', 'Hello '
+}
+task(runScanner, dependsOn: 'classes', type: JavaExec) {
+    main = 'org.simpl4.Scanner'
+    classpath = sourceSets.main.runtimeClasspath
 }
