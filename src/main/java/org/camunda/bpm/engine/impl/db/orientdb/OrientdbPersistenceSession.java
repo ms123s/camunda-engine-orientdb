@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.lang.Iterable;
 import java.util.Map;
 import java.lang.reflect.*;
@@ -51,6 +52,8 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	private final static Logger LOG = Logger.getLogger(OrientdbPersistenceSession.class.getName());
 	private boolean isOpen = false;
 	long sessionId;
+	private List<String> prefixList = new ArrayList<>(Arrays.asList("selectLatest", "select"));
+	private List<String> suffixList = new ArrayList<>(Arrays.asList("CountBy", "By"));
 
 	protected OrientGraph orientGraph;
 
@@ -61,19 +64,27 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		LOG.info("openSession:" + sessionId);
 	}
 
+	public Object selectOne(String statement, Object parameter) {
+		String prefix = getPrefix(statement);
+		String suffix = getSuffix(statement);
+		String entityName = getEntityName( statement, prefix, suffix);
+		LOG.info("selectOne(" + statement +","+ entityName+ "):" + parameter);
+		return null;
+	}
+
 	public List<?> selectList(String statement, Object parameter) {
+		String prefix = getPrefix(statement);
+		String suffix = getSuffix(statement);
+		String entityName = getEntityName( statement, prefix, suffix);
 		if (parameter instanceof org.camunda.bpm.engine.impl.db.ListQueryParameterObject) {
 			Object p = ((org.camunda.bpm.engine.impl.db.ListQueryParameterObject) parameter).getParameter();
 			if (p != null) {
-				LOG.info("selectList1(" + statement + "):" + p);
+				LOG.info("selectList1(" + statement +","+entityName+ "):" + p);
 			} else {
-				LOG.info("selectList2(" + statement + "):" + parameter);
+				LOG.info("selectList2(" + statement +","+entityName+ "):" + parameter);
 			}
 		} else {
-			LOG.info("selectList3(" + statement + "):" + parameter);
-		}
-		if (LOG.isLoggable(Level.FINE)) {
-			LOG.fine("executing selectList " + statement);
+			LOG.info("selectList3(" + statement +","+entityName+ "):" + parameter);
 		}
 
 		return new ArrayList();
@@ -81,68 +92,95 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 
 	public <T extends DbEntity> T selectById(Class<T> entityClass, String id) {
 		String entityName = entityClass.getSimpleName();
-		LOG.info("selectById(" + entityName + ").id:" + id);
+		LOG.info("->selectById(" + entityName + ").id:" + id);
 		OCommandRequest query = new OSQLSynchQuery("select  from "+entityName+" where id=?");
-		LOG.info("- query:" + query);
+		LOG.info("  - query:" + query);
 		Iterable<Element> result = orientGraph.command(query).execute(id);
-		LOG.info("- result:"+result);
-		OrientVertex v = null;
+		LOG.info("  - result:"+result);
+		Map<String,Object> props = null;
 		for (Element elem : result) {
-			LOG.info("-- :"+elem+"/"+elem.getClass());
-			v = (OrientVertex)elem;
+			props = ((OrientVertex)elem).getProperties();
 			break;
 		}
-		if( v == null){
+		if( props == null){
+			LOG.info("<-selectById("+entityName+").return:null");
 			return null;
 		}
-		BaseEntityHandler handler = OrientdbSessionFactory.getEntityHandler(entityClass);
 		try {
 			T entity = (T)entityClass.newInstance();
-			List<Map<String, Object>> fields = handler.getMetadata();
-			Map<String,Object> props = v.getProperties();
-			for (Map<String, Object> f : fields) {
-				String name = (String) f.get("name");
-				Object value = props.get(name);
-				if( value == null){
-					continue;
-				}
-				LOG.info("- Prop(" + name + "):" + value);
-				String setter = (String) f.get("setter");
-				if( setter == null){
-					continue;
-				}
-				Class type = (Class) f.get("type");
-				Class[] args = new Class[1];
-				args[0] = type;
-
-				Method method = entityClass.getMethod(setter,args);
-				method.invoke(entity, value);
-			}
-			LOG.info("selectById.return:"+entity);
+			setEntityValues( entityClass, entity, props);
+			LOG.info("<-selectById("+entityName+").return:"+entity);
 			return entity;
 		} catch (Exception e) {
 			LOG.throwing("OrientdbPersistenceSession", "selectById", e);
 			e.printStackTrace();
 		}
+		LOG.info("<-selectById("+entityName+").return:null");
 		return null;
 	}
 
-	public Object selectOne(String statement, Object parameter) {
-		LOG.info("selectOne(" + statement + "):" + parameter);
-
-		/*SelectEntityStatementHandler statementHandler = HazelcastSessionFactory.getSelectEntityStatementHandler(statement);
-		if(statementHandler != null) {
-			DbEntity dbEntity = statementHandler.execute(this, parameter);
-			if(dbEntity != null) {
-				fireEntityLoaded(dbEntity);
-			}
-			return dbEntity;
+	private Map<String,Object> executeQueryOne( String entityName, String where, Object[] args){
+		LOG.info("->selectById(" + entityName + ").id:" + id);
+		OCommandRequest query = new OSQLSynchQuery("select  from "+entityName+" where id=?");
+		LOG.info("  - query:" + query);
+		Iterable<Element> result = orientGraph.command(query).execute(id);
+		LOG.info("  - result:"+result);
+		Map<String,Object> props = null;
+		for (Element elem : result) {
+			props = ((OrientVertex)elem).getProperties();
+			break;
 		}
-		else {
-			LOG.log(Level.WARNING, "SELECT one statement '{}' currently not supported:"+ statement);
+		if( props == null){
+			LOG.info("<-selectById("+entityName+").return:null");
 			return null;
-		}*/
-		return null;
+		}
+	}
+
+	private void setEntityValues( Class entityClass, Object entity, Map<String,Object> props) throws Exception{
+		BaseEntityHandler handler = OrientdbSessionFactory.getEntityHandler(entityClass);
+		List<Map<String, Object>> entityMeta = handler.getMetadata();
+		for (Map<String, Object> m : entityMeta) {
+			String name = (String) m.get("name");
+			Object value = props.get(name);
+			if( value == null){
+				continue;
+			}
+			LOG.info("  - Prop(" + name + "):" + value);
+			String setter = (String) m.get("setter");
+			if( setter == null){
+				continue;
+			}
+			Class type = (Class) m.get("type");
+			Class[] args = new Class[1];
+			args[0] = type;
+
+			Method method = entityClass.getMethod(setter,args);
+			method.invoke(entity, value);
+		}
+	}
+
+	private String getPrefix( String statement){
+		for( String pre : this.prefixList){
+			if( statement.startsWith(pre)){
+				return pre;
+			}
+		}
+		throw new RuntimeException("OrientdbPersistenceSession.getPrefix("+statement+"):not found");
+	}
+
+	private String getSuffix( String statement){
+		for( String suff : this.suffixList){
+			if( statement.indexOf(suff)>0){
+				return suff;
+			}
+		}
+		throw new RuntimeException("OrientdbPersistenceSession.getSuffix("+statement+"):not found");
+	}
+
+	private String getEntityName( String statement, String prefix, String suffix){
+		int start = prefix.length();
+		int end = statement.indexOf(suffix);
+		return statement.substring(start, end);
 	}
 
 	protected void insertEntity(DbEntityOperation operation) {
@@ -160,10 +198,10 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 
 		try {
 			Vertex v = this.orientGraph.addVertex("class:"+entityName);
-			List<Map<String, Object>> fields = handler.getMetadata();
-			for (Map<String, Object> f : fields) {
-				String getter = (String) f.get("getter");
-				String name = (String) f.get("name");
+			List<Map<String, Object>> entityMeta = handler.getMetadata();
+			for (Map<String, Object> m : entityMeta) {
+				String getter = (String) m.get("getter");
+				String name = (String) m.get("name");
 				Method method = entityClass.getMethod(getter);
 				Object value = method.invoke(entity);
 				LOG.info("- Field(" + name + "):" + value);
