@@ -30,5 +30,8 @@ public class PropertyEntityHandler extends BaseEntityHandler{
 		super( g, PropertyEntity.class);
 	}
 
+	public void modifyMetadata() {
+		setSetterByGetter( "getId", null);
+	}
 
 }

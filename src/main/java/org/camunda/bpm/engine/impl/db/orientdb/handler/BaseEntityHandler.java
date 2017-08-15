@@ -50,7 +50,7 @@ public abstract class BaseEntityHandler {
 		this.modifyMetadata();
 		LOG.info("--> "+ this.entityClass.getSimpleName() );
 		for( Map<String, Object> m : this.entityMetadata){
-			LOG.info("  - "+ m );
+			//LOG.info("  - "+ m );
 		}
 		createClassAndProperties();
 	}

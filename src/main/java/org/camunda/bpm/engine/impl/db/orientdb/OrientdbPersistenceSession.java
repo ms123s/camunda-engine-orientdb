@@ -39,6 +39,8 @@ import com.tinkerpop.blueprints.Vertex;
 import com.orientechnologies.orient.core.command.OCommandRequest;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
 import com.tinkerpop.blueprints.Element;
+import com.tinkerpop.blueprints.impls.orient.OrientVertex;
+
 	
 /**
  * @author Manfred Sattler
@@ -77,24 +79,51 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		return new ArrayList();
 	}
 
-	public <T extends DbEntity> T selectById(Class<T> type, String id) {
-		String entityName = type.getSimpleName();
+	public <T extends DbEntity> T selectById(Class<T> entityClass, String id) {
+		String entityName = entityClass.getSimpleName();
 		LOG.info("selectById(" + entityName + ").id:" + id);
 		OCommandRequest query = new OSQLSynchQuery("select  from "+entityName+" where id=?");
 		LOG.info("- query:" + query);
 		Iterable<Element> result = orientGraph.command(query).execute(id);
 		LOG.info("- result:"+result);
+		OrientVertex v = null;
 		for (Element elem : result) {
-			LOG.info("-- :"+elem);
+			LOG.info("-- :"+elem+"/"+elem.getClass());
+			v = (OrientVertex)elem;
+			break;
 		}
-		/*AbstractPortableEntity<T> portable = (AbstractPortableEntity<T>) getTransactionalMap(type).get(id);
-		if(portable != null) {
-			T entity = portable.getEntity();
-			fireEntityLoaded(entity);
-			return entity;
-		} else {
+		if( v == null){
 			return null;
-		}*/
+		}
+		BaseEntityHandler handler = OrientdbSessionFactory.getEntityHandler(entityClass);
+		try {
+			T entity = (T)entityClass.newInstance();
+			List<Map<String, Object>> fields = handler.getMetadata();
+			Map<String,Object> props = v.getProperties();
+			for (Map<String, Object> f : fields) {
+				String name = (String) f.get("name");
+				Object value = props.get(name);
+				if( value == null){
+					continue;
+				}
+				LOG.info("- Prop(" + name + "):" + value);
+				String setter = (String) f.get("setter");
+				if( setter == null){
+					continue;
+				}
+				Class type = (Class) f.get("type");
+				Class[] args = new Class[1];
+				args[0] = type;
+
+				Method method = entityClass.getMethod(setter,args);
+				method.invoke(entity, value);
+			}
+			LOG.info("selectById.return:"+entity);
+			return entity;
+		} catch (Exception e) {
+			LOG.throwing("OrientdbPersistenceSession", "selectById", e);
+			e.printStackTrace();
+		}
 		return null;
 	}
 
@@ -129,14 +158,13 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			((HasDbRevision) entity).setRevision(1);
 		}
 
-if( true) return;
 		try {
 			Vertex v = this.orientGraph.addVertex("class:"+entityName);
 			List<Map<String, Object>> fields = handler.getMetadata();
 			for (Map<String, Object> f : fields) {
 				String getter = (String) f.get("getter");
 				String name = (String) f.get("name");
-				Method method = entityClass.getDeclaredMethod(getter);
+				Method method = entityClass.getMethod(getter);
 				Object value = method.invoke(entity);
 				LOG.info("- Field(" + name + "):" + value);
 				v.setProperty(name, value);
