@@ -38,6 +38,11 @@ public class Scanner {
 
 	public static void main(String[] args) {
 		initLog();
+
+		def cwd = System.getProperty("user.dir");
+		def outDir = new File( cwd, "src/main/java/org/camunda/bpm/engine/impl/db/orientdb/handler");
+		def templateContent = this.getClass().getResource( '/EntityTemplate.java' ).text;
+
 		ConfigurationBuilder cb = new ConfigurationBuilder();
 		cb.addClassLoader( TaskEntity.class.getClassLoader());
 		cb.setScanners(new SubTypesScanner());
@@ -45,8 +50,15 @@ public class Scanner {
 		Reflections r = new Reflections( cb );
 		Set<Class<? extends DbEntity>> modules = r.getSubTypesOf(DbEntity.class);
 		for( Class de : modules){
-			System.out.println("\n");
-			new PrintHier( de).printHierarchy();
+			def outFile = new File( outDir, de.getSimpleName()+"Handler.java");
+			System.out.println(de.getName());
+			def template = new groovy.text.StreamingTemplateEngine().createTemplate(templateContent);
+			def binding =[
+				entityName: de.getSimpleName()
+			];
+	   	def classContent = template.make(binding);
+			file.write( classContent);
+			//new PrintHier( de).printHierarchy();
 		}
 	}
 
