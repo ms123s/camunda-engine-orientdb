@@ -43,21 +43,6 @@ import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
 import com.tinkerpop.blueprints.Element;
 import com.tinkerpop.blueprints.impls.orient.OrientVertex;
 
-import com.github.raymanrt.orientqb.query.Clause;
-import com.github.raymanrt.orientqb.query.Projection;
-import com.github.raymanrt.orientqb.query.Query;
-import static com.github.raymanrt.orientqb.query.Clause.and;
-import static com.github.raymanrt.orientqb.query.Clause.clause;
-import static com.github.raymanrt.orientqb.query.Clause.not;
-import static com.github.raymanrt.orientqb.query.Clause.or;
-import static com.github.raymanrt.orientqb.query.Operator.EQ;
-import static com.github.raymanrt.orientqb.query.Operator.NULL;
-import static com.github.raymanrt.orientqb.query.Parameter.parameter;
-import static com.github.raymanrt.orientqb.query.Projection.ALL;
-import static com.github.raymanrt.orientqb.query.Projection.projection;
-import static com.github.raymanrt.orientqb.query.Variable.variable;
-
-	
 /**
  * @author Manfred Sattler
  */

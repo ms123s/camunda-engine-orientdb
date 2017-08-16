@@ -80,6 +80,7 @@ public abstract class BaseEntityHandler {
 
 	public String buildQuery( String entityName, String statement, Map<String,Object> parameterMap){
 		modifyParameterMap( statement, parameterMap );
+
 		List<Clause> clauseList = new ArrayList<Clause>();
 		for (String field : parameterMap.keySet()){
 			Object value = parameterMap.get(field);
@@ -92,10 +93,7 @@ public abstract class BaseEntityHandler {
 			clauseList.add( c );
 		}
 		Clause w = and( clauseList.toArray(new Clause[clauseList.size()])  );
-
-		Query q = new Query()
-			.from(entityName)
-			.where(w);
+		Query q = new Query().from(entityName).where(w);
 
 		postProcessQuery( q, statement, parameterMap );
 
