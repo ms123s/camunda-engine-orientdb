@@ -55,17 +55,25 @@ public abstract class BaseEntityHandler {
 	protected OrientGraph orientGraph;
 	protected Class entityClass;
 	private List<Map<String, Object>> entityMetadata = new ArrayList<Map<String, Object>>();
+	private Map<String,Map> metaByFieldMap = new HashMap<String,Map>();
 
 	public BaseEntityHandler(OrientGraph g, Class ec) {
 		this.entityClass = ec;
 		this.orientGraph = g;
 		this.entityMetadata = this.buildMetadata(ec);
 		this.modifyMetadata();
+		this.buildFieldMap();
 		//LOG.info("--> "+ this.entityClass.getSimpleName() );
 		for( Map<String, Object> m : this.entityMetadata){
 			//LOG.info("  - "+ m );
 		}
 		createClassAndProperties();
+	}
+
+	private void buildFieldMap(){
+		for( Map<String, Object> m : entityMetadata){
+			this.metaByFieldMap.put( (String)m.get("name"), m);
+		}
 	}
 
 	public List<Map<String, Object>> getMetadata(){
@@ -79,8 +87,18 @@ public abstract class BaseEntityHandler {
 	public void postProcessQuery(Query q, String statement, Map<String,Object> parameterMap) {
 	}
 
+	public void checkParameterMap(Map<String,Object> parameterMap) {
+		for (String field : parameterMap.keySet()){
+			if( this.metaByFieldMap.get(field) == null){
+				throw new RuntimeException("BaseEntityHandler.checkParameterMap("+field+") not found");
+			}
+			LOG.info("checkParameterMap("+field+") ok!");
+		}
+	}
+
 	public String buildQuery( String entityName, String statement, Map<String,Object> parameterMap){
 		modifyParameterMap( statement, parameterMap );
+		checkParameterMap( parameterMap );
 
 		List<Clause> clauseList = new ArrayList<Clause>();
 		for (String field : parameterMap.keySet()){
