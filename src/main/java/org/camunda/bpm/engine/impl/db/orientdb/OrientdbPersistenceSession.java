@@ -84,11 +84,11 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		String suffix = getSuffix(statement);
 		String entityName = getEntityName( statement, prefix, suffix);
 		Map<String,Object> parameterMap = getParameterMap( parameter);
-		LOG.info("selectOne(" + statement +","+ entityName+ "):" + parameterMap);
+		LOG.info("->selectOne(" + statement +","+ entityName+ "):" + parameterMap);
 		Class entityClass = OrientdbSessionFactory.getEntityClass(entityName);
-		LOG.info(" -  entityClass:"+entityClass);
+		LOG.info("  - entityClass:"+entityClass);
 		BaseEntityHandler entityHandler = OrientdbSessionFactory.getEntityHandler(entityClass);
-		LOG.info(" -  entityHandler:"+entityHandler);
+		LOG.info("  - entityHandler:"+entityHandler);
 		entityHandler.modifyParameterMap( parameterMap );
 		List<Clause> clauseList = new ArrayList<Clause>();
 		for (String field : parameterMap.keySet()){
@@ -107,12 +107,12 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			.from(entityName)
 			.where(w);
 
-		LOG.info(" - query:" + q);
+		LOG.info("  - query:" + q);
 
 		OCommandRequest query = new OSQLSynchQuery( q.toString());
 
 		Iterable<Element> result = orientGraph.command(query).execute();
-		LOG.info(" - result:"+result);
+		LOG.info("  - result:"+result);
 		Map<String,Object> props = null;
 		for (Element elem : result) {
 			props = ((OrientVertex)elem).getProperties();
@@ -122,8 +122,6 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			LOG.info("<-selectOne("+entityName+").return:null");
 			return null;
 		}
-		LOG.info(" - props:"+props);
-			
 		try {
 			Object entity = entityClass.newInstance();
 			setEntityValues( entityClass, entity, props);
