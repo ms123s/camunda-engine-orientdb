@@ -87,30 +87,9 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		LOG.info("->selectOne(" + statement +","+ entityName+ "):" + parameterMap);
 		Class entityClass = OrientdbSessionFactory.getEntityClass(entityName);
 		LOG.info("  - entityClass:"+entityClass);
-		BaseEntityHandler entityHandler = OrientdbSessionFactory.getEntityHandler(entityClass);
-		LOG.info("  - entityHandler:"+entityHandler);
-		entityHandler.modifyParameterMap( statement, parameterMap );
-		List<Clause> clauseList = new ArrayList<Clause>();
-		for (String field : parameterMap.keySet()){
-			Object value = parameterMap.get(field);
-			Clause c = null;
-			if( value == null){
-				c = projection(field).isNull();
-			}else{
-				c = clause(field, EQ, value);
-			}
-			clauseList.add( c );
-		}
-		Clause w = and( clauseList.toArray(new Clause[clauseList.size()])  );
 
-		Query q = new Query()
-			.from(entityName)
-			.where(w);
-
-		entityHandler.postProcessQuery( q, statement, parameterMap );
-		LOG.info("  - query:" + q);
-
-		OCommandRequest query = new OSQLSynchQuery( q.toString());
+		String queryString = buildQuery( entityClass, entityName, statement, parameterMap );
+		OCommandRequest query = new OSQLSynchQuery( queryString );
 
 		Iterable<Element> result = orientGraph.command(query).execute();
 		LOG.info("  - result:"+result);
@@ -142,10 +121,66 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		String entityName = getEntityName( statement, prefix, suffix);
 		Map<String,Object> parameterMap = getParameterMap( parameter);
 		LOG.info("selectList(" + statement +","+entityName+ "):" + parameterMap);
+		Class entityClass = OrientdbSessionFactory.getEntityClass(entityName);
+		LOG.info("  - entityClass:"+entityClass);
 
+		String queryString = buildQuery( entityClass, entityName, statement, parameterMap );
+		OCommandRequest query = new OSQLSynchQuery( queryString );
+
+		Iterable<Element> result = orientGraph.command(query).execute();
+		LOG.info("  - result:"+result);
+		List<Map<String,Object>> propsList = new ArrayList<Map<String,Object>>();
+		for (Element elem : result) {
+			Map<String,Object> props = ((OrientVertex)elem).getProperties();
+			propsList.add( props);
+		}
+		if( propsList.size() == 0){
+			LOG.info("<-selectList("+entityName+").return:emptyList");
+			return propsList;
+		}
+		try {
+			List<Object> entityList = new ArrayList<Object>();
+			for( Map<String,Object> props : propsList){
+				Object entity = entityClass.newInstance();
+				setEntityValues( entityClass, entity, props);
+				entityList.add( entity);
+			}
+			LOG.info("<-selectList("+entityName+").return:"+entityList);
+			return entityList;
+		} catch (Exception e) {
+			LOG.throwing("OrientdbPersistenceSession", "selectOne", e);
+			e.printStackTrace();
+		}
+		LOG.info("<-selectList("+entityName+").return:null");
 		return new ArrayList();
 	}
 
+	private String buildQuery( Class entityClass, String entityName, String statement, Map<String,Object> parameterMap){
+		BaseEntityHandler entityHandler = OrientdbSessionFactory.getEntityHandler(entityClass);
+		LOG.info("  - entityHandler:"+entityHandler);
+		entityHandler.modifyParameterMap( statement, parameterMap );
+		List<Clause> clauseList = new ArrayList<Clause>();
+		for (String field : parameterMap.keySet()){
+			Object value = parameterMap.get(field);
+			Clause c = null;
+			if( value == null){
+				c = projection(field).isNull();
+			}else{
+				c = clause(field, EQ, value);
+			}
+			clauseList.add( c );
+		}
+		Clause w = and( clauseList.toArray(new Clause[clauseList.size()])  );
+
+		Query q = new Query()
+			.from(entityName)
+			.where(w);
+
+		entityHandler.postProcessQuery( q, statement, parameterMap );
+
+		LOG.info("  - query:" + q);
+		return q.toString();
+	}
 
 	private Map<String,Object> getParameterMap( Object parameter){
 		if (parameter instanceof ListQueryParameterObject) {
@@ -245,7 +280,11 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	private String getEntityName( String statement, String prefix, String suffix){
 		int start = prefix.length();
 		int end = statement.indexOf(suffix);
-		return statement.substring(start, end) + "Entity";
+		String name = statement.substring(start, end);
+		if( !name.endsWith("Statistics") && name.endsWith("s")){
+			name = name.substring(0, name.length()-1);
+		}
+		return name + "Entity";
 	}
 
 	protected void insertEntity(DbEntityOperation operation) {
