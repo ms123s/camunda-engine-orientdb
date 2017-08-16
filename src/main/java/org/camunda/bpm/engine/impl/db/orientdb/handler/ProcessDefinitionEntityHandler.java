@@ -4,6 +4,7 @@ import java.util.logging.Logger;
 
 import org.camunda.bpm.engine.impl.persistence.entity.ProcessDefinitionEntity;
 import com.tinkerpop.blueprints.impls.orient.OrientGraph;
+import java.util.Map;
 
 /**
  * @author Manfred Sattler
@@ -13,5 +14,8 @@ public class ProcessDefinitionEntityHandler extends BaseEntityHandler{
 
 	public ProcessDefinitionEntityHandler(OrientGraph g) {
 		super( g, ProcessDefinitionEntity.class);
+	}
+	public void modifyParameterMap(Map<String,Object> parameterMap) {
+		parameterMap.put( "key", parameterMap.remove( "processDefinitionKey" ) );
 	}
 }

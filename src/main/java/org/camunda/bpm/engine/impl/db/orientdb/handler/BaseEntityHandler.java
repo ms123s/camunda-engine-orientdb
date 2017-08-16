@@ -57,6 +57,8 @@ public abstract class BaseEntityHandler {
 
 	public void modifyMetadata() {
 	}
+	public void modifyParameterMap(Map<String,Object> parameterMap) {
+	}
 	public List<Map<String, Object>> getMetadata(){
 		return this.entityMetadata;
 	}
