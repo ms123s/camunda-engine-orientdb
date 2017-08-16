@@ -50,14 +50,14 @@ public class Scanner {
 		Reflections r = new Reflections( cb );
 		Set<Class<? extends DbEntity>> modules = r.getSubTypesOf(DbEntity.class);
 		for( Class de : modules){
-			def outFile = new File( outDir, de.getSimpleName()+"Handler.java");
 			System.out.println(de.getName());
-			def template = new groovy.text.StreamingTemplateEngine().createTemplate(templateContent);
 			def binding =[
 				entityName: de.getSimpleName()
 			];
-	   	def classContent = template.make(binding);
-			file.write( classContent);
+			def template = new groovy.text.StreamingTemplateEngine().createTemplate(templateContent);
+	   	def classContent = template.make(binding).toString();
+			def outFile = new File( outDir, de.getSimpleName()+"Handler.java");
+			outFile.write( classContent);
 			//new PrintHier( de).printHierarchy();
 		}
 	}
