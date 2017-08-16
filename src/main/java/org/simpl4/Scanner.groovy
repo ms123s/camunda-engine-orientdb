@@ -41,6 +41,8 @@ public class Scanner {
 
 		def cwd = System.getProperty("user.dir");
 		def outDir = new File( cwd, "src/main/java/org/camunda/bpm/engine/impl/db/orientdb/handler");
+		def outHandlerMap = new File( cwd, "etc/HandlerMap.txt");
+		outHandlerMap.write("");
 		def templateContent = this.getClass().getResource( '/EntityTemplate.java' ).text;
 
 		ConfigurationBuilder cb = new ConfigurationBuilder();
@@ -49,15 +51,18 @@ public class Scanner {
 		cb.setUrls(ClasspathHelper.forPackage("org.camunda"));
 		Reflections r = new Reflections( cb );
 		Set<Class<? extends DbEntity>> modules = r.getSubTypesOf(DbEntity.class);
+
 		for( Class de : modules){
 			System.out.println(de.getName());
 			def binding =[
-				entityName: de.getSimpleName()
+				entityName: de.getSimpleName(),
+				entityNameWithPackage: de.getName()
 			];
 			def template = new groovy.text.StreamingTemplateEngine().createTemplate(templateContent);
 	   	def classContent = template.make(binding).toString();
 			def outFile = new File( outDir, de.getSimpleName()+"Handler.java");
 			outFile.write( classContent);
+			outHandlerMap.append("entityHandlerMap.put(${binding.entityName}.class, new ${binding.entityName}Handler(orientGraph));\n");
 			//new PrintHier( de).printHierarchy();
 		}
 	}

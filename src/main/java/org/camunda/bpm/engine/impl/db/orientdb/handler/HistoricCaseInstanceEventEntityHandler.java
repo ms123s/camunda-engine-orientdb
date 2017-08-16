@@ -2,7 +2,7 @@ package org.camunda.bpm.engine.impl.db.orientdb.handler;
 
 import java.util.logging.Logger;
 
-import org.camunda.bpm.engine.impl.persistence.entity.HistoricCaseInstanceEventEntity;
+import org.camunda.bpm.engine.impl.history.event.HistoricCaseInstanceEventEntity;
 import com.tinkerpop.blueprints.impls.orient.OrientGraph;
 
 /**

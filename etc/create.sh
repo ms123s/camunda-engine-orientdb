@@ -1,9 +1,0 @@
-
-NAMES="TenantMembershipEntity DurationReportResultEntity DeploymentStatisticsEntity ResourceEntity TaskEntity HistoricProcessInstanceEntity ProcessDefinitionEntity EverLivingJobEntity ProcessDefinitionStatisticsEntity ReportResultEntity ExternalTaskEntity FilterEntity MembershipEntity MessageEntity DeploymentEntity HistoricFormPropertyEntity HistoricVariableInstanceEntity HistoricActivityInstanceEntity HistoricIncidentEntity ExecutionEntity MetricIntervalEntity HistoricIdentityLinkLogEntity UserEntity HistoricTaskInstanceEntity AttachmentEntity JobDefinitionEntity EventSubscriptionEntity TaskCountByCandidateGroupResultEntity CommentEntity HistoricCaseActivityInstanceEntity TaskReportResultEntity VariableInstanceEntity TenantEntity AuthorizationEntity IdentityInfoEntity IdentityLinkEntity ByteArrayEntity HistoricDetailVariableInstanceUpdateEntity JobEntity TimerEntity MeterLogEntity IncidentEntity IncidentStatisticsEntity HistoricJobLogEventEntity GroupEntity HistoricCaseInstanceEntity PropertyEntity" 
-
-for name in $NAMES
-do
-	echo $name
-	cp EntityTemplate.java src/main/java/org/camunda/bpm/engine/impl/db/orientdb/handler/${name}Handler.java
-	sed -i "s!__NAME__!$name!g" src/main/java/org/camunda/bpm/engine/impl/db/orientdb/handler/${name}Handler.java
-done
