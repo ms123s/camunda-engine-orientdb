@@ -68,14 +68,15 @@ public abstract class BaseEntityHandler {
 		createClassAndProperties();
 	}
 
+	public List<Map<String, Object>> getMetadata(){
+		return this.entityMetadata;
+	}
 	public void modifyMetadata() {
 	}
+
 	public void modifyParameterMap(String statement, Map<String,Object> parameterMap) {
 	}
 	public void postProcessQuery(Query q, String statement, Map<String,Object> parameterMap) {
-	}
-	public List<Map<String, Object>> getMetadata(){
-		return this.entityMetadata;
 	}
 
 	public String buildQuery( String entityName, String statement, Map<String,Object> parameterMap){
