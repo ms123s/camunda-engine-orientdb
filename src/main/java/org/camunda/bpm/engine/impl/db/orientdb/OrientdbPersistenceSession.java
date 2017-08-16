@@ -123,9 +123,8 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			return null;
 		}
 		LOG.info(" - props:"+props);
-
 			
-/*		try {
+		try {
 			Object entity = entityClass.newInstance();
 			setEntityValues( entityClass, entity, props);
 			LOG.info("<-selectOne("+entityName+").return:"+entity);
@@ -134,7 +133,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			LOG.throwing("OrientdbPersistenceSession", "selectOne", e);
 			e.printStackTrace();
 		}
-		LOG.info("<-selectById("+entityName+").return:null");*/
+		LOG.info("<-selectById("+entityName+").return:null");
 		return null;
 	}
 
