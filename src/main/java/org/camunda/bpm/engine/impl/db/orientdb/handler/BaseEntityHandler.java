@@ -31,7 +31,19 @@ import com.orientechnologies.orient.core.metadata.schema.OSchemaProxy;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.command.OCommandRequest;
 import com.orientechnologies.orient.core.sql.OCommandSQL;
+import com.github.raymanrt.orientqb.query.Clause;
+import com.github.raymanrt.orientqb.query.Projection;
 import com.github.raymanrt.orientqb.query.Query;
+import static com.github.raymanrt.orientqb.query.Clause.and;
+import static com.github.raymanrt.orientqb.query.Clause.clause;
+import static com.github.raymanrt.orientqb.query.Clause.not;
+import static com.github.raymanrt.orientqb.query.Clause.or;
+import static com.github.raymanrt.orientqb.query.Operator.EQ;
+import static com.github.raymanrt.orientqb.query.Operator.NULL;
+import static com.github.raymanrt.orientqb.query.Parameter.parameter;
+import static com.github.raymanrt.orientqb.query.Projection.ALL;
+import static com.github.raymanrt.orientqb.query.Projection.projection;
+import static com.github.raymanrt.orientqb.query.Variable.variable;
 
 /**
  * @author Manfred Sattler
@@ -65,6 +77,32 @@ public abstract class BaseEntityHandler {
 	public List<Map<String, Object>> getMetadata(){
 		return this.entityMetadata;
 	}
+
+	public String buildQuery( String entityName, String statement, Map<String,Object> parameterMap){
+		modifyParameterMap( statement, parameterMap );
+		List<Clause> clauseList = new ArrayList<Clause>();
+		for (String field : parameterMap.keySet()){
+			Object value = parameterMap.get(field);
+			Clause c = null;
+			if( value == null){
+				c = projection(field).isNull();
+			}else{
+				c = clause(field, EQ, value);
+			}
+			clauseList.add( c );
+		}
+		Clause w = and( clauseList.toArray(new Clause[clauseList.size()])  );
+
+		Query q = new Query()
+			.from(entityName)
+			.where(w);
+
+		postProcessQuery( q, statement, parameterMap );
+
+		LOG.info("  - query:" + q);
+		return q.toString();
+	}
+
 
 	private List<String> excludeList = new ArrayList<>(Arrays.asList("hashCode"));
 	private List<Map<String, Object>> buildMetadata(Class clazz) {

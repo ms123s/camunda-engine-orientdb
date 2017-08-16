@@ -43,6 +43,8 @@ import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
 import com.tinkerpop.blueprints.Element;
 import com.tinkerpop.blueprints.impls.orient.OrientVertex;
 
+import com.github.raymanrt.orientqb.query.Clause;
+import com.github.raymanrt.orientqb.query.Projection;
 import com.github.raymanrt.orientqb.query.Query;
 import static com.github.raymanrt.orientqb.query.Clause.and;
 import static com.github.raymanrt.orientqb.query.Clause.clause;
@@ -50,11 +52,9 @@ import static com.github.raymanrt.orientqb.query.Clause.not;
 import static com.github.raymanrt.orientqb.query.Clause.or;
 import static com.github.raymanrt.orientqb.query.Operator.EQ;
 import static com.github.raymanrt.orientqb.query.Operator.NULL;
-import static com.github.raymanrt.orientqb.query.Projection.projection;
-import com.github.raymanrt.orientqb.query.Projection;
-import com.github.raymanrt.orientqb.query.Clause;
-import static com.github.raymanrt.orientqb.query.Projection.ALL;
 import static com.github.raymanrt.orientqb.query.Parameter.parameter;
+import static com.github.raymanrt.orientqb.query.Projection.ALL;
+import static com.github.raymanrt.orientqb.query.Projection.projection;
 import static com.github.raymanrt.orientqb.query.Variable.variable;
 
 	
@@ -88,7 +88,9 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		Class entityClass = OrientdbSessionFactory.getEntityClass(entityName);
 		LOG.info("  - entityClass:"+entityClass);
 
-		String queryString = buildQuery( entityClass, entityName, statement, parameterMap );
+		BaseEntityHandler entityHandler = OrientdbSessionFactory.getEntityHandler(entityClass);
+		String queryString = entityHandler.buildQuery( entityName, statement, parameterMap);
+
 		OCommandRequest query = new OSQLSynchQuery( queryString );
 
 		Iterable<Element> result = orientGraph.command(query).execute();
@@ -124,7 +126,9 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		Class entityClass = OrientdbSessionFactory.getEntityClass(entityName);
 		LOG.info("  - entityClass:"+entityClass);
 
-		String queryString = buildQuery( entityClass, entityName, statement, parameterMap );
+		BaseEntityHandler entityHandler = OrientdbSessionFactory.getEntityHandler(entityClass);
+		String queryString = entityHandler.buildQuery( entityName, statement, parameterMap);
+
 		OCommandRequest query = new OSQLSynchQuery( queryString );
 
 		Iterable<Element> result = orientGraph.command(query).execute();
@@ -153,33 +157,6 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		}
 		LOG.info("<-selectList("+entityName+").return:null");
 		return new ArrayList();
-	}
-
-	private String buildQuery( Class entityClass, String entityName, String statement, Map<String,Object> parameterMap){
-		BaseEntityHandler entityHandler = OrientdbSessionFactory.getEntityHandler(entityClass);
-		LOG.info("  - entityHandler:"+entityHandler);
-		entityHandler.modifyParameterMap( statement, parameterMap );
-		List<Clause> clauseList = new ArrayList<Clause>();
-		for (String field : parameterMap.keySet()){
-			Object value = parameterMap.get(field);
-			Clause c = null;
-			if( value == null){
-				c = projection(field).isNull();
-			}else{
-				c = clause(field, EQ, value);
-			}
-			clauseList.add( c );
-		}
-		Clause w = and( clauseList.toArray(new Clause[clauseList.size()])  );
-
-		Query q = new Query()
-			.from(entityName)
-			.where(w);
-
-		entityHandler.postProcessQuery( q, statement, parameterMap );
-
-		LOG.info("  - query:" + q);
-		return q.toString();
 	}
 
 	private Map<String,Object> getParameterMap( Object parameter){
