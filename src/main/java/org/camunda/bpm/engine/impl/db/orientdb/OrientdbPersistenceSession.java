@@ -89,7 +89,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		LOG.info("  - entityClass:"+entityClass);
 		BaseEntityHandler entityHandler = OrientdbSessionFactory.getEntityHandler(entityClass);
 		LOG.info("  - entityHandler:"+entityHandler);
-		entityHandler.modifyParameterMap( parameterMap );
+		entityHandler.modifyParameterMap( statement, parameterMap );
 		List<Clause> clauseList = new ArrayList<Clause>();
 		for (String field : parameterMap.keySet()){
 			Object value = parameterMap.get(field);
@@ -107,6 +107,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			.from(entityName)
 			.where(w);
 
+		entityHandler.postProcessQuery( q, statement, parameterMap );
 		LOG.info("  - query:" + q);
 
 		OCommandRequest query = new OSQLSynchQuery( q.toString());

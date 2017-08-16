@@ -31,6 +31,7 @@ import com.orientechnologies.orient.core.metadata.schema.OSchemaProxy;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.command.OCommandRequest;
 import com.orientechnologies.orient.core.sql.OCommandSQL;
+import com.github.raymanrt.orientqb.query.Query;
 
 /**
  * @author Manfred Sattler
@@ -57,7 +58,9 @@ public abstract class BaseEntityHandler {
 
 	public void modifyMetadata() {
 	}
-	public void modifyParameterMap(Map<String,Object> parameterMap) {
+	public void modifyParameterMap(String statement, Map<String,Object> parameterMap) {
+	}
+	public void postProcessQuery(Query q, String statement, Map<String,Object> parameterMap) {
 	}
 	public List<Map<String, Object>> getMetadata(){
 		return this.entityMetadata;
