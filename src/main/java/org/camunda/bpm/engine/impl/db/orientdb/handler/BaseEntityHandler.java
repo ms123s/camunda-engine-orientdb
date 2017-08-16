@@ -62,7 +62,7 @@ public abstract class BaseEntityHandler {
 		this.orientGraph = g;
 		this.entityMetadata = this.buildMetadata(ec);
 		this.modifyMetadata();
-		this.buildFieldMap();
+		this.buildMetaFieldMap();
 		//LOG.info("--> "+ this.entityClass.getSimpleName() );
 		for( Map<String, Object> m : this.entityMetadata){
 			//LOG.info("  - "+ m );
@@ -70,7 +70,7 @@ public abstract class BaseEntityHandler {
 		createClassAndProperties();
 	}
 
-	private void buildFieldMap(){
+	private void buildMetaFieldMap(){
 		for( Map<String, Object> m : entityMetadata){
 			this.metaByFieldMap.put( (String)m.get("name"), m);
 		}
