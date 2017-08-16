@@ -45,3 +45,7 @@ task(runScanner, dependsOn: 'classes', type: JavaExec) {
     main = 'org.simpl4.Scanner'
     classpath = sourceSets.main.runtimeClasspath
 }
+task(printHier, dependsOn: 'classes', type: JavaExec) {
+    main = 'org.simpl4.PrintHier'
+    classpath = sourceSets.main.runtimeClasspath
+}

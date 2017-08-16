@@ -44,8 +44,9 @@ public class Scanner {
 		cb.setUrls(ClasspathHelper.forPackage("org.camunda"));
 		Reflections r = new Reflections( cb );
 		Set<Class<? extends DbEntity>> modules = r.getSubTypesOf(DbEntity.class);
-		for( Object de : modules){
-			System.err.println(de);
+		for( Class de : modules){
+			System.out.println("\n");
+			new PrintHier( de).printHierarchy();
 		}
 	}
 
