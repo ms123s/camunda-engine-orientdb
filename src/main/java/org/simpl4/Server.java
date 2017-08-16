@@ -7,6 +7,7 @@ import com.tinkerpop.blueprints.impls.orient.OrientGraph;
 import org.camunda.bpm.engine.RepositoryService;
 import org.camunda.bpm.engine.RuntimeService;
 import org.camunda.bpm.model.bpmn.Bpmn;
+import org.camunda.bpm.engine.variable.Variables;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -45,7 +46,7 @@ public class Server {
 				endEvent().done()).
 				deploy().getId();
 
-			//runtimeService.startProcessInstanceByKey("testProcess", createVariables().putValue("foo", stringValue("bar")));
+			runtimeService.startProcessInstanceByKey("testProcess", Variables.createVariables().putValue("foo", Variables.stringValue("bar")));
 
 		} finally {
 			processEngine.close();

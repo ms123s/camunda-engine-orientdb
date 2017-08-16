@@ -17,7 +17,9 @@ public class ProcessDefinitionEntityHandler extends BaseEntityHandler{
 		super( g, ProcessDefinitionEntity.class);
 	}
 	public void modifyParameterMap(String statement, Map<String,Object> parameterMap) {
-		parameterMap.put( "key", parameterMap.remove( "processDefinitionKey" ) );
+		if( parameterMap.get("processDefinitionKey") != null){
+			parameterMap.put( "key", parameterMap.remove( "processDefinitionKey" ) );
+		}
 	}
 	public void postProcessQuery(Query q, String statement, Map<String,Object> parameterMap) {
 		if( statement.indexOf("Latest") > 0){

@@ -68,7 +68,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		String prefix = getPrefix(statement);
 		String suffix = getSuffix(statement);
 		String entityName = getEntityName( statement, prefix, suffix);
-		Map<String,Object> parameterMap = getParameterMap( parameter);
+		Map<String,Object> parameterMap = getParameterMap( statement, parameter);
 		LOG.info("->selectOne(" + statement +","+ entityName+ "):" + parameterMap);
 		Class entityClass = OrientdbSessionFactory.getEntityClass(entityName);
 		LOG.info("  - entityClass:"+entityClass);
@@ -106,7 +106,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		String prefix = getPrefix(statement);
 		String suffix = getSuffix(statement);
 		String entityName = getEntityName( statement, prefix, suffix);
-		Map<String,Object> parameterMap = getParameterMap( parameter);
+		Map<String,Object> parameterMap = getParameterMap( statement, parameter);
 		LOG.info("selectList(" + statement +","+entityName+ "):" + parameterMap);
 		Class entityClass = OrientdbSessionFactory.getEntityClass(entityName);
 		LOG.info("  - entityClass:"+entityClass);
@@ -144,9 +144,20 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		return new ArrayList();
 	}
 
-	private Map<String,Object> getParameterMap( Object parameter){
+	private Map<String,Object> getParameterMap( String statement, Object parameter){
 		if (parameter instanceof ListQueryParameterObject) {
-			return (Map<String, Object>) ((ListQueryParameterObject) parameter).getParameter();
+			if( ((ListQueryParameterObject) parameter).getParameter() instanceof String ){
+				Object obj =  ((ListQueryParameterObject) parameter).getParameter();
+				if( statement.endsWith("ByKey")){
+					Map<String,Object> map = new HashMap<String,Object>();
+					map.put( "key", obj);
+					return map;
+				}else{
+					throw new RuntimeException("getParameterMap("+statement+"):"+obj);
+				}
+			}else{
+				return (Map<String, Object>) ((ListQueryParameterObject) parameter).getParameter();
+			}
 		} else {
 			return (Map<String, Object>) parameter;
 		}
