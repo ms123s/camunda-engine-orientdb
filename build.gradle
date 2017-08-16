@@ -1,5 +1,7 @@
+ext.version='0.0.1'
 apply plugin:'java'
 apply plugin:'groovy'
+apply plugin: 'osgi'
 
 sourceSets.main.groovy.srcDirs += ["src/main/java"]
 ext.camunda_version='7.7.0'
@@ -35,6 +37,19 @@ dependencies {
  	compile files("/root/.m2/repository/org/slf4j/slf4j-api/1.7.21/slf4j-api-1.7.21.jar")
  	compile files("/root/.m2/repository/org/springframework/spring-beans/4.3.9.RELEASE/spring-beans-4.3.9.RELEASE.jar")
  	compile files("/root/.m2/repository/org/springframework/spring-core/4.3.9.RELEASE/spring-core-4.3.9.RELEASE.jar")
+}
+
+jar {
+    manifest { 
+        instruction 'Private-Package','com.javacodegeeks.gradle.osgi'
+        instruction 'Bundle-Vendor', 'simpl4'
+        instruction 'Bundle-Description', 'camunda orientdb support'
+        instruction 'Bundle-ManifestVersion', '2'
+        instruction 'Bundle-Version', '0.0.1'
+        instruction 'Bundle-Name', 'camunda-engine-orientdb'
+        instruction 'Bundle-SymbolicName', 'CamundaEngineOrientdb'
+        instruction 'Export-Package', 'org.camunda.bpm.engine.impl*;version="0.0.1"'	
+    }
 }
 
 task(runServer, dependsOn: 'classes', type: JavaExec) {

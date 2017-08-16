@@ -10,11 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
-import javax.swing.JDialog;
-
-import jdk.nashorn.internal.runtime.PropertyMap; // since Java 8, just for testing
-
-import com.sun.javafx.collections.TrackableObservableList;
 
 public class PrintHier {
 	private static final String PADDING = "        ";
@@ -25,14 +20,6 @@ public class PrintHier {
 	private final Map<String, List<String>> subClazzEntries = new HashMap<>();
 
 	public static void main(final String[] args) {
-		new PrintHier(
-				PrintStream.class,
-				FileOutputStream.class,
-				FileInputStream.class,
-				TrackableObservableList.class,
-				PropertyMap.class,
-				JDialog.class
-				).printHierarchy();
 	}
 
 	public PrintHier(final Class<?>... clazzes) {

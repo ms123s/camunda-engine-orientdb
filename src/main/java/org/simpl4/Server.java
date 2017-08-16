@@ -37,12 +37,14 @@ public class Server {
 		LOG.info("orientdb.processEngine:" + processEngine);
 
 		try {
+    	String taskId = "waitForMessage";
+			RuntimeService runtimeService = processEngine.getRuntimeService();
 
 			RepositoryService repositoryService = processEngine.getRepositoryService();
-			RuntimeService runtimeService = processEngine.getRuntimeService();
 			String deploymentId = repositoryService.createDeployment().
 				addModelInstance("process1.bpmn", Bpmn.createExecutableProcess("testProcess").
 				startEvent().
+        receiveTask(taskId).
 				endEvent().done()).
 				deploy().getId();
 
