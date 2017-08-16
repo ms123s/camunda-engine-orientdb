@@ -48,7 +48,7 @@ public abstract class BaseEntityHandler {
 		this.orientGraph = g;
 		this.entityMetadata = this.buildMetadata(ec);
 		this.modifyMetadata();
-		LOG.info("--> "+ this.entityClass.getSimpleName() );
+		//LOG.info("--> "+ this.entityClass.getSimpleName() );
 		for( Map<String, Object> m : this.entityMetadata){
 			//LOG.info("  - "+ m );
 		}

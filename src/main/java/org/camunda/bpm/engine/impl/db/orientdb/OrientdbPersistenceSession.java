@@ -43,6 +43,20 @@ import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
 import com.tinkerpop.blueprints.Element;
 import com.tinkerpop.blueprints.impls.orient.OrientVertex;
 
+import com.github.raymanrt.orientqb.query.Query;
+import static com.github.raymanrt.orientqb.query.Clause.and;
+import static com.github.raymanrt.orientqb.query.Clause.clause;
+import static com.github.raymanrt.orientqb.query.Clause.not;
+import static com.github.raymanrt.orientqb.query.Clause.or;
+import static com.github.raymanrt.orientqb.query.Operator.EQ;
+import static com.github.raymanrt.orientqb.query.Operator.NULL;
+import static com.github.raymanrt.orientqb.query.Projection.projection;
+import com.github.raymanrt.orientqb.query.Projection;
+import com.github.raymanrt.orientqb.query.Clause;
+import static com.github.raymanrt.orientqb.query.Projection.ALL;
+import static com.github.raymanrt.orientqb.query.Parameter.parameter;
+import static com.github.raymanrt.orientqb.query.Variable.variable;
+
 	
 /**
  * @author Manfred Sattler
@@ -71,6 +85,56 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		String entityName = getEntityName( statement, prefix, suffix);
 		Map<String,Object> parameterMap = getParameterMap( parameter);
 		LOG.info("selectOne(" + statement +","+ entityName+ "):" + parameterMap);
+		Class entityClass = OrientdbSessionFactory.getEntityClass(entityName);
+		LOG.info(" -  entityClass:"+entityClass);
+		BaseEntityHandler entityHandler = OrientdbSessionFactory.getEntityHandler(entityClass);
+		LOG.info(" -  entityHandler:"+entityHandler);
+
+		List<Clause> clauseList = new ArrayList<Clause>();
+		for (String field : parameterMap.keySet()){
+			Object value = parameterMap.get(field);
+			Clause c = null;
+			if( value == null){
+				c = projection(field).isNull();
+			}else{
+				c = clause(field, EQ, value);
+			}
+			clauseList.add( c );
+		}
+		Clause w = and( clauseList.toArray(new Clause[clauseList.size()])  );
+
+		Query q = new Query()
+			.from(entityName)
+			.where(w);
+
+		LOG.info(" - query:" + q);
+
+		OCommandRequest query = new OSQLSynchQuery( q.toString());
+
+		Iterable<Element> result = orientGraph.command(query).execute();
+		LOG.info(" - result:"+result);
+		Map<String,Object> props = null;
+		for (Element elem : result) {
+			props = ((OrientVertex)elem).getProperties();
+			break;
+		}
+		if( props == null){
+			LOG.info("<-selectOne("+entityName+").return:null");
+			return null;
+		}
+		LOG.info(" - props:"+props);
+
+			
+/*		try {
+			Object entity = entityClass.newInstance();
+			setEntityValues( entityClass, entity, props);
+			LOG.info("<-selectOne("+entityName+").return:"+entity);
+			return entity;
+		} catch (Exception e) {
+			LOG.throwing("OrientdbPersistenceSession", "selectOne", e);
+			e.printStackTrace();
+		}
+		LOG.info("<-selectById("+entityName+").return:null");*/
 		return null;
 	}
 
@@ -183,7 +247,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	private String getEntityName( String statement, String prefix, String suffix){
 		int start = prefix.length();
 		int end = statement.indexOf(suffix);
-		return statement.substring(start, end);
+		return statement.substring(start, end) + "Entity";
 	}
 
 	protected void insertEntity(DbEntityOperation operation) {

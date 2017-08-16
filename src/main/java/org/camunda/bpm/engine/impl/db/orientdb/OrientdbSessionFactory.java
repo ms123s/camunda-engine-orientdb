@@ -15,6 +15,7 @@ package org.camunda.bpm.engine.impl.db.orientdb;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import org.camunda.bpm.engine.impl.db.DbEntity;
 import org.camunda.bpm.engine.impl.interceptor.Session;
 import org.camunda.bpm.engine.impl.interceptor.SessionFactory;
@@ -30,6 +31,11 @@ import org.camunda.bpm.engine.impl.cmmn.entity.runtime.*;
 import com.tinkerpop.blueprints.impls.orient.OrientGraph;
 
 import com.tinkerpop.blueprints.impls.orient.OrientGraphFactory;
+import org.reflections.util.ConfigurationBuilder;
+import org.reflections.util.ClasspathHelper;
+import org.reflections.Reflections;
+import org.reflections.scanners.SubTypesScanner;
+import org.camunda.bpm.engine.impl.db.DbEntity;
 
 /**
  * @author Manfred Sattler
@@ -38,10 +44,25 @@ public class OrientdbSessionFactory implements SessionFactory {
 
 	private OrientGraphFactory graphFactory;
 	private static Map<Class, BaseEntityHandler> entityHandlerMap;
+	private static Map<String, Class> entityClassMap;
 
 	public OrientdbSessionFactory(OrientGraphFactory f) {
 		this.graphFactory = f;
 		initHandler();
+		initEntityClasses();
+	}
+	private void initEntityClasses() {
+		ConfigurationBuilder cb = new ConfigurationBuilder();
+		cb.addClassLoader( TaskEntity.class.getClassLoader());
+		cb.setScanners(new SubTypesScanner());
+		cb.setUrls(ClasspathHelper.forPackage("org.camunda"));
+		Reflections r = new Reflections( cb );
+		Set<Class<? extends DbEntity>> classes = r.getSubTypesOf(DbEntity.class);
+
+		entityClassMap = new HashMap<String, Class>();
+		for( Class c : classes){
+			entityClassMap.put( c.getSimpleName(), c );
+		}
 	}
 
 	private void initHandler() {
@@ -121,6 +142,10 @@ public class OrientdbSessionFactory implements SessionFactory {
 
 	public static BaseEntityHandler getEntityHandler(Class entityClass) {
 		return entityHandlerMap.get(entityClass);
+	}
+
+	public static Class getEntityClass(String  entityName) {
+		return entityClassMap.get(entityName);
 	}
 
 	public Class<?> getSessionType() {
