@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.lang.Iterable;
 import java.util.Map;
+import java.util.Set;
+import java.util.Iterator;
 import java.lang.reflect.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -34,6 +36,7 @@ import org.camunda.bpm.engine.impl.db.entitymanager.operation.DbEntityOperation;
 import org.camunda.bpm.engine.impl.persistence.entity.ExecutionEntity;
 import org.camunda.bpm.engine.impl.db.orientdb.handler.*;
 import org.camunda.bpm.engine.impl.db.ListQueryParameterObject;
+import org.camunda.bpm.engine.impl.AbstractQuery;
 
 import static org.camunda.bpm.engine.impl.util.EnsureUtil.ensureNotNull;
 import com.tinkerpop.blueprints.impls.orient.OrientGraph;
@@ -42,6 +45,9 @@ import com.orientechnologies.orient.core.command.OCommandRequest;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
 import com.tinkerpop.blueprints.Element;
 import com.tinkerpop.blueprints.impls.orient.OrientVertex;
+
+import static com.github.raymanrt.orientqb.query.Operator.EQ;
+import static com.github.raymanrt.orientqb.query.Operator.NULL;
 
 /**
  * @author Manfred Sattler
@@ -68,13 +74,14 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		String prefix = getPrefix(statement);
 		String suffix = getSuffix(statement);
 		String entityName = getEntityName( statement, prefix, suffix);
-		Map<String,Object> parameterMap = getParameterMap( statement, parameter);
-		LOG.info("->selectOne(" + statement +","+ entityName+ "):" + parameterMap);
 		Class entityClass = OrientdbSessionFactory.getEntityClass(entityName);
 		LOG.info("  - entityClass:"+entityClass);
 
 		BaseEntityHandler entityHandler = OrientdbSessionFactory.getEntityHandler(entityClass);
-		String queryString = entityHandler.buildQuery( entityName, statement, parameterMap);
+
+		List<Parameter> parameterList = getParameterList( statement, parameter, entityHandler);
+		LOG.info("->selectOne(" + statement +","+ entityName+ "):" + parameterList);
+		String queryString = entityHandler.buildQuery( entityName, statement, parameterList);
 
 		OCommandRequest query = new OSQLSynchQuery( queryString );
 
@@ -106,13 +113,16 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		String prefix = getPrefix(statement);
 		String suffix = getSuffix(statement);
 		String entityName = getEntityName( statement, prefix, suffix);
-		Map<String,Object> parameterMap = getParameterMap( statement, parameter);
-		LOG.info("selectList(" + statement +","+entityName+ "):" + parameterMap);
+		LOG.info("selectList(" + statement +","+entityName+ "):" + parameter);
+
 		Class entityClass = OrientdbSessionFactory.getEntityClass(entityName);
 		LOG.info("  - entityClass:"+entityClass);
 
 		BaseEntityHandler entityHandler = OrientdbSessionFactory.getEntityHandler(entityClass);
-		String queryString = entityHandler.buildQuery( entityName, statement, parameterMap);
+
+		List<Parameter> parameterList = getParameterList( statement, parameter, entityHandler);
+		LOG.info("selectList(" + statement +","+entityName+ "):" + parameterList);
+		String queryString = entityHandler.buildQuery( entityName, statement, parameterList);
 
 		OCommandRequest query = new OSQLSynchQuery( queryString );
 
@@ -147,23 +157,45 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		return new ArrayList();
 	}
 
-	private Map<String,Object> getParameterMap( String statement, Object parameter){
-		if (parameter instanceof ListQueryParameterObject) {
+	private List<Parameter> getParameterList( String statement, Object parameter, BaseEntityHandler handler){
+		LOG.info("getParameterList("+statement+"):"+parameter);
+		if (parameter instanceof AbstractQuery) {
+			return handler.getParameterList(parameter);
+		}else if (parameter instanceof ListQueryParameterObject) {
+			LOG.info(" - ListQueryParameterObject");
 			if( ((ListQueryParameterObject) parameter).getParameter() instanceof String ){
+				LOG.info(" - String");
 				Object obj =  ((ListQueryParameterObject) parameter).getParameter();
 				if( statement.endsWith("ByKey")){
-					Map<String,Object> map = new HashMap<String,Object>();
-					map.put( "key", obj);
-					return map;
+					List<Parameter> parameterList = new ArrayList<Parameter>();
+					Parameter p = new Parameter( "key", EQ, obj);
+					parameterList.add( p);
+					return parameterList;
 				}else{
 					throw new RuntimeException("getParameterMap("+statement+"):"+obj);
 				}
 			}else{
-				return (Map<String, Object>) ((ListQueryParameterObject) parameter).getParameter();
+				Map<String,Object> map = (Map<String, Object>) ((ListQueryParameterObject) parameter).getParameter();
+				LOG.info(" - Map1:"+map);
+				return _getParameterList( map );
 			}
 		} else {
-			return (Map<String, Object>) parameter;
+			Map<String,Object> map =  (Map<String, Object>) parameter;
+			LOG.info(" - Map2:"+map);
+			return _getParameterList( map );
 		}
+	}
+	private List<Parameter> _getParameterList( Map<String,Object> map ){
+		List<Parameter> parameterList = new ArrayList<Parameter>();
+		Set<String> keySet = map.keySet();
+		Iterator<String> iterator = map.keySet().iterator();
+		while(iterator.hasNext()) {
+			Map<String,Object> param = new HashMap<String,Object>();
+			String key = iterator.next();
+			Parameter p = new Parameter( key, EQ, map.get(key));
+			parameterList.add( p);
+		}
+		return parameterList;
 	}
 
 	public <T extends DbEntity> T selectById(Class<T> entityClass, String id) {

@@ -21,6 +21,7 @@ import static com.github.raymanrt.orientqb.query.Parameter.parameter;
 import static com.github.raymanrt.orientqb.query.Projection.ALL;
 import static com.github.raymanrt.orientqb.query.Projection.projection;
 import static com.github.raymanrt.orientqb.query.Variable.variable;
+import org.camunda.bpm.engine.impl.db.orientdb.Parameter;
 
 /**
  * @author Manfred Sattler
@@ -31,29 +32,35 @@ public class JobEntityHandler extends BaseEntityHandler{
 	public JobEntityHandler(OrientGraph g) {
 		super( g, JobEntity.class);
 	}
-	public void modifyParameterMap(String statement, Map<String,Object> parameterMap) {
-		parameterMap.put( "jobHandlerConfigurationRaw", parameterMap.remove( "handlerConfiguration" ) );
-		parameterMap.put( "jobHandlerType", parameterMap.remove( "handlerType" ) );
+	public void modifyParameterList(String statement, List<Parameter> parameterList) {
+		for (Parameter p : parameterList){
+			if( p.name.equals("handlerConfiguration")){
+				p.name = "jobHandlerConfigurationRaw";
+			}
+			if( p.name.equals("handlerType")){
+				p.name = "jobHandlerType";
+			}
+		}
 	}
 
-	public String buildQuery( String entityName, String statement, Map<String,Object> parameterMap){
-		modifyParameterMap( statement, parameterMap );
+	public String buildQuery( String entityName, String statement, List<Parameter> parameterList){
+		modifyParameterList( statement, parameterList );
 
-		Object handlerConfigurationWithFollowUpJobCreatedProperty = parameterMap.remove("handlerConfigurationWithFollowUpJobCreatedProperty");
+		Parameter ph = getParameter( parameterList, "handlerConfigurationWithFollowUpJobCreatedProperty");
+		Object handlerConfigurationWithFollowUpJobCreatedProperty = ph.value;
 		List<Clause> clauseList = new ArrayList<Clause>();
-		for (String field : parameterMap.keySet()){
-			Object value = parameterMap.get(field);
+		for (Parameter p : parameterList){
 			Clause c = null;
-			if( value == null){
-				c = projection(field).isNull();
+			if( p.value == null){
+				c = projection(p.name).isNull();
 			}else{
-				if( field.equals("jobHandlerConfigurationRaw")){
+				if( p.name.equals("jobHandlerConfigurationRaw")){
 					c = or ( 
-								clause(field, EQ, value),
-								clause(field, EQ, handlerConfigurationWithFollowUpJobCreatedProperty)
+								clause(p.name, EQ, p.value),
+								clause(p.name, EQ, handlerConfigurationWithFollowUpJobCreatedProperty)
 							);
 				}else{
-					c = clause(field, EQ, value);
+					c = clause(p.name, p.op, p.value);
 				}
 			}
 			clauseList.add( c );
@@ -61,7 +68,7 @@ public class JobEntityHandler extends BaseEntityHandler{
 		Clause w = and( clauseList.toArray(new Clause[clauseList.size()])  );
 		Query q = new Query().from(entityName).where(w);
 
-		postProcessQuery( q, statement, parameterMap );
+		postProcessQuery( q, statement, parameterList );
 
 		LOG.info("  - query:" + q);
 		return q.toString();

@@ -44,6 +44,7 @@ import static com.github.raymanrt.orientqb.query.Parameter.parameter;
 import static com.github.raymanrt.orientqb.query.Projection.ALL;
 import static com.github.raymanrt.orientqb.query.Projection.projection;
 import static com.github.raymanrt.orientqb.query.Variable.variable;
+import org.camunda.bpm.engine.impl.db.orientdb.Parameter;
 
 /**
  * @author Manfred Sattler
@@ -82,42 +83,53 @@ public abstract class BaseEntityHandler {
 	public void modifyMetadata() {
 	}
 
-	public void modifyParameterMap(String statement, Map<String,Object> parameterMap) {
+	public void modifyParameterList(String statement, List<Parameter> parameterList) {
 	}
-	public void postProcessQuery(Query q, String statement, Map<String,Object> parameterMap) {
+	public void postProcessQuery(Query q, String statement, List<Parameter> parameterList) {
 		if( statement.indexOf("Latest") > 0 && this.metaByFieldMap.get("version") != null){
 			q.orderBy("version");
 		}
 	}
 
-	public void checkParameterMap(Map<String,Object> parameterMap) {
-		for (String field : parameterMap.keySet()){
-			if( this.metaByFieldMap.get(field) == null){
-				throw new RuntimeException("BaseEntityHandler.checkParameterMap("+field+") not found");
+	public Parameter getParameter(List<Parameter> parameterList, String name) {
+		for (Parameter p : parameterList){
+			if( p.name.equals(name)){
+				return p;
 			}
-			LOG.info("checkParameterMap("+field+") ok!");
 		}
+		return null;
 	}
 
-	public String buildQuery( String entityName, String statement, Map<String,Object> parameterMap){
-		modifyParameterMap( statement, parameterMap );
-		checkParameterMap( parameterMap );
+	public void checkParameterList(List<Parameter> parameterList) {
+		for (Parameter p : parameterList){
+			if( this.metaByFieldMap.get(p.name) == null){
+				throw new RuntimeException("BaseEntityHandler.checkParameterList("+this.entityClass.getSimpleName()+","+p.name+") not found");
+			}
+			LOG.info("checkParameterMap("+p.name+") ok!");
+		}
+	}
+	public List<Parameter> getParameterList(Object p) {
+		throw new RuntimeException("Parameter for "+p.getClass()+ " not handled");
+	}
+
+	public String buildQuery( String entityName, String statement, List<Parameter> parameterList){
+		modifyParameterList( statement, parameterList );
+		checkParameterList( parameterList );
 
 		List<Clause> clauseList = new ArrayList<Clause>();
-		for (String field : parameterMap.keySet()){
-			Object value = parameterMap.get(field);
+		for (Parameter p : parameterList){
 			Clause c = null;
-			if( value == null){
-				c = projection(field).isNull();
+			if( p.value == null){
+				c = projection(p.name).isNull();
 			}else{
-				c = clause(field, EQ, value);
+				c = clause(p.name, p.op, p.value);
 			}
 			clauseList.add( c );
 		}
 		Clause w = and( clauseList.toArray(new Clause[clauseList.size()])  );
 		Query q = new Query().from(entityName).where(w);
 
-		postProcessQuery( q, statement, parameterMap );
+		postProcessQuery( q, statement, parameterList );
 
 		LOG.info("  - query:" + q);
 		return q.toString();
@@ -148,6 +160,14 @@ public abstract class BaseEntityHandler {
 			}
 		}
 		return fieldList;
+	}
+	protected <Any> Any getValue(Object obj, String methodName) {
+		try{
+			Method method = obj.getClass().getMethod(methodName, (Class[])null);
+			return (Any) method.invoke(obj);
+		}catch( Exception e){
+			throw new RuntimeException("BaseEntityHandler.getValue:"+obj.getClass().getSimpleName()+"."+methodName);
+		}
 	}
 
 	private String getSetter(Class clazz, String baseName) {

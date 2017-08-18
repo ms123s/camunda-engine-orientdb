@@ -36,11 +36,13 @@ import org.reflections.util.ClasspathHelper;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 import org.camunda.bpm.engine.impl.db.DbEntity;
+import java.util.logging.Logger;
 
 /**
  * @author Manfred Sattler
  */
 public class OrientdbSessionFactory implements SessionFactory {
+	private final static Logger LOG = Logger.getLogger(OrientdbSessionFactory.class.getName());
 
 	private OrientGraphFactory graphFactory;
 	private static Map<Class, BaseEntityHandler> entityHandlerMap;
@@ -52,15 +54,17 @@ public class OrientdbSessionFactory implements SessionFactory {
 		initEntityClasses();
 	}
 	private void initEntityClasses() {
-		ConfigurationBuilder cb = new ConfigurationBuilder();
+		/*ConfigurationBuilder cb = new ConfigurationBuilder();
 		cb.addClassLoader( TaskEntity.class.getClassLoader());
 		cb.setScanners(new SubTypesScanner());
-		cb.setUrls(ClasspathHelper.forPackage("org.camunda"));
+		ClassLoader[] cl = new ClassLoader[1];
+		cl[0] = TaskEntity.class.getClassLoader();
+		cb.setUrls(ClasspathHelper.forPackage("org.camunda",cl));
 		Reflections r = new Reflections( cb );
-		Set<Class<? extends DbEntity>> classes = r.getSubTypesOf(DbEntity.class);
+		Set<Class<? extends DbEntity>> classes = r.getSubTypesOf(DbEntity.class);*/
 
 		entityClassMap = new HashMap<String, Class>();
-		for( Class c : classes){
+		for( Class c : entityHandlerMap.keySet()){
 			entityClassMap.put( c.getSimpleName(), c );
 		}
 	}
