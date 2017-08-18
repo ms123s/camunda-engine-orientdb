@@ -194,7 +194,7 @@ public abstract class BaseEntityHandler {
 			if (schema.getClass(entityName) != null) {
 				return;
 			}
-			executeUpdate(this.orientGraph, "CREATE CLASS " + entityName + " EXTENDS V");
+			executeUpdate(this.orientGraph, "CREATE CLASS " + entityName + " EXTENDS V, ORestricted");
 			for (Map<String, Object> f : this.entityMetadata) {
 				String pname = (String) f.get("name");
 				String ptype = (String) ((OType) f.get("otype")).toString();

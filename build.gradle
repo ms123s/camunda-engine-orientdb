@@ -1,4 +1,4 @@
-ext.version='0.0.1'
+version='0.0.1'
 apply plugin:'java'
 apply plugin:'groovy'
 apply plugin: 'osgi'
@@ -45,9 +45,6 @@ jar {
         instruction 'Bundle-Vendor', 'simpl4'
         instruction 'Bundle-Description', 'camunda orientdb support'
         instruction 'Bundle-ManifestVersion', '2'
-        instruction 'Bundle-Version', '0.0.1'
-        instruction 'Bundle-Name', 'camunda-engine-orientdb'
-        instruction 'Bundle-SymbolicName', 'CamundaEngineOrientdb'
         instruction 'Export-Package', 'org.camunda.bpm.engine.impl*;version="0.0.1"'	
     }
 }
