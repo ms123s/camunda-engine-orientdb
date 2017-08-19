@@ -23,8 +23,8 @@ public class DeploymentEntityHandler extends BaseEntityHandler{
 		super( g, DeploymentEntity.class);
 	}
 	@Override
-	public List<CParameter> getCParameterList(Object p) {
-		List<CParameter> parameterList = super.getCParameterList(p);
+	public List<CParameter> getCParameterList(String statement, Object p) {
+		List<CParameter> parameterList = super.getCParameterList(statement,p);
 		Date before = getValue( p, "getDeploymentBefore");
 		if( before != null){
 			parameterList.add( new CParameter( "deploymentTime", LT, before));

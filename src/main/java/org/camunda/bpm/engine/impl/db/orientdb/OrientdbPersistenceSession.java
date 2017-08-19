@@ -75,12 +75,12 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		String suffix = getSuffix(statement);
 		String entityName = getEntityName( statement, prefix, suffix);
 		Class entityClass = OrientdbSessionFactory.getEntityClass(entityName);
-		LOG.info("  - entityClass:"+entityClass);
+		LOG.info("->selectOne(" + statement +","+ entityName+ "):" + parameter);
 
 		BaseEntityHandler entityHandler = OrientdbSessionFactory.getEntityHandler(entityClass);
 
 		List<CParameter> parameterList = getCParameterList( statement, parameter, entityHandler);
-		LOG.info("->selectOne(" + statement +","+ entityName+ "):" + parameterList);
+		LOG.info("  - CParameterList:"+parameterList);
 		OCommandRequest query = entityHandler.buildQuery( entityName, statement, parameterList);
 
 		Iterable<Element> result = orientGraph.command(query).execute();
@@ -95,6 +95,14 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			return null;
 		}
 		try {
+			if( statement.indexOf("Count") > 0){
+				int count = 0;
+				for (Element elem : result) {
+					count++;
+				}
+				LOG.info("<-selectOne.count("+entityName+").return:"+count);
+				return new Long(count);
+			}
 			Object entity = entityClass.newInstance();
 			setEntityValues( entityClass, entity, props);
 			LOG.info("<-selectOne("+entityName+").return:"+entity);
@@ -119,7 +127,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		BaseEntityHandler entityHandler = OrientdbSessionFactory.getEntityHandler(entityClass);
 
 		List<CParameter> parameterList = getCParameterList( statement, parameter, entityHandler);
-		LOG.info("selectList(" + statement +","+entityName+ "):" + parameterList);
+		LOG.info("  - CParameterList:"+parameterList);
 		OCommandRequest query = entityHandler.buildQuery( entityName, statement, parameterList);
 
 		Iterable<Element> result = orientGraph.command(query).execute();
@@ -154,13 +162,13 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	}
 
 	private List<CParameter> getCParameterList( String statement, Object parameter, BaseEntityHandler handler){
-		LOG.info("getParameterList("+statement+"):"+parameter);
+		LOG.info("  - getParameterList("+statement+"):"+parameter);
 		if (parameter instanceof AbstractQuery) {
-			return handler.getCParameterList(parameter);
+			return handler.getCParameterList(statement,parameter);
 		}else if (parameter instanceof ListQueryParameterObject) {
-			LOG.info(" - ListQueryParameterObject");
+			LOG.info("  - ListQueryParameterObject");
 			if( ((ListQueryParameterObject) parameter).getParameter() instanceof String ){
-				LOG.info(" - String");
+				LOG.info("  - String");
 				Object obj =  ((ListQueryParameterObject) parameter).getParameter();
 				if( statement.endsWith("ByKey")){
 					List<CParameter> parameterList = new ArrayList<CParameter>();
@@ -168,16 +176,17 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 					parameterList.add( p);
 					return parameterList;
 				}else{
-					throw new RuntimeException("getParameterMap("+statement+"):"+obj);
+					//throw new RuntimeException("getParameterMap("+statement+","+cname+"):"+obj);
+					return handler.getCParameterList(statement,(String)obj);
 				}
 			}else{
 				Map<String,Object> map = (Map<String, Object>) ((ListQueryParameterObject) parameter).getParameter();
-				LOG.info(" - Map1:"+map);
+				LOG.info("  - Map1:"+map);
 				return _getCParameterList( map );
 			}
 		} else {
 			Map<String,Object> map =  (Map<String, Object>) parameter;
-			LOG.info(" - Map2:"+map);
+			LOG.info("  - Map2:"+map);
 			return _getCParameterList( map );
 		}
 	}
