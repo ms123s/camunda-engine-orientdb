@@ -164,6 +164,9 @@ public abstract class BaseEntityHandler {
 			String setter = getSetter( clazz, baseName);
 			String prefix = getGetterPrefix(name);
 			if (setter!=null && !excludeList.contains(name) && !Modifier.isStatic(m.getModifiers()) && prefix != null && isPrimitiveOrPrimitiveWrapperOrString(returnType)) {
+				if( prefix.equals("get") && (returnType == boolean.class || returnType == Boolean.class)){
+					continue;
+				}
 				Map<String, Object> map = new HashMap<String, Object>();
 				map.put("type", returnType);
 				map.put("name", baseName);
@@ -172,6 +175,7 @@ public abstract class BaseEntityHandler {
 				map.put("setter", setter);
 				map.put("otype", OType.getTypeByClass(returnType));
 				if( !containsGetter(name,fieldList)){
+//					LOG.info("fieldList("+this.entityClass.getSimpleName()+").add:"+map);
 					fieldList.add(map);
 				}
 			}
@@ -184,6 +188,15 @@ public abstract class BaseEntityHandler {
 			return (Any) method.invoke(obj);
 		}catch( Exception e){
 			throw new RuntimeException("BaseEntityHandler.getValue:"+obj.getClass().getSimpleName()+"."+methodName);
+		}
+	}
+
+	protected boolean hasMethod(Class c, String methodName) {
+		try{
+			Method method = c.getMethod(methodName, (Class[])null);
+			return method != null;
+		}catch( Exception e){
+			return false;
 		}
 	}
 
