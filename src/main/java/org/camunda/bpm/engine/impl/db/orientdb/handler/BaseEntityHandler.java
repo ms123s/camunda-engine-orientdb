@@ -234,7 +234,10 @@ public abstract class BaseEntityHandler {
 
 		//postProcessQuery(q, statement, parameterList);
 
-		OCommandRequest update = new OCommandSQL(q.toString());
+		String d = q.toString().replace("DELETE ", "DELETE VERTEX ");
+		LOG.info("  - delete2:" + d);
+		OCommandRequest update = new OCommandSQL(d);
+		LOG.info("  - update:" + update);
 		return update;
 	}
 
