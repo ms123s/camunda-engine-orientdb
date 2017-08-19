@@ -196,19 +196,19 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 				List<CParameter> parameterList = new ArrayList<CParameter>();
 				if (statement.endsWith("ByKey")) {
 					parameterList.add(new CParameter("key", EQ, obj));
-				}else if (statement.endsWith("ByProcDef")) {
+				} else if (statement.endsWith("ByProcDef")) {
 					parameterList.add(new CParameter("processDefId", EQ, obj));
-				}else if (statement.endsWith("ById")) {
+				} else if (statement.endsWith("ById")) {
 					parameterList.add(new CParameter("id", EQ, obj));
-				}else if (statement.endsWith("ByDeploymentId")) {
+				} else if (statement.endsWith("ByDeploymentId")) {
 					parameterList.add(new CParameter("deploymentId", EQ, obj));
-				}else if (statement.endsWith("ByProcessDefinitionId")) {
+				} else if (statement.endsWith("ByProcessDefinitionId")) {
 					parameterList.add(new CParameter("processDefinitionId", EQ, obj));
-				}else if (statement.endsWith("deleteDeployment")) {
+				} else if (statement.endsWith("deleteDeployment")) {
 					parameterList.add(new CParameter("id", EQ, obj));
 				}
 				return parameterList;
-			}else{
+			} else {
 				Map<String, Object> map = (Map<String, Object>) parameter;
 				LOG.info("   - Map2:" + map);
 				return _getCParameterList(map);
@@ -395,11 +395,11 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		List<CParameter> parameterList = getCParameterList(statement, parameter, handler);
 		LOG.info("  - CParameterList:" + parameterList);
 
-		if( parameterList.size()> 0){
+		if (parameterList.size() > 0) {
 			OCommandRequest up = handler.buildDelete(entityName, statement, parameterList);
 			orientGraph.command(up).execute();
-		}else{
-			throw new RuntimeException("OrientdbPersistenceSession.deleteBulk(" + statement + ","+entityName+"):no parameter");
+		} else {
+			throw new RuntimeException("OrientdbPersistenceSession.deleteBulk(" + statement + "," + entityName + "):no parameter");
 		}
 	}
 
