@@ -89,7 +89,7 @@ public abstract class BaseEntityHandler {
 	public void modifyMetadata() {
 	}
 
-	public void modifyParameterList(String statement, List<CParameter> parameterList) {
+	public void modifyCParameterList(String statement, List<CParameter> parameterList) {
 	}
 
 	public void postProcessQuery(Query q, String statement, List<CParameter> parameterList) {
@@ -98,7 +98,7 @@ public abstract class BaseEntityHandler {
 		}
 	}
 
-	public CParameter getParameter(List<CParameter> parameterList, String name) {
+	public CParameter getCParameter(List<CParameter> parameterList, String name) {
 		for (CParameter p : parameterList) {
 			if (p.name.equals(name)) {
 				return p;
@@ -107,7 +107,7 @@ public abstract class BaseEntityHandler {
 		return null;
 	}
 
-	public List<CParameter> getParameterList(Object p) {
+	public List<CParameter> getCParameterList(Object p) {
 		List<CParameter> parameterList = new ArrayList<CParameter>();
 		List<Map<String, Object>> md = getMetadata();
 		Class c = p.getClass();
@@ -157,7 +157,7 @@ public abstract class BaseEntityHandler {
 	}*/
 
 	public OCommandRequest buildQuery(String entityName, String statement, List<CParameter> parameterList) {
-		modifyParameterList(statement, parameterList);
+		modifyCParameterList(statement, parameterList);
 		checkParameterList(parameterList);
 
 		List<Clause> clauseList = new ArrayList<Clause>();

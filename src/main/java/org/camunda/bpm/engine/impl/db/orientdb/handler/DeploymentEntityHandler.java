@@ -22,20 +22,8 @@ public class DeploymentEntityHandler extends BaseEntityHandler{
 	public DeploymentEntityHandler(OrientGraph g) {
 		super( g, DeploymentEntity.class);
 	}
-	public List<CParameter> getParameterList(Object p) {
+	public List<CParameter> getCParameterList(Object p) {
 		List<CParameter> parameterList = new ArrayList<CParameter>();
-		String deploymentId = getValue( p, "getDeploymentId");
-		if( deploymentId != null){
-			parameterList.add( new CParameter( "id", EQ, deploymentId));
-		}
-		String name = getValue( p, "getName");
-		if( name != null){
-			parameterList.add( new CParameter( "name", EQ, name));
-		}
-		String nameLike = getValue( p, "getNameLike");
-		if( nameLike != null){
-			parameterList.add( new CParameter( "name", LIKE, nameLike));
-		}
 		Date before = getValue( p, "getDeploymentBefore");
 		if( before != null){
 			parameterList.add( new CParameter( "deploymentTime", LT, before));
@@ -44,8 +32,7 @@ public class DeploymentEntityHandler extends BaseEntityHandler{
 		if( after != null){
 			parameterList.add( new CParameter( "deploymentTime", GT, after));
 		}
-			parameterList.add( new CParameter( "deploymentTime", GT, new Date()));
-		log.info("DeploymentEntityHandler.getParameterList:"+parameterList);
+		log.info("DeploymentEntityHandler.getCParameterList:"+parameterList);
 		return parameterList;
 	}
 }

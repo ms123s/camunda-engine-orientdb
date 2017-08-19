@@ -24,7 +24,7 @@ public class ProcessDefinitionEntityHandler extends BaseEntityHandler{
 	public ProcessDefinitionEntityHandler(OrientGraph g) {
 		super( g, ProcessDefinitionEntity.class);
 	}
-	public void modifyParameterList(String statement, List<CParameter> parameterList) {
+	public void modifyCParameterList(String statement, List<CParameter> parameterList) {
 		for (CParameter p : parameterList){
 			if( p.name.equals("processDefinitionKey")){
 				if( p.value != null){

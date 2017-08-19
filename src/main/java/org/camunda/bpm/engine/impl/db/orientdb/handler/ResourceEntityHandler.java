@@ -17,7 +17,7 @@ public class ResourceEntityHandler extends BaseEntityHandler{
 	public ResourceEntityHandler(OrientGraph g) {
 		super( g, ResourceEntity.class);
 	}
-	public void modifyParameterList(String statement, List<CParameter> parameterList) {
+	public void modifyCParameterList(String statement, List<CParameter> parameterList) {
 		for (CParameter p : parameterList){
 			if( p.name.equals("resourceName")){
 				if( p.value != null){

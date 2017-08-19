@@ -34,7 +34,7 @@ public class JobEntityHandler extends BaseEntityHandler{
 	public JobEntityHandler(OrientGraph g) {
 		super( g, JobEntity.class);
 	}
-	public void modifyParameterList(String statement, List<CParameter> parameterList) {
+	public void modifyCParameterList(String statement, List<CParameter> parameterList) {
 		for (CParameter p : parameterList){
 			if( p.name.equals("handlerConfiguration")){
 				p.name = "jobHandlerConfigurationRaw";
@@ -46,9 +46,9 @@ public class JobEntityHandler extends BaseEntityHandler{
 	}
 
 	public OCommandRequest buildQuery( String entityName, String statement, List<CParameter> parameterList){
-		modifyParameterList( statement, parameterList );
+		modifyCParameterList( statement, parameterList );
 
-		CParameter ph = getParameter( parameterList, "handlerConfigurationWithFollowUpJobCreatedProperty");
+		CParameter ph = getCParameter( parameterList, "handlerConfigurationWithFollowUpJobCreatedProperty");
 		Object handlerConfigurationWithFollowUpJobCreatedProperty = ph.value;
 		List<Clause> clauseList = new ArrayList<Clause>();
 		for (CParameter p : parameterList){

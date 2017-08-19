@@ -79,7 +79,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 
 		BaseEntityHandler entityHandler = OrientdbSessionFactory.getEntityHandler(entityClass);
 
-		List<CParameter> parameterList = getParameterList( statement, parameter, entityHandler);
+		List<CParameter> parameterList = getCParameterList( statement, parameter, entityHandler);
 		LOG.info("->selectOne(" + statement +","+ entityName+ "):" + parameterList);
 		OCommandRequest query = entityHandler.buildQuery( entityName, statement, parameterList);
 
@@ -118,7 +118,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 
 		BaseEntityHandler entityHandler = OrientdbSessionFactory.getEntityHandler(entityClass);
 
-		List<CParameter> parameterList = getParameterList( statement, parameter, entityHandler);
+		List<CParameter> parameterList = getCParameterList( statement, parameter, entityHandler);
 		LOG.info("selectList(" + statement +","+entityName+ "):" + parameterList);
 		OCommandRequest query = entityHandler.buildQuery( entityName, statement, parameterList);
 
@@ -153,10 +153,10 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		return new ArrayList();
 	}
 
-	private List<CParameter> getParameterList( String statement, Object parameter, BaseEntityHandler handler){
+	private List<CParameter> getCParameterList( String statement, Object parameter, BaseEntityHandler handler){
 		LOG.info("getParameterList("+statement+"):"+parameter);
 		if (parameter instanceof AbstractQuery) {
-			return handler.getParameterList(parameter);
+			return handler.getCParameterList(parameter);
 		}else if (parameter instanceof ListQueryParameterObject) {
 			LOG.info(" - ListQueryParameterObject");
 			if( ((ListQueryParameterObject) parameter).getParameter() instanceof String ){
@@ -173,15 +173,15 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			}else{
 				Map<String,Object> map = (Map<String, Object>) ((ListQueryParameterObject) parameter).getParameter();
 				LOG.info(" - Map1:"+map);
-				return _getParameterList( map );
+				return _getCParameterList( map );
 			}
 		} else {
 			Map<String,Object> map =  (Map<String, Object>) parameter;
 			LOG.info(" - Map2:"+map);
-			return _getParameterList( map );
+			return _getCParameterList( map );
 		}
 	}
-	private List<CParameter> _getParameterList( Map<String,Object> map ){
+	private List<CParameter> _getCParameterList( Map<String,Object> map ){
 		List<CParameter> parameterList = new ArrayList<CParameter>();
 		Set<String> keySet = map.keySet();
 		Iterator<String> iterator = map.keySet().iterator();
