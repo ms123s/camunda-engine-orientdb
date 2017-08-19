@@ -108,8 +108,8 @@ public abstract class BaseEntityHandler {
 	}
 
 	public List<CParameter> getCParameterList(String statement, Object p) {
-		if( p instanceof String){
-			throw new RuntimeException("getCParameterList(String) cannot be handledi here:"+p);
+		if (p instanceof String) {
+			throw new RuntimeException("getCParameterList(String) cannot be handledi here:" + p);
 		}
 		List<CParameter> parameterList = new ArrayList<CParameter>();
 		List<Map<String, Object>> md = getMetadata();
@@ -133,12 +133,20 @@ public abstract class BaseEntityHandler {
 				boolean b = hasMethod(c, getter + "Like");
 				Object val = null;
 				if (b) {
-					val = getValue(p, getter+"Like");
+					val = getValue(p, getter + "Like");
 					if (val != null) {
 						parameterList.add(new CParameter((String) m.get("name"), LIKE, val));
 						LOG.info("getter(" + getter + "Like," + b + "):" + val);
 					}
 				}
+			}
+		}
+		boolean b = hasMethod(c, "isLatest");
+		if (b) {
+			Object val = getValue(p, "isLatest");
+			if (val != null) {
+				LOG.info("isLatest(" + b + "):" + val);
+				parameterList.add(new CParameter("_latest", EQ, ""));
 			}
 		}
 
@@ -148,7 +156,7 @@ public abstract class BaseEntityHandler {
 
 	public void checkParameterList(List<CParameter> parameterList) {
 		for (CParameter p : parameterList) {
-			if (this.metaByFieldMap.get(p.name) == null) {
+			if (this.metaByFieldMap.get(p.name) == null && !p.name.equals("_latest")) {
 				throw new RuntimeException("BaseEntityHandler.checkParameterList(" + this.entityClass.getSimpleName() + "," + p.name + ") not found");
 			}
 			LOG.info("checked(" + entityClass.getSimpleName() + "." + p.name + ")");
@@ -164,19 +172,28 @@ public abstract class BaseEntityHandler {
 		checkParameterList(parameterList);
 
 		List<Clause> clauseList = new ArrayList<Clause>();
+		boolean isLatest = false;
 		for (CParameter p : parameterList) {
 			Clause c = null;
 			if (p.value == null) {
 				c = projection(p.name).isNull();
+			} else if (p.name.equals("_latest")) {
+				isLatest = true;
 			} else if (p.value instanceof Date) {
 				c = clause(p.name, p.op, parameter(p.name));
 			} else {
 				c = clause(p.name, p.op, p.value);
 			}
-			clauseList.add(c);
+			if (c != null) {
+				clauseList.add(c);
+			}
 		}
 		Clause w = and(clauseList.toArray(new Clause[clauseList.size()]));
 		Query q = new Query().from(entityName).where(w);
+		if (isLatest) {
+			q.limit(1);
+			q.orderByDesc("version");
+		}
 
 		postProcessQuery(q, statement, parameterList);
 
