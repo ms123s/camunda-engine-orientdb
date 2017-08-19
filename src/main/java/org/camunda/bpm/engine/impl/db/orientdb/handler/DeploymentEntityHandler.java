@@ -22,8 +22,9 @@ public class DeploymentEntityHandler extends BaseEntityHandler{
 	public DeploymentEntityHandler(OrientGraph g) {
 		super( g, DeploymentEntity.class);
 	}
+	@Override
 	public List<CParameter> getCParameterList(Object p) {
-		List<CParameter> parameterList = new ArrayList<CParameter>();
+		List<CParameter> parameterList = super.getCParameterList(p);
 		Date before = getValue( p, "getDeploymentBefore");
 		if( before != null){
 			parameterList.add( new CParameter( "deploymentTime", LT, before));

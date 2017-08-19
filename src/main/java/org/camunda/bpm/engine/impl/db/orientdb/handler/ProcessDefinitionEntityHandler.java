@@ -24,6 +24,7 @@ public class ProcessDefinitionEntityHandler extends BaseEntityHandler{
 	public ProcessDefinitionEntityHandler(OrientGraph g) {
 		super( g, ProcessDefinitionEntity.class);
 	}
+	@Override
 	public void modifyCParameterList(String statement, List<CParameter> parameterList) {
 		for (CParameter p : parameterList){
 			if( p.name.equals("processDefinitionKey")){
@@ -33,6 +34,7 @@ public class ProcessDefinitionEntityHandler extends BaseEntityHandler{
 			}
 		}
 	}
+	@Override
 	public void postProcessQuery(Query q, String statement, List<CParameter> parameterList) {
 		if( statement.indexOf("Latest") > 0){
 			q.orderBy("version");

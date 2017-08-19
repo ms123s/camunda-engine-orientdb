@@ -34,6 +34,7 @@ public class JobEntityHandler extends BaseEntityHandler{
 	public JobEntityHandler(OrientGraph g) {
 		super( g, JobEntity.class);
 	}
+	@Override
 	public void modifyCParameterList(String statement, List<CParameter> parameterList) {
 		for (CParameter p : parameterList){
 			if( p.name.equals("handlerConfiguration")){
@@ -45,6 +46,7 @@ public class JobEntityHandler extends BaseEntityHandler{
 		}
 	}
 
+	@Override
 	public OCommandRequest buildQuery( String entityName, String statement, List<CParameter> parameterList){
 		modifyCParameterList( statement, parameterList );
 
