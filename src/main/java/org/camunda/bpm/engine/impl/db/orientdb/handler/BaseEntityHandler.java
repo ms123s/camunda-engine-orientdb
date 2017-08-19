@@ -106,7 +106,7 @@ public abstract class BaseEntityHandler {
 
 	public List<CParameter> getCParameterList(String statement, Object p) {
 		if (p instanceof String) {
-			throw new RuntimeException("getCParameterList(String) cannot be handledi here:" + p);
+			throw new RuntimeException("getCParameterList("+statement+","+this.entityClass.getSimpleName()+",String) cannot be handled here:" + p);
 		}
 		List<CParameter> parameterList = new ArrayList<CParameter>();
 		List<Map<String, Object>> md = getMetadata();

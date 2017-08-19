@@ -142,14 +142,23 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			return propsList;
 		}
 		try {
-			List<Object> entityList = new ArrayList<Object>();
-			for( Map<String,Object> props : propsList){
-				Object entity = entityClass.newInstance();
-				setEntityValues( entityClass, entity, props);
-				entityList.add( entity);
+			if( statement.indexOf("IdsBy") >0){
+				List<String> idList = new ArrayList<String>();
+				for( Map<String,Object> props : propsList){
+					idList.add( (String)props.get("id"));
+				}
+				LOG.info("<-selectList("+entityName+").return:"+idList);
+				return idList;
+			}else{
+				List<Object> entityList = new ArrayList<Object>();
+				for( Map<String,Object> props : propsList){
+					Object entity = entityClass.newInstance();
+					setEntityValues( entityClass, entity, props);
+					entityList.add( entity);
+				}
+				LOG.info("<-selectList("+entityName+").return:"+entityList);
+				return entityList;
 			}
-			LOG.info("<-selectList("+entityName+").return:"+entityList);
-			return entityList;
 		} catch (Exception e) {
 			LOG.throwing("OrientdbPersistenceSession", "selectOne", e);
 			e.printStackTrace();
@@ -165,8 +174,8 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		}else if (parameter instanceof ListQueryParameterObject) {
 			LOG.info("   - ListQueryParameterObject");
 			if( ((ListQueryParameterObject) parameter).getParameter() instanceof String ){
-				LOG.info("   - String");
 				Object obj =  ((ListQueryParameterObject) parameter).getParameter();
+				LOG.info("   - String:"+obj);
 				if( statement.endsWith("ByKey")){
 					List<CParameter> parameterList = new ArrayList<CParameter>();
 					CParameter p = new CParameter( "key", EQ, obj);
@@ -290,7 +299,9 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		int start = prefix.length();
 		int end = statement.indexOf(suffix);
 		String name = statement.substring(start, end);
-		if( !name.endsWith("Statistics") && name.endsWith("s")){
+		if( statement.equals("selectProcessInstanceIdsByProcessDefinitionId")){
+			name = "Execution";
+		}else if( !name.endsWith("Statistics") && name.endsWith("s")){
 			name = name.substring(0, name.length()-1);
 		}
 		return name + "Entity";
@@ -371,20 +382,12 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 
 	protected void deleteBulk(DbBulkOperation operation) {
 		String statement = operation.getStatement();
-
-		if (LOG.isLoggable(Level.FINE)) {
-			LOG.fine("executing deleteBulk " + statement);
-		}
-
 		Object parameter = operation.getParameter();
 
-		/*DeleteStatementHandler statementHandler = HazelcastSessionFactory.getDeleteStatementHandler(statement);
-		if(statementHandler != null) {
-			statementHandler.execute(this, parameter);
-		}
-		else {
-			LOG.log(Level.WARNING, "Delete statement '{}' currently not supported", statement);
-		}*/
+		Class entityClass = operation.getEntityType();
+		String entityName = entityClass.getSimpleName();
+		BaseEntityHandler handler = OrientdbSessionFactory.getEntityHandler(entityClass);
+		LOG.info("deleteBulk("+statement+","+entityName+").parameter:" + parameter);
 
 	}
 

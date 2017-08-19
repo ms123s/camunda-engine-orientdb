@@ -69,6 +69,7 @@ public class OrientdbProcessEngineConfiguration extends ProcessEngineConfigurati
 		setJobExecutorActivate(false);
 		setDbMetricsReporterActivate(false);
 		setDeploymentLockUsed(false);
+		setTenantCheckEnabled(false);
 		System.err.println("OrientdbProcessEngineConfiguration");
 		CommandContextFactory ccf = createDefaultCommandContextFactory();
 		ccf.setProcessEngineConfiguration(this);

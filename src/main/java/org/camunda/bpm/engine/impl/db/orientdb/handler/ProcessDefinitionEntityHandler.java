@@ -25,6 +25,19 @@ public class ProcessDefinitionEntityHandler extends BaseEntityHandler{
 		super( g, ProcessDefinitionEntity.class);
 	}
 	@Override
+	public List<CParameter> getCParameterList(String statement, Object p) {
+		if( p instanceof String ){
+			if( statement.equals("selectProcessDefinitionByDeploymentId")){
+				List<CParameter> parameterList = new ArrayList<CParameter>();
+				parameterList.add( new CParameter( "deploymentId", EQ, p));
+				return parameterList;
+			}
+			throw new RuntimeException("ProcessDefinitionEntity.getCParameterList("+statement+",String) cannot be handled here:"+p);
+		}else{
+			return super.getCParameterList(statement,p);
+		}
+	}
+	@Override
 	public void modifyCParameterList(String statement, List<CParameter> parameterList) {
 		for (CParameter p : parameterList){
 			if( p.name.equals("processDefinitionKey")){
