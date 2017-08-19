@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.lang.reflect.*;
+import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -30,6 +31,8 @@ import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.metadata.schema.OSchemaProxy;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.command.OCommandRequest;
+import com.orientechnologies.orient.core.command.OCommandContext;
+import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
 import com.orientechnologies.orient.core.sql.OCommandSQL;
 import com.github.raymanrt.orientqb.query.Clause;
 import com.github.raymanrt.orientqb.query.Projection;
@@ -44,7 +47,7 @@ import static com.github.raymanrt.orientqb.query.Parameter.parameter;
 import static com.github.raymanrt.orientqb.query.Projection.ALL;
 import static com.github.raymanrt.orientqb.query.Projection.projection;
 import static com.github.raymanrt.orientqb.query.Variable.variable;
-import org.camunda.bpm.engine.impl.db.orientdb.Parameter;
+import org.camunda.bpm.engine.impl.db.orientdb.CParameter;
 
 /**
  * @author Manfred Sattler
@@ -83,16 +86,16 @@ public abstract class BaseEntityHandler {
 	public void modifyMetadata() {
 	}
 
-	public void modifyParameterList(String statement, List<Parameter> parameterList) {
+	public void modifyParameterList(String statement, List<CParameter> parameterList) {
 	}
-	public void postProcessQuery(Query q, String statement, List<Parameter> parameterList) {
+	public void postProcessQuery(Query q, String statement, List<CParameter> parameterList) {
 		if( statement.indexOf("Latest") > 0 && this.metaByFieldMap.get("version") != null){
 			q.orderBy("version");
 		}
 	}
 
-	public Parameter getParameter(List<Parameter> parameterList, String name) {
-		for (Parameter p : parameterList){
+	public CParameter getParameter(List<CParameter> parameterList, String name) {
+		for (CParameter p : parameterList){
 			if( p.name.equals(name)){
 				return p;
 			}
@@ -100,27 +103,29 @@ public abstract class BaseEntityHandler {
 		return null;
 	}
 
-	public void checkParameterList(List<Parameter> parameterList) {
-		for (Parameter p : parameterList){
+	public void checkParameterList(List<CParameter> parameterList) {
+		for (CParameter p : parameterList){
 			if( this.metaByFieldMap.get(p.name) == null){
 				throw new RuntimeException("BaseEntityHandler.checkParameterList("+this.entityClass.getSimpleName()+","+p.name+") not found");
 			}
 			LOG.info("checkParameterMap("+p.name+") ok!");
 		}
 	}
-	public List<Parameter> getParameterList(Object p) {
+	public List<CParameter> getParameterList(Object p) {
 		throw new RuntimeException("Parameter for "+p.getClass()+ " not handled");
 	}
 
-	public String buildQuery( String entityName, String statement, List<Parameter> parameterList){
+	public OCommandRequest buildQuery( String entityName, String statement, List<CParameter> parameterList){
 		modifyParameterList( statement, parameterList );
 		checkParameterList( parameterList );
 
 		List<Clause> clauseList = new ArrayList<Clause>();
-		for (Parameter p : parameterList){
+		for (CParameter p : parameterList){
 			Clause c = null;
 			if( p.value == null){
 				c = projection(p.name).isNull();
+			} else if( p.value instanceof Date){
+				c = clause(p.name, p.op, parameter(p.name));
 			}else{
 				c = clause(p.name, p.op, p.value);
 			}
@@ -131,8 +136,20 @@ public abstract class BaseEntityHandler {
 
 		postProcessQuery( q, statement, parameterList );
 
+		OCommandRequest query = new OSQLSynchQuery( q.toString() );
+		OCommandContext qcontext = query.getContext();
+		boolean hasVar = false;
+		for (CParameter p : parameterList){
+			if( p.value instanceof Date){
+				qcontext.setVariable(p.name, p.value);
+				hasVar = true;
+			}
+		}
 		LOG.info("  - query:" + q);
-		return q.toString();
+		if( hasVar){
+			LOG.info("  - query.params:" + qcontext);
+		}
+		return query;
 	}
 
 

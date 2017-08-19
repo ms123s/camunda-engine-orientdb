@@ -4,7 +4,7 @@ import java.util.logging.Logger;
 
 import org.camunda.bpm.engine.impl.persistence.entity.DeploymentEntity;
 import com.tinkerpop.blueprints.impls.orient.OrientGraph;
-import org.camunda.bpm.engine.impl.db.orientdb.Parameter;
+import org.camunda.bpm.engine.impl.db.orientdb.CParameter;
 import java.util.List;
 import java.util.Date;
 import java.util.ArrayList;
@@ -22,28 +22,29 @@ public class DeploymentEntityHandler extends BaseEntityHandler{
 	public DeploymentEntityHandler(OrientGraph g) {
 		super( g, DeploymentEntity.class);
 	}
-	public List<Parameter> getParameterList(Object p) {
-		List<Parameter> parameterList = new ArrayList<Parameter>();
+	public List<CParameter> getParameterList(Object p) {
+		List<CParameter> parameterList = new ArrayList<CParameter>();
 		String deploymentId = getValue( p, "getDeploymentId");
 		if( deploymentId != null){
-			parameterList.add( new Parameter( "id", EQ, deploymentId));
+			parameterList.add( new CParameter( "id", EQ, deploymentId));
 		}
 		String name = getValue( p, "getName");
 		if( name != null){
-			parameterList.add( new Parameter( "name", EQ, name));
+			parameterList.add( new CParameter( "name", EQ, name));
 		}
 		String nameLike = getValue( p, "getNameLike");
 		if( nameLike != null){
-			parameterList.add( new Parameter( "name", LIKE, nameLike));
+			parameterList.add( new CParameter( "name", LIKE, nameLike));
 		}
 		Date before = getValue( p, "getDeploymentBefore");
 		if( before != null){
-			parameterList.add( new Parameter( "deploymentTime", LT, before));
+			parameterList.add( new CParameter( "deploymentTime", LT, before));
 		}
 		Date after = getValue( p, "getDeploymentAfter");
 		if( after != null){
-			parameterList.add( new Parameter( "deploymentTime", GT, after));
+			parameterList.add( new CParameter( "deploymentTime", GT, after));
 		}
+			parameterList.add( new CParameter( "deploymentTime", GT, new Date()));
 		log.info("DeploymentEntityHandler.getParameterList:"+parameterList);
 		return parameterList;
 	}

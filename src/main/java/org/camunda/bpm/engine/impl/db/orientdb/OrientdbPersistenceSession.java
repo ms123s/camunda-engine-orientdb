@@ -79,11 +79,9 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 
 		BaseEntityHandler entityHandler = OrientdbSessionFactory.getEntityHandler(entityClass);
 
-		List<Parameter> parameterList = getParameterList( statement, parameter, entityHandler);
+		List<CParameter> parameterList = getParameterList( statement, parameter, entityHandler);
 		LOG.info("->selectOne(" + statement +","+ entityName+ "):" + parameterList);
-		String queryString = entityHandler.buildQuery( entityName, statement, parameterList);
-
-		OCommandRequest query = new OSQLSynchQuery( queryString );
+		OCommandRequest query = entityHandler.buildQuery( entityName, statement, parameterList);
 
 		Iterable<Element> result = orientGraph.command(query).execute();
 		LOG.info("  - result:"+result);
@@ -120,11 +118,9 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 
 		BaseEntityHandler entityHandler = OrientdbSessionFactory.getEntityHandler(entityClass);
 
-		List<Parameter> parameterList = getParameterList( statement, parameter, entityHandler);
+		List<CParameter> parameterList = getParameterList( statement, parameter, entityHandler);
 		LOG.info("selectList(" + statement +","+entityName+ "):" + parameterList);
-		String queryString = entityHandler.buildQuery( entityName, statement, parameterList);
-
-		OCommandRequest query = new OSQLSynchQuery( queryString );
+		OCommandRequest query = entityHandler.buildQuery( entityName, statement, parameterList);
 
 		Iterable<Element> result = orientGraph.command(query).execute();
 		LOG.info("  - result:"+result);
@@ -157,7 +153,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		return new ArrayList();
 	}
 
-	private List<Parameter> getParameterList( String statement, Object parameter, BaseEntityHandler handler){
+	private List<CParameter> getParameterList( String statement, Object parameter, BaseEntityHandler handler){
 		LOG.info("getParameterList("+statement+"):"+parameter);
 		if (parameter instanceof AbstractQuery) {
 			return handler.getParameterList(parameter);
@@ -167,8 +163,8 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 				LOG.info(" - String");
 				Object obj =  ((ListQueryParameterObject) parameter).getParameter();
 				if( statement.endsWith("ByKey")){
-					List<Parameter> parameterList = new ArrayList<Parameter>();
-					Parameter p = new Parameter( "key", EQ, obj);
+					List<CParameter> parameterList = new ArrayList<CParameter>();
+					CParameter p = new CParameter( "key", EQ, obj);
 					parameterList.add( p);
 					return parameterList;
 				}else{
@@ -185,14 +181,14 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			return _getParameterList( map );
 		}
 	}
-	private List<Parameter> _getParameterList( Map<String,Object> map ){
-		List<Parameter> parameterList = new ArrayList<Parameter>();
+	private List<CParameter> _getParameterList( Map<String,Object> map ){
+		List<CParameter> parameterList = new ArrayList<CParameter>();
 		Set<String> keySet = map.keySet();
 		Iterator<String> iterator = map.keySet().iterator();
 		while(iterator.hasNext()) {
 			Map<String,Object> param = new HashMap<String,Object>();
 			String key = iterator.next();
-			Parameter p = new Parameter( key, EQ, map.get(key));
+			CParameter p = new CParameter( key, EQ, map.get(key));
 			parameterList.add( p);
 		}
 		return parameterList;

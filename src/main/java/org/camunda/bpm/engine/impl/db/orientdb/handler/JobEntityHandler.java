@@ -21,7 +21,9 @@ import static com.github.raymanrt.orientqb.query.Parameter.parameter;
 import static com.github.raymanrt.orientqb.query.Projection.ALL;
 import static com.github.raymanrt.orientqb.query.Projection.projection;
 import static com.github.raymanrt.orientqb.query.Variable.variable;
-import org.camunda.bpm.engine.impl.db.orientdb.Parameter;
+import org.camunda.bpm.engine.impl.db.orientdb.CParameter;
+import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
+import com.orientechnologies.orient.core.command.OCommandRequest;
 
 /**
  * @author Manfred Sattler
@@ -32,8 +34,8 @@ public class JobEntityHandler extends BaseEntityHandler{
 	public JobEntityHandler(OrientGraph g) {
 		super( g, JobEntity.class);
 	}
-	public void modifyParameterList(String statement, List<Parameter> parameterList) {
-		for (Parameter p : parameterList){
+	public void modifyParameterList(String statement, List<CParameter> parameterList) {
+		for (CParameter p : parameterList){
 			if( p.name.equals("handlerConfiguration")){
 				p.name = "jobHandlerConfigurationRaw";
 			}
@@ -43,13 +45,13 @@ public class JobEntityHandler extends BaseEntityHandler{
 		}
 	}
 
-	public String buildQuery( String entityName, String statement, List<Parameter> parameterList){
+	public OCommandRequest buildQuery( String entityName, String statement, List<CParameter> parameterList){
 		modifyParameterList( statement, parameterList );
 
-		Parameter ph = getParameter( parameterList, "handlerConfigurationWithFollowUpJobCreatedProperty");
+		CParameter ph = getParameter( parameterList, "handlerConfigurationWithFollowUpJobCreatedProperty");
 		Object handlerConfigurationWithFollowUpJobCreatedProperty = ph.value;
 		List<Clause> clauseList = new ArrayList<Clause>();
-		for (Parameter p : parameterList){
+		for (CParameter p : parameterList){
 			Clause c = null;
 			if( p.value == null){
 				c = projection(p.name).isNull();
@@ -71,6 +73,7 @@ public class JobEntityHandler extends BaseEntityHandler{
 		postProcessQuery( q, statement, parameterList );
 
 		LOG.info("  - query:" + q);
-		return q.toString();
+		OCommandRequest query = new OSQLSynchQuery( q.toString() );
+		return query;
 	}
 }
