@@ -93,9 +93,6 @@ public abstract class BaseEntityHandler {
 	}
 
 	public void postProcessQuery(Query q, String statement, List<CParameter> parameterList) {
-		if (statement.indexOf("Latest") > 0 && this.metaByFieldMap.get("version") != null) {
-			q.orderBy("version");
-		}
 	}
 
 	public CParameter getCParameter(List<CParameter> parameterList, String name) {
@@ -143,10 +140,9 @@ public abstract class BaseEntityHandler {
 		}
 		boolean b = hasMethod(c, "isLatest");
 		if (b) {
-			Object val = getValue(p, "isLatest");
-			if (val != null) {
-				LOG.info("isLatest(" + b + "):" + val);
-				parameterList.add(new CParameter("_latest", EQ, ""));
+			Boolean val = getValue(p, "isLatest");
+			if (val != null && val == true) {
+				parameterList.add(new CParameter("_isLatest", EQ, ""));
 			}
 		}
 
@@ -156,16 +152,12 @@ public abstract class BaseEntityHandler {
 
 	public void checkParameterList(List<CParameter> parameterList) {
 		for (CParameter p : parameterList) {
-			if (this.metaByFieldMap.get(p.name) == null && !p.name.equals("_latest")) {
+			if (this.metaByFieldMap.get(p.name) == null && !p.name.equals("_isLatest")) {
 				throw new RuntimeException("BaseEntityHandler.checkParameterList(" + this.entityClass.getSimpleName() + "," + p.name + ") not found");
 			}
 			LOG.info("checked(" + entityClass.getSimpleName() + "." + p.name + ")");
 		}
 	}
-
-	/*public List<CParameter> getParameterList(Object p) {
-		throw new RuntimeException("Parameter for "+p.getClass()+ " not handled");
-	}*/
 
 	public OCommandRequest buildQuery(String entityName, String statement, List<CParameter> parameterList) {
 		modifyCParameterList(statement, parameterList);
@@ -177,7 +169,7 @@ public abstract class BaseEntityHandler {
 			Clause c = null;
 			if (p.value == null) {
 				c = projection(p.name).isNull();
-			} else if (p.name.equals("_latest")) {
+			} else if (p.name.equals("_isLatest")) {
 				isLatest = true;
 			} else if (p.value instanceof Date) {
 				c = clause(p.name, p.op, parameter(p.name));
@@ -188,9 +180,12 @@ public abstract class BaseEntityHandler {
 				clauseList.add(c);
 			}
 		}
+		if (statement.indexOf("Latest") > 0) {
+			isLatest = true;
+		}
 		Clause w = and(clauseList.toArray(new Clause[clauseList.size()]));
 		Query q = new Query().from(entityName).where(w);
-		if (isLatest) {
+		if (isLatest && this.metaByFieldMap.get("version") != null) {
 			q.limit(1);
 			q.orderByDesc("version");
 		}

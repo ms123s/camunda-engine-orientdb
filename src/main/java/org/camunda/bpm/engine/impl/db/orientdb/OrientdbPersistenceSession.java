@@ -147,9 +147,6 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 				Object entity = entityClass.newInstance();
 				setEntityValues( entityClass, entity, props);
 				entityList.add( entity);
-				if( statement.indexOf("Latest") > 0){
-					break;
-				}
 			}
 			LOG.info("<-selectList("+entityName+").return:"+entityList);
 			return entityList;

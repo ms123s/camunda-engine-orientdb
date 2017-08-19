@@ -36,8 +36,5 @@ public class ProcessDefinitionEntityHandler extends BaseEntityHandler{
 	}
 	@Override
 	public void postProcessQuery(Query q, String statement, List<CParameter> parameterList) {
-		if( statement.indexOf("Latest") > 0){
-			q.orderByDesc("version");
-		}
 	}
 }
