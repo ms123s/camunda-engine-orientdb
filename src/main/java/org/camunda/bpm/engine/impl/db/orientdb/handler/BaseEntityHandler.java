@@ -13,7 +13,6 @@
 
 package org.camunda.bpm.engine.impl.db.orientdb.handler;
 
-
 import com.github.raymanrt.orientqb.query.Clause;
 import com.github.raymanrt.orientqb.query.Projection;
 import com.github.raymanrt.orientqb.query.Query;
@@ -62,7 +61,7 @@ public abstract class BaseEntityHandler {
 	protected OrientGraph orientGraph;
 	protected Class entityClass;
 	private List<Map<String, Object>> entityMetadata = new ArrayList<Map<String, Object>>();
-	private Map<String,Map> metaByFieldMap = new HashMap<String,Map>();
+	private Map<String, Map> metaByFieldMap = new HashMap<String, Map>();
 
 	public BaseEntityHandler(OrientGraph g, Class ec) {
 		this.entityClass = ec;
@@ -71,35 +70,37 @@ public abstract class BaseEntityHandler {
 		this.modifyMetadata();
 		this.buildMetaFieldMap();
 		//LOG.info("--> "+ this.entityClass.getSimpleName() );
-		for( Map<String, Object> m : this.entityMetadata){
+		for (Map<String, Object> m : this.entityMetadata) {
 			//LOG.info("  - "+ m );
 		}
 		createClassAndProperties();
 	}
 
-	private void buildMetaFieldMap(){
-		for( Map<String, Object> m : entityMetadata){
-			this.metaByFieldMap.put( (String)m.get("name"), m);
+	private void buildMetaFieldMap() {
+		for (Map<String, Object> m : entityMetadata) {
+			this.metaByFieldMap.put((String) m.get("name"), m);
 		}
 	}
 
-	public List<Map<String, Object>> getMetadata(){
+	public List<Map<String, Object>> getMetadata() {
 		return this.entityMetadata;
 	}
+
 	public void modifyMetadata() {
 	}
 
 	public void modifyParameterList(String statement, List<CParameter> parameterList) {
 	}
+
 	public void postProcessQuery(Query q, String statement, List<CParameter> parameterList) {
-		if( statement.indexOf("Latest") > 0 && this.metaByFieldMap.get("version") != null){
+		if (statement.indexOf("Latest") > 0 && this.metaByFieldMap.get("version") != null) {
 			q.orderBy("version");
 		}
 	}
 
 	public CParameter getParameter(List<CParameter> parameterList, String name) {
-		for (CParameter p : parameterList){
-			if( p.name.equals(name)){
+		for (CParameter p : parameterList) {
+			if (p.name.equals(name)) {
 				return p;
 			}
 		}
@@ -108,86 +109,92 @@ public abstract class BaseEntityHandler {
 
 	public List<CParameter> getParameterList(Object p) {
 		List<CParameter> parameterList = new ArrayList<CParameter>();
-		List<Map<String,Object>> md = getMetadata();
+		List<Map<String, Object>> md = getMetadata();
 		Class c = p.getClass();
-		for( Map<String,Object> m : md){
-			String getter = (String)m.get("getter");
-			boolean b = hasMethod( c, getter);
+		for (Map<String, Object> m : md) {
+			String getter = (String) m.get("getter");
+			boolean b = hasMethod(c, getter);
 			Object val = null;
-			if( b ){
-				val = getValue( p, getter);
-				LOG.info("getter("+getter+","+b+"):"+val);
-				parameterList.add( new CParameter( (String)m.get("name"), EQ, val));
+			if (b) {
+				val = getValue(p, getter);
+				if (val != null) {
+					LOG.info("getter(" + getter + "," + b + "):" + val);
+					parameterList.add(new CParameter((String) m.get("name"), EQ, val));
+				}
 			}
 		}
-		for( Map<String,Object> m : md){
-			String getter = (String)m.get("getter");
-			if( m.get("type") == String.class){
-				boolean b = hasMethod( c, getter+"Like");
+		for (Map<String, Object> m : md) {
+			String getter = (String) m.get("getter");
+			String name = (String) m.get("name");
+			if (m.get("type") == String.class) {
+				boolean b = hasMethod(c, getter + "Like");
 				Object val = null;
-				if( b ){
-					val = getValue( p, getter);
-					parameterList.add( new CParameter( (String)m.get("name"), LIKE, val));
-					LOG.info("getter("+getter+"Like,"+b+"):"+val);
+				if (b) {
+					val = getValue(p, getter+"Like");
+					if (val != null) {
+						parameterList.add(new CParameter((String) m.get("name"), LIKE, val));
+						LOG.info("getter(" + getter + "Like," + b + "):" + val);
+					}
 				}
 			}
 		}
 
-		LOG.info("getParameterList:"+parameterList);
+		LOG.info("getCParameterList:" + parameterList);
 		return parameterList;
 	}
 
 	public void checkParameterList(List<CParameter> parameterList) {
-		for (CParameter p : parameterList){
-			if( this.metaByFieldMap.get(p.name) == null){
-				throw new RuntimeException("BaseEntityHandler.checkParameterList("+this.entityClass.getSimpleName()+","+p.name+") not found");
+		for (CParameter p : parameterList) {
+			if (this.metaByFieldMap.get(p.name) == null) {
+				throw new RuntimeException("BaseEntityHandler.checkParameterList(" + this.entityClass.getSimpleName() + "," + p.name + ") not found");
 			}
-			LOG.info("checkParameterMap("+p.name+") ok!");
+			LOG.info("checked(" + entityClass.getSimpleName() + "." + p.name + ")");
 		}
 	}
+
 	/*public List<CParameter> getParameterList(Object p) {
 		throw new RuntimeException("Parameter for "+p.getClass()+ " not handled");
 	}*/
 
-	public OCommandRequest buildQuery( String entityName, String statement, List<CParameter> parameterList){
-		modifyParameterList( statement, parameterList );
-		checkParameterList( parameterList );
+	public OCommandRequest buildQuery(String entityName, String statement, List<CParameter> parameterList) {
+		modifyParameterList(statement, parameterList);
+		checkParameterList(parameterList);
 
 		List<Clause> clauseList = new ArrayList<Clause>();
-		for (CParameter p : parameterList){
+		for (CParameter p : parameterList) {
 			Clause c = null;
-			if( p.value == null){
+			if (p.value == null) {
 				c = projection(p.name).isNull();
-			} else if( p.value instanceof Date){
+			} else if (p.value instanceof Date) {
 				c = clause(p.name, p.op, parameter(p.name));
-			}else{
+			} else {
 				c = clause(p.name, p.op, p.value);
 			}
-			clauseList.add( c );
+			clauseList.add(c);
 		}
-		Clause w = and( clauseList.toArray(new Clause[clauseList.size()])  );
+		Clause w = and(clauseList.toArray(new Clause[clauseList.size()]));
 		Query q = new Query().from(entityName).where(w);
 
-		postProcessQuery( q, statement, parameterList );
+		postProcessQuery(q, statement, parameterList);
 
-		OCommandRequest query = new OSQLSynchQuery( q.toString() );
+		OCommandRequest query = new OSQLSynchQuery(q.toString());
 		OCommandContext qcontext = query.getContext();
 		boolean hasVar = false;
-		for (CParameter p : parameterList){
-			if( p.value instanceof Date){
+		for (CParameter p : parameterList) {
+			if (p.value instanceof Date) {
 				qcontext.setVariable(p.name, p.value);
 				hasVar = true;
 			}
 		}
 		LOG.info("  - query:" + q);
-		if( hasVar){
+		if (hasVar) {
 			LOG.info("  - query.params:" + qcontext);
 		}
 		return query;
 	}
 
-
 	private List<String> excludeList = new ArrayList<>(Arrays.asList("hashCode"));
+
 	private List<Map<String, Object>> buildMetadata(Class clazz) {
 		List<Map<String, Object>> fieldList = new ArrayList<Map<String, Object>>();
 		Method[] methods = clazz.getMethods();
@@ -195,12 +202,12 @@ public abstract class BaseEntityHandler {
 			Class returnType = m.getReturnType();
 			String name = m.getName();
 			String baseName = getBaseName(name);
-			String setter = getSetter( clazz, baseName);
+			String setter = getSetter(clazz, baseName);
 			String prefix = getGetterPrefix(name);
-			if( prefix != null && prefix.equals("get") && (returnType == boolean.class || returnType == Boolean.class)){
+			if (prefix != null && prefix.equals("get") && (returnType == boolean.class || returnType == Boolean.class)) {
 				continue;
 			}
-			if (setter!=null && !excludeList.contains(name) && !Modifier.isStatic(m.getModifiers()) && prefix != null && isPrimitiveOrPrimitiveWrapperOrString(returnType)) {
+			if (setter != null && !excludeList.contains(name) && !Modifier.isStatic(m.getModifiers()) && prefix != null && isPrimitiveOrPrimitiveWrapperOrString(returnType)) {
 				Map<String, Object> map = new HashMap<String, Object>();
 				map.put("type", returnType);
 				map.put("name", baseName);
@@ -208,35 +215,36 @@ public abstract class BaseEntityHandler {
 				map.put("getter", name);
 				map.put("setter", setter);
 				map.put("otype", OType.getTypeByClass(returnType));
-				if( !containsGetter(name,fieldList)){
-//					LOG.info("fieldList("+this.entityClass.getSimpleName()+").add:"+map);
+				if (!containsGetter(name, fieldList)) {
+					//					LOG.info("fieldList("+this.entityClass.getSimpleName()+").add:"+map);
 					fieldList.add(map);
 				}
 			}
 		}
 		return fieldList;
 	}
+
 	protected <Any> Any getValue(Object obj, String methodName) {
-		try{
-			Method method = obj.getClass().getMethod(methodName, (Class[])null);
+		try {
+			Method method = obj.getClass().getMethod(methodName, (Class[]) null);
 			return (Any) method.invoke(obj);
-		}catch( Exception e){
-			throw new RuntimeException("BaseEntityHandler.getValue:"+obj.getClass().getSimpleName()+"."+methodName);
+		} catch (Exception e) {
+			throw new RuntimeException("BaseEntityHandler.getValue:" + obj.getClass().getSimpleName() + "." + methodName);
 		}
 	}
 
 	protected boolean hasMethod(Class c, String methodName) {
-		try{
-			Method method = c.getMethod(methodName, (Class[])null);
+		try {
+			Method method = c.getMethod(methodName, (Class[]) null);
 			return method != null;
-		}catch( Exception e){
+		} catch (Exception e) {
 			return false;
 		}
 	}
 
 	private String getSetter(Class clazz, String baseName) {
 		Method[] methods = clazz.getMethods();
-		String setter = "set"+firstToUpper(baseName);
+		String setter = "set" + firstToUpper(baseName);
 		for (Method m : methods) {
 			Class returnType = m.getReturnType();
 			Class[] parameterTypes = m.getParameterTypes();
@@ -248,23 +256,24 @@ public abstract class BaseEntityHandler {
 		return null;
 	}
 
-	private String getBaseName( String methodName ){
-		if( methodName.startsWith("get")){
+	private String getBaseName(String methodName) {
+		if (methodName.startsWith("get")) {
 			return firstToLower(methodName.substring(3));
 		}
-		if( methodName.startsWith("has")){
+		if (methodName.startsWith("has")) {
 			return firstToLower(methodName.substring(3));
 		}
-		if( methodName.startsWith("is")){
+		if (methodName.startsWith("is")) {
 			return firstToLower(methodName.substring(2));
 		}
 		return firstToLower(methodName);
 	}
 
 	private String[] getterPrefixes = new String[] { "is", "has", "get" };
-	private String getGetterPrefix( String mName){
-		for( String pre : getterPrefixes){
-			if( mName.startsWith( pre)){
+
+	private String getGetterPrefix(String mName) {
+		for (String pre : getterPrefixes) {
+			if (mName.startsWith(pre)) {
 				return pre;
 			}
 		}
@@ -293,27 +302,28 @@ public abstract class BaseEntityHandler {
 		}
 	}
 
-	protected void removeByGetter( String getter){
-		for (Iterator<Map<String,Object>> iter = this.entityMetadata.listIterator(); iter.hasNext(); ) {
-			Map<String,Object> m = iter.next();
-			if ( getter.equals(m.get("getter"))) {
+	protected void removeByGetter(String getter) {
+		for (Iterator<Map<String, Object>> iter = this.entityMetadata.listIterator(); iter.hasNext();) {
+			Map<String, Object> m = iter.next();
+			if (getter.equals(m.get("getter"))) {
 				iter.remove();
 			}
 		}
 	}
 
-	protected void setSetterByGetter( String getter, String setter){
-		for (Iterator<Map<String,Object>> iter = this.entityMetadata.listIterator(); iter.hasNext(); ) {
-			Map<String,Object> m = iter.next();
-			if ( getter.equals(m.get("getter"))) {
+	protected void setSetterByGetter(String getter, String setter) {
+		for (Iterator<Map<String, Object>> iter = this.entityMetadata.listIterator(); iter.hasNext();) {
+			Map<String, Object> m = iter.next();
+			if (getter.equals(m.get("getter"))) {
 				m.put("setter", setter);
 			}
 		}
 	}
-	protected boolean containsGetter( String getter, List<Map<String,Object>> list){
-		for (Iterator<Map<String,Object>> iter = list.listIterator(); iter.hasNext(); ) {
-			Map<String,Object> m = iter.next();
-			if ( getter.equals(m.get("getter"))) {
+
+	protected boolean containsGetter(String getter, List<Map<String, Object>> list) {
+		for (Iterator<Map<String, Object>> iter = list.listIterator(); iter.hasNext();) {
+			Map<String, Object> m = iter.next();
+			if (getter.equals(m.get("getter"))) {
 				return true;
 			}
 		}
@@ -329,44 +339,45 @@ public abstract class BaseEntityHandler {
 		return (type.isPrimitive() && type != void.class) || type == Double.class || type == Float.class || type == Long.class || type == Integer.class || type == Short.class || type == Character.class || type == Byte.class || type == Boolean.class || type == String.class || type == java.util.Date.class || type == byte[].class;
 	}
 
-	protected String firstToLower( String s){
+	protected String firstToLower(String s) {
 		char c[] = s.toCharArray();
 		c[0] = Character.toLowerCase(c[0]);
 		return new String(c);
 	}
-	protected String firstToUpper( String s){
+
+	protected String firstToUpper(String s) {
 		char c[] = s.toCharArray();
 		c[0] = Character.toUpperCase(c[0]);
 		return new String(c);
 	}
 
-/*	private String[] prefixes = new String[] { "management", "task", "filter", "identity", "history", "runtime", "repository" };
-	private String[] ops = new String[] { "In", "Like", "LessThanOrEqual", "LessThan", "GreaterThanOrEqual", "GreaterThan", "Equal", "NotEqual" };
+	/*	private String[] prefixes = new String[] { "management", "task", "filter", "identity", "history", "runtime", "repository" };
+	 private String[] ops = new String[] { "In", "Like", "LessThanOrEqual", "LessThan", "GreaterThanOrEqual", "GreaterThan", "Equal", "NotEqual" };
 
-	private boolean hasQuery(String name) {
-		for (String prefix : prefixes) {
-			try {
-				Class clazz = Class.forName("org.camunda.bpm.engine." + prefix + "." + name + "Query");
-				Method[] meths = clazz.getDeclaredMethods();
-				for (Method m : meths) {
-					//				System.err.println("\tyyy.method("+name+"):"+m.getName());
-				}
-				return true;
-			} catch (Exception e) {
-				//System.err.println("yyy.Exception("+name+"):"+e.getMessage());
-			}
-		}
-		return false;
-	}
+	 private boolean hasQuery(String name) {
+	 for (String prefix : prefixes) {
+	 try {
+	 Class clazz = Class.forName("org.camunda.bpm.engine." + prefix + "." + name + "Query");
+	 Method[] meths = clazz.getDeclaredMethods();
+	 for (Method m : meths) {
+	 //				System.err.println("\tyyy.method("+name+"):"+m.getName());
+	 }
+	 return true;
+	 } catch (Exception e) {
+	 //System.err.println("yyy.Exception("+name+"):"+e.getMessage());
+	 }
+	 }
+	 return false;
+	 }
 
 
-	protected Map getMetaData(Class clazz) {
-		String name = clazz.getSimpleName();
-		String ename = name.substring(0, name.length() - 6);
-		List fields = getSimpleFields(clazz);
-		//		boolean b = hasQuery( ename);
-		return null;
-	}*/
+	 protected Map getMetaData(Class clazz) {
+	 String name = clazz.getSimpleName();
+	 String ename = name.substring(0, name.length() - 6);
+	 List fields = getSimpleFields(clazz);
+	 //		boolean b = hasQuery( ename);
+	 return null;
+	 }*/
 
 	private List<Map<String, Object>> getSimpleFields(Class clazz) {
 		List<Map<String, Object>> fieldList = new ArrayList<Map<String, Object>>();
