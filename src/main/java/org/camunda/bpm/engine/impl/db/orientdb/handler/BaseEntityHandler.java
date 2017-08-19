@@ -13,41 +13,44 @@
 
 package org.camunda.bpm.engine.impl.db.orientdb.handler;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.lang.reflect.*;
-import java.util.Date;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
-import com.tinkerpop.blueprints.impls.orient.OrientGraph;
-import com.orientechnologies.orient.core.metadata.schema.OType;
-import com.orientechnologies.orient.core.metadata.schema.OSchemaProxy;
-import com.orientechnologies.orient.core.metadata.schema.OClass;
-import com.orientechnologies.orient.core.command.OCommandRequest;
-import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
-import com.orientechnologies.orient.core.sql.OCommandSQL;
 import com.github.raymanrt.orientqb.query.Clause;
 import com.github.raymanrt.orientqb.query.Projection;
 import com.github.raymanrt.orientqb.query.Query;
+import com.orientechnologies.orient.core.command.OCommandContext;
+import com.orientechnologies.orient.core.command.OCommandRequest;
+import com.orientechnologies.orient.core.metadata.schema.OClass;
+import com.orientechnologies.orient.core.metadata.schema.OSchemaProxy;
+import com.orientechnologies.orient.core.metadata.schema.OType;
+import com.orientechnologies.orient.core.sql.OCommandSQL;
+import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
+import com.tinkerpop.blueprints.impls.orient.OrientGraph;
+import java.lang.reflect.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.Map;
+import org.camunda.bpm.engine.impl.db.orientdb.CParameter;
 import static com.github.raymanrt.orientqb.query.Clause.and;
 import static com.github.raymanrt.orientqb.query.Clause.clause;
 import static com.github.raymanrt.orientqb.query.Clause.not;
 import static com.github.raymanrt.orientqb.query.Clause.or;
 import static com.github.raymanrt.orientqb.query.Operator.EQ;
+import static com.github.raymanrt.orientqb.query.Operator.GT;
+import static com.github.raymanrt.orientqb.query.Operator.LIKE;
+import static com.github.raymanrt.orientqb.query.Operator.LT;
 import static com.github.raymanrt.orientqb.query.Operator.NULL;
 import static com.github.raymanrt.orientqb.query.Parameter.parameter;
 import static com.github.raymanrt.orientqb.query.Projection.ALL;
 import static com.github.raymanrt.orientqb.query.Projection.projection;
 import static com.github.raymanrt.orientqb.query.Variable.variable;
-import org.camunda.bpm.engine.impl.db.orientdb.CParameter;
 
 /**
  * @author Manfred Sattler
@@ -103,6 +106,37 @@ public abstract class BaseEntityHandler {
 		return null;
 	}
 
+	public List<CParameter> getParameterList(Object p) {
+		List<CParameter> parameterList = new ArrayList<CParameter>();
+		List<Map<String,Object>> md = getMetadata();
+		Class c = p.getClass();
+		for( Map<String,Object> m : md){
+			String getter = (String)m.get("getter");
+			boolean b = hasMethod( c, getter);
+			Object val = null;
+			if( b ){
+				val = getValue( p, getter);
+				LOG.info("getter("+getter+","+b+"):"+val);
+				parameterList.add( new CParameter( (String)m.get("name"), EQ, val));
+			}
+		}
+		for( Map<String,Object> m : md){
+			String getter = (String)m.get("getter");
+			if( m.get("type") == String.class){
+				boolean b = hasMethod( c, getter+"Like");
+				Object val = null;
+				if( b ){
+					val = getValue( p, getter);
+					parameterList.add( new CParameter( (String)m.get("name"), LIKE, val));
+					LOG.info("getter("+getter+"Like,"+b+"):"+val);
+				}
+			}
+		}
+
+		LOG.info("getParameterList:"+parameterList);
+		return parameterList;
+	}
+
 	public void checkParameterList(List<CParameter> parameterList) {
 		for (CParameter p : parameterList){
 			if( this.metaByFieldMap.get(p.name) == null){
@@ -111,9 +145,9 @@ public abstract class BaseEntityHandler {
 			LOG.info("checkParameterMap("+p.name+") ok!");
 		}
 	}
-	public List<CParameter> getParameterList(Object p) {
+	/*public List<CParameter> getParameterList(Object p) {
 		throw new RuntimeException("Parameter for "+p.getClass()+ " not handled");
-	}
+	}*/
 
 	public OCommandRequest buildQuery( String entityName, String statement, List<CParameter> parameterList){
 		modifyParameterList( statement, parameterList );
@@ -163,10 +197,10 @@ public abstract class BaseEntityHandler {
 			String baseName = getBaseName(name);
 			String setter = getSetter( clazz, baseName);
 			String prefix = getGetterPrefix(name);
+			if( prefix != null && prefix.equals("get") && (returnType == boolean.class || returnType == Boolean.class)){
+				continue;
+			}
 			if (setter!=null && !excludeList.contains(name) && !Modifier.isStatic(m.getModifiers()) && prefix != null && isPrimitiveOrPrimitiveWrapperOrString(returnType)) {
-				if( prefix.equals("get") && (returnType == boolean.class || returnType == Boolean.class)){
-					continue;
-				}
 				Map<String, Object> map = new HashMap<String, Object>();
 				map.put("type", returnType);
 				map.put("name", baseName);

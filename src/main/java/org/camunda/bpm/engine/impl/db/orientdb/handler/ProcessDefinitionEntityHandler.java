@@ -38,21 +38,4 @@ public class ProcessDefinitionEntityHandler extends BaseEntityHandler{
 			q.orderBy("version");
 		}
 	}
-	public List<CParameter> getParameterList(Object p) {
-		List<CParameter> parameterList = new ArrayList<CParameter>();
-		List<Map<String,Object>> md = getMetadata();
-		Class c = p.getClass();
-		for( Map<String,Object> m : md){
-			String getter = (String)m.get("getter");
-			boolean b = hasMethod( c, getter);
-			Object val = null;
-			if( b ){
-				val = getValue( p, getter);
-			}
-			log.info("getter("+getter+","+b+"):"+val);
-		}
-
-		log.info("ProcessDefinitionEntityHandler.getParameterList:"+parameterList);
-		return parameterList;
-	}
 }
