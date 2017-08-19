@@ -16,6 +16,7 @@ package org.camunda.bpm.engine.impl.db.orientdb.handler;
 import com.github.raymanrt.orientqb.query.Clause;
 import com.github.raymanrt.orientqb.query.Projection;
 import com.github.raymanrt.orientqb.query.Query;
+import com.github.raymanrt.orientqb.delete.Delete;
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.command.OCommandRequest;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
@@ -23,6 +24,7 @@ import com.orientechnologies.orient.core.metadata.schema.OSchemaProxy;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.sql.OCommandSQL;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
+import com.orientechnologies.orient.core.sql.OCommandSQL;
 import com.tinkerpop.blueprints.impls.orient.OrientGraph;
 import java.lang.reflect.*;
 import java.util.ArrayList;
@@ -206,6 +208,34 @@ public abstract class BaseEntityHandler {
 			LOG.info("  - query.params:" + qcontext);
 		}
 		return query;
+	}
+
+	public OCommandRequest buildDelete(String entityName, String statement, List<CParameter> parameterList) {
+		modifyCParameterList(statement, parameterList);
+		checkParameterList(parameterList);
+
+		List<Clause> clauseList = new ArrayList<Clause>();
+		for (CParameter p : parameterList) {
+			Clause c = null;
+			if (p.value == null) {
+				c = projection(p.name).isNull();
+			} else if (p.value instanceof Date) {
+				c = clause(p.name, p.op, parameter(p.name));
+			} else {
+				c = clause(p.name, p.op, p.value);
+			}
+			if (c != null) {
+				clauseList.add(c);
+			}
+		}
+		Clause w = and(clauseList.toArray(new Clause[clauseList.size()]));
+		Delete q = new Delete().from(entityName).where(w);
+		LOG.info("  - delete:" + q.toString());
+
+		//postProcessQuery(q, statement, parameterList);
+
+		OCommandRequest update = new OCommandSQL(q.toString());
+		return update;
 	}
 
 	private List<String> excludeList = new ArrayList<>(Arrays.asList("hashCode"));

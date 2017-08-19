@@ -190,9 +190,29 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 				return _getCParameterList(map);
 			}
 		} else {
-			Map<String, Object> map = (Map<String, Object>) parameter;
-			LOG.info("   - Map2:" + map);
-			return _getCParameterList(map);
+			if (parameter instanceof String) {
+				Object obj = parameter;
+				LOG.info("   - String:" + obj);
+				List<CParameter> parameterList = new ArrayList<CParameter>();
+				if (statement.endsWith("ByKey")) {
+					parameterList.add(new CParameter("key", EQ, obj));
+				}else if (statement.endsWith("ByProcDef")) {
+					parameterList.add(new CParameter("processDefId", EQ, obj));
+				}else if (statement.endsWith("ById")) {
+					parameterList.add(new CParameter("id", EQ, obj));
+				}else if (statement.endsWith("ByDeploymentId")) {
+					parameterList.add(new CParameter("deploymentId", EQ, obj));
+				}else if (statement.endsWith("ByProcessDefinitionId")) {
+					parameterList.add(new CParameter("processDefinitionId", EQ, obj));
+				}else if (statement.endsWith("deleteDeployment")) {
+					parameterList.add(new CParameter("id", EQ, obj));
+				}
+				return parameterList;
+			}else{
+				Map<String, Object> map = (Map<String, Object>) parameter;
+				LOG.info("   - Map2:" + map);
+				return _getCParameterList(map);
+			}
 		}
 	}
 
@@ -372,7 +392,15 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		String entityName = entityClass.getSimpleName();
 		BaseEntityHandler handler = OrientdbSessionFactory.getEntityHandler(entityClass);
 		LOG.info("deleteBulk(" + statement + "," + entityName + ").parameter:" + parameter);
+		List<CParameter> parameterList = getCParameterList(statement, parameter, handler);
+		LOG.info("  - CParameterList:" + parameterList);
 
+		if( parameterList.size()> 0){
+			OCommandRequest up = handler.buildDelete(entityName, statement, parameterList);
+			orientGraph.command(up).execute();
+		}else{
+			throw new RuntimeException("OrientdbPersistenceSession.deleteBulk(" + statement + ","+entityName+"):no parameter");
+		}
 	}
 
 	protected void updateBulk(DbBulkOperation operation) {
