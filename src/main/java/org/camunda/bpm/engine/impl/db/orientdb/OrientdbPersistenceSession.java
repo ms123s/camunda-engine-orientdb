@@ -94,7 +94,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			LOG.info("<-selectOne(" + entityName + ").return:null");
 			if (statement.indexOf("Count") > 0) {
 				return new Long(0);
-			}else{
+			} else {
 				return null;
 			}
 		}
