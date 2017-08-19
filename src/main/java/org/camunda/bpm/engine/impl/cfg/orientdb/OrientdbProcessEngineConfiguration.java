@@ -60,7 +60,7 @@ public class OrientdbProcessEngineConfiguration extends ProcessEngineConfigurati
 
 		graphFactory = f;
 		// explicitly disable unsupported features
-		setHistory(HISTORY_NONE);
+		setHistory(HISTORY_FULL);
 
 		setCmmnEnabled(false);
 		setDmnEnabled(false);

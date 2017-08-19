@@ -68,9 +68,13 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		this.isOpen = true;
 		sessionId = new java.util.Date().getTime();
 		LOG.info("openSession:" + sessionId);
+		if( true){
+			new Exception("openSession").printStackTrace();
+		}
 	}
 
 	public Object selectOne(String statement, Object parameter) {
+			LOG.info("selectOne:" + statement);
 		String prefix = getPrefix(statement);
 		String suffix = getSuffix(statement);
 		String entityName = getEntityName(statement, prefix, suffix);
@@ -120,6 +124,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	}
 
 	public List<?> selectList(String statement, Object parameter) {
+			LOG.info("selectList:" + statement);
 		String prefix = getPrefix(statement);
 		String suffix = getSuffix(statement);
 		String entityName = getEntityName(statement, prefix, suffix);
@@ -459,6 +464,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	}
 
 	public void lock(String statement) {
+			LOG.info("lock:" + statement);
 	}
 
 	public void commit() {
@@ -488,10 +494,12 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	}
 
 	public int executeUpdate(String s, Object o) {
+			LOG.info("executeUpdate:" + s+"/"+o);
 		return 0;
 	}
 
 	public int executeNonEmptyUpdateStmt(String s, Object o) {
+			LOG.info("executeNonEmptyUpdateStmt:" + s+"/"+o);
 		return 0;
 	}
 
