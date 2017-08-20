@@ -313,6 +313,8 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			name = "Execution";
 		}else if (statement.startsWith("selectHistoricDetail")) {
 			name = "HistoricDetailEvent";
+		}else if (statement.startsWith("selectVariablesBy")) {
+			name = "VariableInstance";
 		} else if (!name.endsWith("Statistics") && name.endsWith("s")) {
 			name = name.substring(0, name.length() - 1);
 		}

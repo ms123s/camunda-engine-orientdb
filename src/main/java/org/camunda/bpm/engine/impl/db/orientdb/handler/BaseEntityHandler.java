@@ -108,9 +108,15 @@ public abstract class BaseEntityHandler {
 
 	public List<CParameter> getCParameterList(String statement, Object p) {
 		if (p instanceof String) {
-			if( statement.endsWith("ByProcessDefinitionId")){
+			int index = statement.indexOf("By");
+			String byString=null;
+			if( index > 0){
+				byString = statement.substring(index+2);
+				byString = firstToLower( byString);
+			}
+			if( byString != null){
 				List<CParameter> parameterList = new ArrayList<CParameter>();
-				parameterList.add( new CParameter( "processDefinitionId", EQ, p));
+				parameterList.add( new CParameter( byString, EQ, p));
 				return parameterList;
 			}
 			throw new RuntimeException("getCParameterList(" + statement + "," + this.entityClass.getSimpleName() + ",String) cannot be handled here:" + p);
