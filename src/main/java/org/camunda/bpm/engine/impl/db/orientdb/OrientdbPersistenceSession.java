@@ -59,7 +59,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	private boolean isOpen = false;
 	long sessionId;
 	private List<String> prefixList = new ArrayList<>(Arrays.asList("selectLatest", "select"));
-	private List<String> suffixList = new ArrayList<>(Arrays.asList("CountBy", "By"));
+	private List<String> suffixList = new ArrayList<>(Arrays.asList("CountBy", "IdsBy", "By"));
 
 	protected OrientGraph orientGraph;
 
@@ -372,35 +372,21 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 
 	protected void updateEntity(DbEntityOperation operation) {
 		LOG.info("updateEntity:" + operation.getEntity());
-		/*		BaseMap<String, AbstractPortableEntity<?>> map = getTransactionalMap(operation);
-		 DbEntity updatedEntity = operation.getEntity();
-
-		 AbstractPortableEntity<?> portable = PortableSerialization.createPortableInstance(updatedEntity);
-
-		 if (updatedEntity instanceof HasDbRevision) {
-		 HasDbRevision updatedRevision = (HasDbRevision) updatedEntity;
-		 int oldRevision = updatedRevision.getRevision();
-		 updatedRevision.setRevision(updatedRevision.getRevisionNext());
-		 AbstractPortableEntity<?> dbPortable = map.put(updatedEntity.getId(), portable);
-		 ensureNotNull(OptimisticLockingException.class, "dbRevision", dbPortable);
-		 HasDbRevision dbRevision = (HasDbRevision) dbPortable.getEntity();
-		 if (dbRevision.getRevision() != oldRevision) {
-		 throw new OptimisticLockingException(updatedEntity + " was updated by another transaction concurrently");
-		 }
-		 }
-		 else {
-		 map.put(updatedEntity.getId(), portable);
-		 }*/
 	}
 
 	protected void deleteBulk(DbBulkOperation operation) {
 		String statement = operation.getStatement();
 		Object parameter = operation.getParameter();
 
+		if( statement.equals("deleteExceptionByteArraysByIds")){
+			LOG.info("deleteBulk(" + statement + ") not handled!");
+			return;
+		}
+
 		Class entityClass = operation.getEntityType();
 		String entityName = entityClass.getSimpleName();
 		BaseEntityHandler handler = OrientdbSessionFactory.getEntityHandler(entityClass);
-		LOG.info("deleteBulk(" + statement + "," + entityName + ").parameter:" + parameter);
+		LOG.info("-> deleteBulk(" + statement + "," + entityName + ").parameter:" + parameter);
 		List<CParameter> parameterList = getCParameterList(statement, parameter, handler);
 		LOG.info("  - CParameterList:" + parameterList);
 
@@ -410,6 +396,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		} else {
 			throw new RuntimeException("OrientdbPersistenceSession.deleteBulk(" + statement + "," + entityName + "):no parameter");
 		}
+		LOG.info("<- deleteBulk ok");
 	}
 
 	protected void updateBulk(DbBulkOperation operation) {

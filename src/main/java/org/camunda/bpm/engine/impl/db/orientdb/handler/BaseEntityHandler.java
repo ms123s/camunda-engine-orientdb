@@ -108,6 +108,11 @@ public abstract class BaseEntityHandler {
 
 	public List<CParameter> getCParameterList(String statement, Object p) {
 		if (p instanceof String) {
+			if( statement.endsWith("ByProcessDefinitionId")){
+				List<CParameter> parameterList = new ArrayList<CParameter>();
+				parameterList.add( new CParameter( "processDefinitionId", EQ, p));
+				return parameterList;
+			}
 			throw new RuntimeException("getCParameterList(" + statement + "," + this.entityClass.getSimpleName() + ",String) cannot be handled here:" + p);
 		}
 		List<CParameter> parameterList = new ArrayList<CParameter>();
@@ -130,10 +135,10 @@ public abstract class BaseEntityHandler {
 			String name = (String) m.get("name");
 			if (m.get("type") == String.class) {
 				boolean b = hasMethod(c, getter + "Like");
-				Object val = null;
+				String val = null;
 				if (b) {
 					val = getValue(p, getter + "Like");
-					if (val != null) {
+					if (val != null && !val.startsWith("null:")) { //@@@MS HistoricProcessInstanceQueryImpl???
 						parameterList.add(new CParameter((String) m.get("name"), LIKE, val));
 						LOG.info("getter(" + getter + "Like," + b + "):" + val);
 					}
@@ -157,7 +162,7 @@ public abstract class BaseEntityHandler {
 			if (this.metaByFieldMap.get(p.name) == null && !p.name.equals("_isLatest")) {
 				throw new RuntimeException("BaseEntityHandler.checkParameterList(" + this.entityClass.getSimpleName() + "," + p.name + ") not found");
 			}
-			LOG.info("checked(" + entityClass.getSimpleName() + "." + p.name + ")");
+//			LOG.info("checked(" + entityClass.getSimpleName() + "." + p.name + ")");
 		}
 	}
 
@@ -230,14 +235,12 @@ public abstract class BaseEntityHandler {
 		}
 		Clause w = and(clauseList.toArray(new Clause[clauseList.size()]));
 		Delete q = new Delete().from(entityName).where(w);
-		LOG.info("  - delete:" + q.toString());
 
 		//postProcessQuery(q, statement, parameterList);
 
 		String d = q.toString().replace("DELETE ", "DELETE VERTEX ");
-		LOG.info("  - delete2:" + d);
+		LOG.info("  - delete:" + d);
 		OCommandRequest update = new OCommandSQL(d);
-		LOG.info("  - update:" + update);
 		return update;
 	}
 
