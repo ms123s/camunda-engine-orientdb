@@ -184,7 +184,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			LOG.info("   - ListQueryParameterObject");
 			if (((ListQueryParameterObject) parameter).getParameter() instanceof String) {
 				Object obj = ((ListQueryParameterObject) parameter).getParameter();
-				LOG.info("   - String:" + obj);
+				LOG.info("   - String1:" + obj);
 				if (statement.endsWith("ByKey")) {
 					List<CParameter> parameterList = new ArrayList<CParameter>();
 					CParameter p = new CParameter("key", EQ, obj);
@@ -196,12 +196,12 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			} else {
 				Map<String, Object> map = (Map<String, Object>) ((ListQueryParameterObject) parameter).getParameter();
 				LOG.info("   - Map1:" + map);
-				return _getCParameterList(map);
+				return getCParameterListFromMap(map);
 			}
 		} else {
 			if (parameter instanceof String) {
 				Object obj = parameter;
-				LOG.info("   - String:" + obj);
+				LOG.info("   - String2:" + obj);
 				List<CParameter> parameterList = new ArrayList<CParameter>();
 				if (statement.endsWith("ByKey")) {
 					parameterList.add(new CParameter("key", EQ, obj));
@@ -220,12 +220,12 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			} else {
 				Map<String, Object> map = (Map<String, Object>) parameter;
 				LOG.info("   - Map2:" + map);
-				return _getCParameterList(map);
+				return getCParameterListFromMap(map);
 			}
 		}
 	}
 
-	private List<CParameter> _getCParameterList(Map<String, Object> map) {
+	private List<CParameter> getCParameterListFromMap(Map<String, Object> map) {
 		List<CParameter> parameterList = new ArrayList<CParameter>();
 		Set<String> keySet = map.keySet();
 		Iterator<String> iterator = map.keySet().iterator();
@@ -327,7 +327,6 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		Class entityClass = entity.getClass();
 		String entityName = entityClass.getSimpleName();
 		BaseEntityHandler handler = OrientdbSessionFactory.getEntityHandler(entityClass);
-		//LOG.info("insertEntity.handler:" + handler.getMetadata());
 
 		if (entity instanceof HasDbRevision) {
 			((HasDbRevision) entity).setRevision(1);
@@ -352,22 +351,6 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 
 	protected void deleteEntity(DbEntityOperation operation) {
 		LOG.info("deleteEntity:" + operation.getEntity());
-		/*		BaseMap<String, AbstractPortableEntity<?>> map = getTransactionalMap(operation);
-
-		 DbEntity removedEntity = operation.getEntity();
-
-		 if (removedEntity instanceof HasDbRevision) {
-		 HasDbRevision removedRevision = (HasDbRevision) removedEntity;
-		 AbstractPortableEntity<?> dbPortable = map.remove(removedEntity.getId());
-		 ensureNotNull(OptimisticLockingException.class, "dbRevision", dbPortable);
-		 HasDbRevision dbRevision = (HasDbRevision) dbPortable.getEntity();
-		 if (dbRevision.getRevision() != removedRevision.getRevision()) {
-		 throw new OptimisticLockingException(removedEntity +  " was updated by another transaction concurrently");
-		 }
-		 }
-		 else {
-		 map.remove(removedEntity.getId());
-		 }*/
 	}
 
 	protected void updateEntity(DbEntityOperation operation) {
