@@ -47,6 +47,7 @@ public class OrientdbSessionFactory implements SessionFactory {
 	private OrientGraphFactory graphFactory;
 	private static Map<Class, BaseEntityHandler> entityHandlerMap;
 	private static Map<String, Class> entityClassMap;
+	private static Map<Class, Class> entityReplaceMap;
 
 	public OrientdbSessionFactory(OrientGraphFactory f) {
 		this.graphFactory = f;
@@ -67,8 +68,14 @@ public class OrientdbSessionFactory implements SessionFactory {
 		for( Class c : entityHandlerMap.keySet()){
 			entityClassMap.put( c.getSimpleName(), c );
 		}
+		initEntityReplace();
 	}
 
+	private void initEntityReplace() {
+		entityReplaceMap = new HashMap<Class, Class>();
+		entityReplaceMap.put(HistoricProcessInstanceEventEntity.class, HistoricProcessInstanceEntity.class);
+		entityReplaceMap.put(HistoricActivityInstanceEventEntity.class, HistoricActivityInstanceEntity.class);
+	}
 	private void initHandler() {
 		OrientGraph orientGraph = this.graphFactory.getTx();
 		entityHandlerMap = new HashMap<Class, BaseEntityHandler>();
@@ -150,6 +157,10 @@ public class OrientdbSessionFactory implements SessionFactory {
 
 	public static Class getEntityClass(String  entityName) {
 		return entityClassMap.get(entityName);
+	}
+	public static Class getReplaceClass(Class  entity) {
+		Class ret = entityReplaceMap.get(entity);
+		return ret == null ? entity : ret;
 	}
 
 	public Class<?> getSessionType() {

@@ -68,9 +68,6 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		this.isOpen = true;
 		sessionId = new java.util.Date().getTime();
 		LOG.info("openSession:" + sessionId);
-		if( true){
-			new Exception("openSession").printStackTrace();
-		}
 	}
 
 	public Object selectOne(String statement, Object parameter) {
@@ -312,8 +309,10 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		int start = prefix.length();
 		int end = statement.indexOf(suffix);
 		String name = statement.substring(start, end);
-		if (statement.equals("selectProcessInstanceIdsByProcessDefinitionId")) {
+		if (statement.startsWith("selectProcessInstance")) {
 			name = "Execution";
+		}else if (statement.startsWith("selectHistoricDetail")) {
+			name = "HistoricDetailEvent";
 		} else if (!name.endsWith("Statistics") && name.endsWith("s")) {
 			name = name.substring(0, name.length() - 1);
 		}
@@ -324,7 +323,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		LOG.info("insertEntity:" + operation.getEntity().getClass().getSimpleName());
 
 		DbEntity entity = operation.getEntity();
-		Class entityClass = entity.getClass();
+		Class entityClass = OrientdbSessionFactory.getReplaceClass(entity.getClass());
 		String entityName = entityClass.getSimpleName();
 		BaseEntityHandler handler = OrientdbSessionFactory.getEntityHandler(entityClass);
 
