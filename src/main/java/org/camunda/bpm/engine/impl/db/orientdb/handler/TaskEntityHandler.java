@@ -14,4 +14,17 @@ public class TaskEntityHandler extends BaseEntityHandler{
 	public TaskEntityHandler(OrientGraph g) {
 		super( g, TaskEntity.class);
 	}
+	@Override
+	public void modifyMetadata() {
+		setSetterByGetter( "getAssignee", "setAssigneeWithoutCascade");
+		setSetterByGetter( "getOwner", "setOwnerWithoutCascade");
+		setSetterByGetter( "getDueDate", "setDueDateWithoutCascade");
+		setSetterByGetter( "getPriority", "setPriorityWithoutCascade");
+		setSetterByGetter( "getParentTaskId", "setParentTaskIdWithoutCascade");
+		setSetterByGetter( "getName", "setNameWithoutCascade");
+		setSetterByGetter( "getDescription", "setDescriptionWithoutCascade");
+		setSetterByGetter( "getTaskDefinitionKey", "setTaskDefinitionKeyWithoutCascade");
+		setSetterByGetter( "getDelegationState", "setDelegationStateWithoutCascade");
+		setSetterByGetter( "getCaseInstanceId", "setCaseInstanceIdWithoutCascade");
+	}
 }

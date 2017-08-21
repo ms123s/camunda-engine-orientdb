@@ -75,6 +75,11 @@ public class OrientdbSessionFactory implements SessionFactory {
 		entityReplaceMap = new HashMap<Class, Class>();
 		entityReplaceMap.put(HistoricProcessInstanceEventEntity.class, HistoricProcessInstanceEntity.class);
 		entityReplaceMap.put(HistoricActivityInstanceEventEntity.class, HistoricActivityInstanceEntity.class);
+		entityReplaceMap.put(HistoricTaskInstanceEventEntity.class, HistoricTaskInstanceEntity.class);
+		entityReplaceMap.put(HistoricFormPropertyEventEntityHandler.class, HistoricFormPropertyEntityHandler.class);
+		entityReplaceMap.put(HistoricIdentityLinkLogEventEntityHandler.class, HistoricIdentityLinkLogEntityHandler.class);
+		entityReplaceMap.put(HistoricIncidentEventEntityHandler.class, HistoricIncidentEntityHandler.class);
+		entityReplaceMap.put(HistoricJobLogEventEntityHandler.class, HistoricJobLogEventHandler.class);
 	}
 	private void initHandler() {
 		OrientGraph orientGraph = this.graphFactory.getTx();

@@ -117,6 +117,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			LOG.info("<-selectOne(" + entityName + ").return:" + entity);
 			return entity;
 		} catch (Exception e) {
+			LOG.info("OrientdbPersistenceSession.selectOne:"+ e.getMessage());
 			LOG.throwing("OrientdbPersistenceSession", "selectOne", e);
 			e.printStackTrace();
 		}
@@ -156,7 +157,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 				for (Map<String, Object> props : propsList) {
 					idList.add((String) props.get("id"));
 				}
-				LOG.info("<-selectList(" + entityName + ").return:" + idList);
+				LOG.info("<-selectList2(" + entityName + ").return:" + idList);
 				return idList;
 			} else {
 				List<Object> entityList = new ArrayList<Object>();
@@ -165,14 +166,15 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 					setEntityValues(entityClass, entity, props);
 					entityList.add(entity);
 				}
-				LOG.info("<-selectList(" + entityName + ").return:" + entityList);
+				LOG.info("<-selectList3(" + entityName + ").return:" + entityList);
 				return entityList;
 			}
 		} catch (Exception e) {
-			LOG.throwing("OrientdbPersistenceSession", "selectOne", e);
+			LOG.info("OrientdbPersistenceSession.selectList:"+ e.getMessage());
+			LOG.throwing("OrientdbPersistenceSession", "selectList", e);
 			e.printStackTrace();
 		}
-		LOG.info("<-selectList(" + entityName + ").return:null");
+		LOG.info("<-selectList4(" + entityName + ").return:null");
 		return new ArrayList();
 	}
 
@@ -265,6 +267,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			LOG.info("<-selectById(" + entityName + ").return:" + entity);
 			return entity;
 		} catch (Exception e) {
+			LOG.info("OrientdbPersistenceSession.selectById:"+ e.getMessage());
 			LOG.throwing("OrientdbPersistenceSession", "selectById", e);
 			e.printStackTrace();
 		}
@@ -284,11 +287,11 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			if (m.get("namedId") != null) {
 				continue;
 			}
-			//LOG.info("  - Prop(" + name + "):" + value);
 			String setter = (String) m.get("setter");
 			if (setter == null) {
 				continue;
 			}
+			LOG.info("  - Prop(" + name + "):" + value);
 			Class type = (Class) m.get("type");
 			Class[] args = new Class[1];
 			args[0] = type;
@@ -365,6 +368,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			}
 			LOG.info("<- insertEntity(" + entityName + "):ok");
 		} catch (Exception e) {
+			LOG.info("OrientdbPersistenceSession.insertEntity:"+ e.getMessage());
 			LOG.throwing("OrientdbPersistenceSession", "insertEntity", e);
 			e.printStackTrace();
 		}
@@ -455,6 +459,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			}
 			return;
 		} catch (Exception e) {
+			LOG.info("OrientdbPersistenceSession.updateById:"+ e.getMessage());
 			LOG.throwing("OrientdbPersistenceSession", "updateById", e);
 			e.printStackTrace();
 		}
