@@ -71,7 +71,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	}
 
 	public Object selectOne(String statement, Object parameter) {
-			LOG.info("selectOne:" + statement);
+		LOG.info("selectOne:" + statement);
 		String prefix = getPrefix(statement);
 		String suffix = getSuffix(statement);
 		String entityName = getEntityName(statement, prefix, suffix);
@@ -92,10 +92,11 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			break;
 		}
 		if (props == null) {
-			LOG.info("<-selectOne(" + entityName + ").return:null");
 			if (statement.indexOf("Count") > 0) {
+				LOG.info("<-selectOne(" + entityName + ").count:0");
 				return new Long(0);
 			} else {
+				LOG.info("<-selectOne(" + entityName + ").return:null");
 				return null;
 			}
 		}
@@ -116,12 +117,12 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			LOG.throwing("OrientdbPersistenceSession", "selectOne", e);
 			e.printStackTrace();
 		}
-		LOG.info("<-selectById(" + entityName + ").return:null");
+		LOG.info("<-selectOne(" + entityName + ").return:null");
 		return null;
 	}
 
 	public List<?> selectList(String statement, Object parameter) {
-			LOG.info("selectList:" + statement);
+		LOG.info("selectList:" + statement);
 		String prefix = getPrefix(statement);
 		String suffix = getSuffix(statement);
 		String entityName = getEntityName(statement, prefix, suffix);
@@ -137,7 +138,6 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		OCommandRequest query = entityHandler.buildQuery(entityName, statement, parameterList);
 
 		Iterable<Element> result = orientGraph.command(query).execute();
-		LOG.info("  - result:" + result);
 		List<Map<String, Object>> propsList = new ArrayList<Map<String, Object>>();
 		for (Element elem : result) {
 			Map<String, Object> props = ((OrientVertex) elem).getProperties();
@@ -210,6 +210,10 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 					parameterList.add(new CParameter("deploymentId", EQ, obj));
 				} else if (statement.endsWith("ByProcessDefinitionId")) {
 					parameterList.add(new CParameter("processDefinitionId", EQ, obj));
+				} else if (statement.endsWith("deleteHistoricProcessInstance")) { //@@@MS check
+					parameterList.add(new CParameter("processInstanceId", EQ, obj));
+				} else if (statement.endsWith("ByProcessInstanceId")) {
+					parameterList.add(new CParameter("processInstanceId", EQ, obj));
 				} else if (statement.endsWith("deleteDeployment")) {
 					parameterList.add(new CParameter("id", EQ, obj));
 				}
@@ -273,6 +277,9 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			if (value == null) {
 				continue;
 			}
+			if (m.get("namedId") != null) {
+				continue;
+			}
 			//LOG.info("  - Prop(" + name + "):" + value);
 			String setter = (String) m.get("setter");
 			if (setter == null) {
@@ -302,18 +309,21 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 				return suff;
 			}
 		}
-		throw new RuntimeException("OrientdbPersistenceSession.getSuffix(" + statement + "):not found");
+		return "";
+		//throw new RuntimeException("OrientdbPersistenceSession.getSuffix(" + statement + "):not found");
 	}
 
 	private String getEntityName(String statement, String prefix, String suffix) {
 		int start = prefix.length();
-		int end = statement.indexOf(suffix);
+		int end = suffix.equals("") ? statement.length() : statement.indexOf(suffix);
 		String name = statement.substring(start, end);
 		if (statement.startsWith("selectProcessInstance")) {
 			name = "Execution";
-		}else if (statement.startsWith("selectHistoricDetail")) {
+		} else if (statement.startsWith("selectHistoricVariables")) {
+			name = "HistoricVariableInstance";
+		} else if (statement.startsWith("selectHistoricDetail")) {
 			name = "HistoricDetailEvent";
-		}else if (statement.startsWith("selectVariablesBy")) {
+		} else if (statement.startsWith("selectVariablesBy")) {
 			name = "VariableInstance";
 		} else if (!name.endsWith("Statistics") && name.endsWith("s")) {
 			name = name.substring(0, name.length() - 1);
@@ -337,6 +347,9 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			Vertex v = this.orientGraph.addVertex("class:" + entityName);
 			List<Map<String, Object>> entityMeta = handler.getMetadata();
 			for (Map<String, Object> m : entityMeta) {
+				if (m.get("namedId") != null) {
+					continue;
+				}
 				String getter = (String) m.get("getter");
 				String name = (String) m.get("name");
 				Method method = entityClass.getMethod(getter);
@@ -362,7 +375,11 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		String statement = operation.getStatement();
 		Object parameter = operation.getParameter();
 
-		if( statement.equals("deleteExceptionByteArraysByIds")){
+		if (statement.equals("deleteExceptionByteArraysByIds")) {
+			LOG.info("deleteBulk(" + statement + ") not handled!");
+			return;
+		}
+		if (statement.equals("deleteErrorDetailsByteArraysByIds")) {
 			LOG.info("deleteBulk(" + statement + ") not handled!");
 			return;
 		}
@@ -435,7 +452,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	}
 
 	public void lock(String statement) {
-			LOG.info("lock:" + statement);
+		LOG.info("lock:" + statement);
 	}
 
 	public void commit() {
@@ -465,12 +482,12 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	}
 
 	public int executeUpdate(String s, Object o) {
-			LOG.info("executeUpdate:" + s+"/"+o);
+		LOG.info("executeUpdate:" + s + "/" + o);
 		return 0;
 	}
 
 	public int executeNonEmptyUpdateStmt(String s, Object o) {
-			LOG.info("executeNonEmptyUpdateStmt:" + s+"/"+o);
+		LOG.info("executeNonEmptyUpdateStmt:" + s + "/" + o);
 		return 0;
 	}
 

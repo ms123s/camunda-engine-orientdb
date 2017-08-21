@@ -26,9 +26,7 @@ public class ExecutionEntityHandler extends BaseEntityHandler{
 				parameterList.add( new CParameter( "processDefinitionId", EQ, p));
 				return parameterList;
 			}
-			throw new RuntimeException("ExecutionEntity.getCParameterList("+statement+",String) cannot be handled here:"+p);
-		}else{
-			return super.getCParameterList(statement,p);
 		}
+		return super.getCParameterList(statement,p);
 	}
 }

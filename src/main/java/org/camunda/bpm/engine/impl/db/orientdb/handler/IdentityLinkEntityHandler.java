@@ -19,6 +19,10 @@ public class IdentityLinkEntityHandler extends BaseEntityHandler{
 		super( g, IdentityLinkEntity.class);
 	}
 	@Override
+	public void modifyMetadata() {
+		addToMeta( "taskId", "getTaskId", "setTaskId", String.class);
+	}
+	@Override
 	public List<CParameter> getCParameterList(String statement, Object p) {
 		if( statement.equals("selectIdentityLinksByProcessDefinition")){
 			List<CParameter> parameterList = new ArrayList<CParameter>();
@@ -26,6 +30,6 @@ public class IdentityLinkEntityHandler extends BaseEntityHandler{
 			parameterList.add( cp);
 			return parameterList;
 		}
-		throw new RuntimeException("IdentityLinkEntity.getCParameterList(String) cannot be handled here:"+p);
+		return super.getCParameterList(statement,p);
 	}
 }

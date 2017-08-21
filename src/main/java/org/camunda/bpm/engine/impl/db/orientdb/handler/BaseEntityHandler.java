@@ -52,6 +52,8 @@ import static com.github.raymanrt.orientqb.query.Parameter.parameter;
 import static com.github.raymanrt.orientqb.query.Projection.ALL;
 import static com.github.raymanrt.orientqb.query.Projection.projection;
 import static com.github.raymanrt.orientqb.query.Variable.variable;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 /**
  * @author Manfred Sattler
@@ -108,19 +110,36 @@ public abstract class BaseEntityHandler {
 
 	public List<CParameter> getCParameterList(String statement, Object p) {
 		if (p instanceof String) {
+			LOG.info("getCParameterList.String: " + p);
 			int index = statement.indexOf("By");
-			String byString=null;
-			if( index > 0){
-				byString = statement.substring(index+2);
-				byString = firstToLower( byString);
+			String byString = null;
+			if (index > 0) {
+				byString = statement.substring(index + 2);
+				byString = firstToLower(byString);
 			}
-			if( byString != null){
-				List<CParameter> parameterList = new ArrayList<CParameter>();
-				parameterList.add( new CParameter( byString, EQ, p));
-				return parameterList;
+			LOG.info("byString1: " + byString);
+			if (byString != null) {
+				LOG.info("byString2: " + byString);
+				if (this.metaByFieldMap.get(byString) == null) {
+					byString = byString + "Id";
+					LOG.info("byString3: " + byString);
+					if (this.metaByFieldMap.get(byString) == null) {
+						byString = null;
+					}
+					LOG.info("byString4: " + byString);
+				}
+				if (byString != null) {
+					List<CParameter> parameterList = new ArrayList<CParameter>();
+					parameterList.add(new CParameter(byString, EQ, p));
+					return parameterList;
+				}
 			}
 			throw new RuntimeException("getCParameterList(" + statement + "," + this.entityClass.getSimpleName() + ",String) cannot be handled here:" + p);
 		}
+		ReflectionToStringBuilder rb = new ReflectionToStringBuilder(p, ToStringStyle.JSON_STYLE);
+		rb.setExcludeNullValues(true);
+		LOG.info("getCParameterList.Object: " + rb.toString());
+
 		List<CParameter> parameterList = new ArrayList<CParameter>();
 		List<Map<String, Object>> md = getMetadata();
 		Class c = p.getClass();
@@ -133,6 +152,8 @@ public abstract class BaseEntityHandler {
 				if (val != null) {
 					LOG.info("getter(" + getter + "," + b + "):" + val);
 					parameterList.add(new CParameter((String) m.get("name"), EQ, val));
+				} else {
+					LOG.info("getter(" + getter + "," + b + "):null");
 				}
 			}
 		}
@@ -147,6 +168,8 @@ public abstract class BaseEntityHandler {
 					if (val != null && !val.startsWith("null:")) { //@@@MS HistoricProcessInstanceQueryImpl???
 						parameterList.add(new CParameter((String) m.get("name"), LIKE, val));
 						LOG.info("getter(" + getter + "Like," + b + "):" + val);
+					} else {
+						LOG.info("getter(" + getter + "," + b + ")Like:null");
 					}
 				}
 			}
@@ -168,7 +191,7 @@ public abstract class BaseEntityHandler {
 			if (this.metaByFieldMap.get(p.name) == null && !p.name.equals("_isLatest")) {
 				throw new RuntimeException("BaseEntityHandler.checkParameterList(" + this.entityClass.getSimpleName() + "," + p.name + ") not found");
 			}
-//			LOG.info("checked(" + entityClass.getSimpleName() + "." + p.name + ")");
+			//			LOG.info("checked(" + entityClass.getSimpleName() + "." + p.name + ")");
 		}
 	}
 
@@ -255,6 +278,9 @@ public abstract class BaseEntityHandler {
 	private List<Map<String, Object>> buildMetadata(Class clazz) {
 		List<Map<String, Object>> fieldList = new ArrayList<Map<String, Object>>();
 		Method[] methods = clazz.getMethods();
+		boolean hasId = false;
+		boolean hasNamedId = false;
+		String idName = getIdNameFromClassName(clazz);
 		for (Method m : methods) {
 			Class returnType = m.getReturnType();
 			String name = m.getName();
@@ -274,9 +300,27 @@ public abstract class BaseEntityHandler {
 				map.put("otype", OType.getTypeByClass(returnType));
 				if (!containsGetter(name, fieldList)) {
 					//					LOG.info("fieldList("+this.entityClass.getSimpleName()+").add:"+map);
+					if ("id".equals(baseName.toLowerCase())) {
+						hasId = true;
+					}
+					if (idName.equals(baseName.toLowerCase())) {
+						hasNamedId = true;
+					}
 					fieldList.add(map);
 				}
 			}
+		}
+		if (hasId && !hasNamedId) {
+			Map<String, Object> map = new HashMap<String, Object>();
+			map.put("type", String.class);
+			map.put("name", "id");
+			map.put("namedId", true);
+			map.put("prefix", "get");
+			map.put("getter", "get" + firstToUpper(idName));
+			map.put("setter", "set" + firstToUpper(idName));
+			map.put("otype", OType.getTypeByClass(String.class));
+			//LOG.info("Adding namedId to "+clazz.getSimpleName()+":"+map);
+			fieldList.add(map);
 		}
 		return fieldList;
 	}
@@ -347,6 +391,9 @@ public abstract class BaseEntityHandler {
 			executeUpdate(this.orientGraph, "CREATE CLASS " + entityName + " EXTENDS V, ORestricted");
 			for (Map<String, Object> f : this.entityMetadata) {
 				String pname = (String) f.get("name");
+				if (f.get("namedId") != null) {
+					continue;
+				}
 				String ptype = (String) ((OType) f.get("otype")).toString();
 				String sql = "CREATE PROPERTY " + entityName + "." + pname + " " + ptype;
 				LOG.info("executeUpdate:" + sql);
@@ -385,6 +432,18 @@ public abstract class BaseEntityHandler {
 			}
 		}
 		return false;
+	}
+
+	protected void addToMeta(String name, String getter, String setter, Class type) {
+		Map<String, Object> map = new HashMap<String, Object>();
+		map.put("type", type);
+		map.put("name", name);
+		map.put("prefix", getGetterPrefix(getter));
+		map.put("getter", getter);
+		map.put("setter", setter);
+		map.put("otype", OType.getTypeByClass(type));
+		LOG.info("addToMeta:" + map);
+		this.entityMetadata.add(map);
 	}
 
 	private void executeUpdate(OrientGraph graph, String sql, Object... args) {
@@ -449,6 +508,13 @@ public abstract class BaseEntityHandler {
 			}
 		}
 		return fieldList;
+	}
+
+	private String getIdNameFromClassName(Class c) {
+		String name = c.getSimpleName();
+		int len = name.length();
+		String base = c.getSimpleName().substring(0, len - "Entity".length());
+		return firstToLower(base) + "Id";
 	}
 }
 

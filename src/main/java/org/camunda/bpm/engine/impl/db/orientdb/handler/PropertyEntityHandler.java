@@ -14,6 +14,7 @@ public class PropertyEntityHandler extends BaseEntityHandler{
 	public PropertyEntityHandler(OrientGraph g) {
 		super( g, PropertyEntity.class);
 	}
+	@Override
 	public void modifyMetadata() {
 		setSetterByGetter( "getId", null);
 	}
