@@ -43,8 +43,11 @@ import com.tinkerpop.blueprints.impls.orient.OrientGraph;
 import com.tinkerpop.blueprints.Vertex;
 import com.orientechnologies.orient.core.command.OCommandRequest;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
+import com.orientechnologies.orient.core.sql.OCommandSQL;
 import com.tinkerpop.blueprints.Element;
 import com.tinkerpop.blueprints.impls.orient.OrientVertex;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 import static com.github.raymanrt.orientqb.query.Operator.EQ;
 import static com.github.raymanrt.orientqb.query.Operator.NULL;
@@ -364,11 +367,17 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	}
 
 	protected void deleteEntity(DbEntityOperation operation) {
-		LOG.info("deleteEntity:" + operation.getEntity());
+		Object entity = operation.getEntity();
+		String entityName = entity.getClass().getSimpleName();
+		String id = getValue(entity, "getId");
+		LOG.info("-> deleteEntity(" + entityName + "):" + id);
+		OCommandRequest del = new OCommandSQL("Delete vertex " + entityName + " where id=?");
+		orientGraph.command(del).execute(id);
+		LOG.info("<- deleteEntity(" + entityName + "):ok");
 	}
 
 	protected void updateEntity(DbEntityOperation operation) {
-		LOG.info("updateEntity:" + operation.getEntity());
+		LOG.info("-> updateEntity:" + operation.getEntity());
 	}
 
 	protected void deleteBulk(DbBulkOperation operation) {
@@ -403,6 +412,15 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	protected void updateBulk(DbBulkOperation operation) {
 		// TODO: implement
 
+	}
+
+	private <Any> Any getValue(Object obj, String methodName) {
+		try {
+			Method method = obj.getClass().getMethod(methodName, (Class[]) null);
+			return (Any) method.invoke(obj);
+		} catch (Exception e) {
+			throw new RuntimeException("OrientdbPersistenceSession.getValue:" + obj.getClass().getSimpleName() + "." + methodName);
+		}
 	}
 
 	protected String getDbVersion() {

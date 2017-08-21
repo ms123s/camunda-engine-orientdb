@@ -153,7 +153,7 @@ public abstract class BaseEntityHandler {
 					LOG.info("getter(" + getter + "," + b + "):" + val);
 					parameterList.add(new CParameter((String) m.get("name"), EQ, val));
 				} else {
-					LOG.info("getter(" + getter + "," + b + "):null");
+					//LOG.info("getter(" + getter + "," + b + "):null");
 				}
 			}
 		}
@@ -169,7 +169,7 @@ public abstract class BaseEntityHandler {
 						parameterList.add(new CParameter((String) m.get("name"), LIKE, val));
 						LOG.info("getter(" + getter + "Like," + b + "):" + val);
 					} else {
-						LOG.info("getter(" + getter + "," + b + ")Like:null");
+						//LOG.info("getter(" + getter + "," + b + ")Like:null");
 					}
 				}
 			}
