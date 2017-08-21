@@ -214,6 +214,8 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 					parameterList.add(new CParameter("processDefId", EQ, obj));
 				} else if (statement.endsWith("ById")) {
 					parameterList.add(new CParameter("id", EQ, obj));
+				} else if (statement.endsWith("ByTaskId")) {
+					parameterList.add(new CParameter("taskId", EQ, obj));
 				} else if (statement.endsWith("ByDeploymentId")) {
 					parameterList.add(new CParameter("deploymentId", EQ, obj));
 				} else if (statement.endsWith("ByProcessDefinitionId")) {
@@ -367,9 +369,9 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 				String name = (String) m.get("name");
 				Method method = entityClass.getMethod(getter);
 				Object value = method.invoke(entity);
-				//if( name.equals("id")){
-				LOG.info("- Field(" + name + "):" + value);
-				//}
+				if (value != null /*name.equals("id")*/) {
+					LOG.info("- Field(" + name + "):" + value);
+				}
 				v.setProperty(name, value);
 			}
 			LOG.info("<- insertEntity(" + entityName + "):ok");
@@ -437,7 +439,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 
 	private void updateById(Object entity, String id) {
 		Class entityClass = OrientdbSessionFactory.getReplaceClass(entity.getClass());
-		String entityName = entity.getClass().getSimpleName();
+		String entityName = entityClass.getSimpleName();
 		OCommandRequest query = new OSQLSynchQuery("select  from " + entityName + " where id=?");
 		Iterable<Element> result = orientGraph.command(query).execute(id);
 		Iterator<Element> it = result.iterator();
@@ -458,9 +460,9 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 				String name = (String) m.get("name");
 				Method method = entityClass.getMethod(getter);
 				Object value = method.invoke(entity);
-				//if( name.equals("id")){
-				LOG.info("- Field(" + name + "):" + value);
-				//}
+				if (value != null /*name.equals("id")*/) {
+					LOG.info("- Field(" + name + "):" + value);
+				}
 				e.setProperty(name, value);
 			}
 			return;
