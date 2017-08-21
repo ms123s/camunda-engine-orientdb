@@ -68,6 +68,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 
 	public OrientdbPersistenceSession(OrientGraph g, boolean openTransaction) {
 		this.orientGraph = g;
+		g.getRawGraph().activateOnCurrentThread();
 		this.isOpen = true;
 		sessionId = new java.util.Date().getTime();
 		LOG.info("openSession:" + sessionId);
@@ -114,10 +115,11 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			}
 			Object entity = entityClass.newInstance();
 			setEntityValues(entityClass, entity, props);
+			dump("selectOne(" + entityName + ")", entity);
 			LOG.info("<-selectOne(" + entityName + ").return:" + entity);
 			return entity;
 		} catch (Exception e) {
-			LOG.info("OrientdbPersistenceSession.selectOne:"+ e.getMessage());
+			LOG.info("OrientdbPersistenceSession.selectOne:" + e.getMessage());
 			LOG.throwing("OrientdbPersistenceSession", "selectOne", e);
 			e.printStackTrace();
 		}
@@ -164,13 +166,14 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 				for (Map<String, Object> props : propsList) {
 					Object entity = entityClass.newInstance();
 					setEntityValues(entityClass, entity, props);
+					dump("selectList(" + entityName + ")", entity);
 					entityList.add(entity);
 				}
 				LOG.info("<-selectList3(" + entityName + ").return:" + entityList);
 				return entityList;
 			}
 		} catch (Exception e) {
-			LOG.info("OrientdbPersistenceSession.selectList:"+ e.getMessage());
+			LOG.info("OrientdbPersistenceSession.selectList:" + e.getMessage());
 			LOG.throwing("OrientdbPersistenceSession", "selectList", e);
 			e.printStackTrace();
 		}
@@ -264,10 +267,11 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		try {
 			T entity = (T) entityClass.newInstance();
 			setEntityValues(entityClass, entity, props);
+			dump("selectById(" + entityName + "," + id + ")", entity);
 			LOG.info("<-selectById(" + entityName + ").return:" + entity);
 			return entity;
 		} catch (Exception e) {
-			LOG.info("OrientdbPersistenceSession.selectById:"+ e.getMessage());
+			LOG.info("OrientdbPersistenceSession.selectById:" + e.getMessage());
 			LOG.throwing("OrientdbPersistenceSession", "selectById", e);
 			e.printStackTrace();
 		}
@@ -291,7 +295,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			if (setter == null) {
 				continue;
 			}
-			LOG.info("  - Prop(" + name + "):" + value);
+			//LOG.info("  - Prop(" + name + "):" + value);
 			Class type = (Class) m.get("type");
 			Class[] args = new Class[1];
 			args[0] = type;
@@ -330,6 +334,8 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			name = "HistoricVariableInstance";
 		} else if (statement.startsWith("selectHistoricDetail")) {
 			name = "HistoricDetailEvent";
+		} else if (statement.startsWith("selectNextJobsToExecute")) {
+			name = "Job";
 		} else if (statement.startsWith("selectVariablesBy")) {
 			name = "VariableInstance";
 		} else if (!name.endsWith("Statistics") && name.endsWith("s")) {
@@ -361,14 +367,14 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 				String name = (String) m.get("name");
 				Method method = entityClass.getMethod(getter);
 				Object value = method.invoke(entity);
-				if( name.equals("id")){
-					LOG.info("- IdField(" + name + "):" + value);
-				}
+				//if( name.equals("id")){
+				LOG.info("- Field(" + name + "):" + value);
+				//}
 				v.setProperty(name, value);
 			}
 			LOG.info("<- insertEntity(" + entityName + "):ok");
 		} catch (Exception e) {
-			LOG.info("OrientdbPersistenceSession.insertEntity:"+ e.getMessage());
+			LOG.info("OrientdbPersistenceSession.insertEntity:" + e.getMessage());
 			LOG.throwing("OrientdbPersistenceSession", "insertEntity", e);
 			e.printStackTrace();
 		}
@@ -384,7 +390,6 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		orientGraph.command(del).execute(id);
 		LOG.info("<- deleteEntity(" + entityName + "):ok");
 	}
-
 
 	protected void deleteBulk(DbBulkOperation operation) {
 		String statement = operation.getStatement();
@@ -425,18 +430,19 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		Object entity = operation.getEntity();
 		String entityName = entity.getClass().getSimpleName();
 		String id = getValue(entity, "getId");
-		LOG.info("-> updateEntity(" + entityName+","+id+")");
-		updateById( entity, id );
-		LOG.info("<- updateEntity(" + entityName+"):ok");
+		LOG.info("-> updateEntity(" + entityName + "," + id + ")");
+		updateById(entity, id);
+		LOG.info("<- updateEntity(" + entityName + "):ok");
 	}
+
 	private void updateById(Object entity, String id) {
 		Class entityClass = OrientdbSessionFactory.getReplaceClass(entity.getClass());
 		String entityName = entity.getClass().getSimpleName();
 		OCommandRequest query = new OSQLSynchQuery("select  from " + entityName + " where id=?");
 		Iterable<Element> result = orientGraph.command(query).execute(id);
-		Iterator<Element> it = result.iterator();	
-		if( !it.hasNext()){
-			LOG.info(" - UpdateById(" + entityName+","+id + ").not found");
+		Iterator<Element> it = result.iterator();
+		if (!it.hasNext()) {
+			LOG.info(" - UpdateById(" + entityName + "," + id + ").not found");
 			return;
 		}
 		try {
@@ -452,14 +458,14 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 				String name = (String) m.get("name");
 				Method method = entityClass.getMethod(getter);
 				Object value = method.invoke(entity);
-				if( name.equals("id")){
-					LOG.info("- IdField(" + name + "):" + value);
-				}
+				//if( name.equals("id")){
+				LOG.info("- Field(" + name + "):" + value);
+				//}
 				e.setProperty(name, value);
 			}
 			return;
 		} catch (Exception e) {
-			LOG.info("OrientdbPersistenceSession.updateById:"+ e.getMessage());
+			LOG.info("OrientdbPersistenceSession.updateById:" + e.getMessage());
 			LOG.throwing("OrientdbPersistenceSession", "updateById", e);
 			e.printStackTrace();
 		}
@@ -473,6 +479,12 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		} catch (Exception e) {
 			throw new RuntimeException("OrientdbPersistenceSession.getValue:" + obj.getClass().getSimpleName() + "." + methodName);
 		}
+	}
+
+	private void dump(String msg, Object o) {
+		ReflectionToStringBuilder rb = new ReflectionToStringBuilder(o, ToStringStyle.JSON_STYLE);
+		rb.setExcludeNullValues(true);
+		LOG.info("+++" + msg + ":\n" + rb.toString());
 	}
 
 	protected String getDbVersion() {

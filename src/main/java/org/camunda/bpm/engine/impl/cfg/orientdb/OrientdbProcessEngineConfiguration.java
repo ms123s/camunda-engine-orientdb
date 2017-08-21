@@ -71,6 +71,7 @@ public class OrientdbProcessEngineConfiguration extends ProcessEngineConfigurati
 		setDeploymentLockUsed(false);
 		setTenantCheckEnabled(false);
 		System.err.println("OrientdbProcessEngineConfiguration");
+		setExecutionTreePrefetchEnabled(false);
 		CommandContextFactory ccf = createDefaultCommandContextFactory();
 		ccf.setProcessEngineConfiguration(this);
 		setCommandContextFactory(ccf);

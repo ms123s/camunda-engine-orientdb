@@ -26,6 +26,11 @@ public class ExecutionEntityHandler extends BaseEntityHandler{
 				parameterList.add( new CParameter( "processDefinitionId", EQ, p));
 				return parameterList;
 			}
+			if( statement.equals("selectExecutionsByParentExecutionId")){
+				List<CParameter> parameterList = new ArrayList<CParameter>();
+				parameterList.add( new CParameter( "parentId", EQ, p));
+				return parameterList;
+			}
 		}
 		return super.getCParameterList(statement,p);
 	}

@@ -44,6 +44,13 @@ public class JobEntityHandler extends BaseEntityHandler{
 				p.name = "jobHandlerType";
 			}
 		}
+		parameterList.remove(getCParameter( parameterList, "deploymentAware"));
+		parameterList.remove(getCParameter( parameterList, "now"));
+	  parameterList.remove(getCParameter( parameterList, "orderingProperties"));
+		parameterList.remove(getCParameter( parameterList, "applyOrdering"));
+	}
+	@Override
+	public void checkParameterList(List<CParameter> parameterList) {
 	}
 
 	@Override
@@ -51,6 +58,9 @@ public class JobEntityHandler extends BaseEntityHandler{
 		modifyCParameterList( statement, parameterList );
 
 		CParameter ph = getCParameter( parameterList, "handlerConfigurationWithFollowUpJobCreatedProperty");
+		if( ph == null){
+			return super.buildQuery( entityName, statement, parameterList);
+		}
 		Object handlerConfigurationWithFollowUpJobCreatedProperty = ph.value;
 		List<Clause> clauseList = new ArrayList<Clause>();
 		for (CParameter p : parameterList){
