@@ -243,6 +243,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	}
 
 	public <T extends DbEntity> T selectById(Class<T> entityClass, String id) {
+		entityClass = OrientdbSessionFactory.getReplaceClass(entityClass);
 		String entityName = entityClass.getSimpleName();
 		LOG.info("->selectById(" + entityName + ").id:" + id);
 		OCommandRequest query = new OSQLSynchQuery("select  from " + entityName + " where id=?");
@@ -335,11 +336,11 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	}
 
 	protected void insertEntity(DbEntityOperation operation) {
-		LOG.info("insertEntity:" + operation.getEntity().getClass().getSimpleName());
 
 		DbEntity entity = operation.getEntity();
 		Class entityClass = OrientdbSessionFactory.getReplaceClass(entity.getClass());
 		String entityName = entityClass.getSimpleName();
+		LOG.info("-> insertEntity(" + entityName + ")");
 		BaseEntityHandler handler = OrientdbSessionFactory.getEntityHandler(entityClass);
 
 		if (entity instanceof HasDbRevision) {
@@ -357,9 +358,12 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 				String name = (String) m.get("name");
 				Method method = entityClass.getMethod(getter);
 				Object value = method.invoke(entity);
-				LOG.info("- Field(" + name + "):" + value);
+				if( name.equals("id")){
+					LOG.info("- IdField(" + name + "):" + value);
+				}
 				v.setProperty(name, value);
 			}
+			LOG.info("<- insertEntity(" + entityName + "):ok");
 		} catch (Exception e) {
 			LOG.throwing("OrientdbPersistenceSession", "insertEntity", e);
 			e.printStackTrace();
@@ -368,6 +372,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 
 	protected void deleteEntity(DbEntityOperation operation) {
 		Object entity = operation.getEntity();
+		Class entityClass = OrientdbSessionFactory.getReplaceClass(entity.getClass());
 		String entityName = entity.getClass().getSimpleName();
 		String id = getValue(entity, "getId");
 		LOG.info("-> deleteEntity(" + entityName + "):" + id);
@@ -376,9 +381,6 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		LOG.info("<- deleteEntity(" + entityName + "):ok");
 	}
 
-	protected void updateEntity(DbEntityOperation operation) {
-		LOG.info("-> updateEntity:" + operation.getEntity());
-	}
 
 	protected void deleteBulk(DbBulkOperation operation) {
 		String statement = operation.getStatement();
@@ -394,6 +396,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		}
 
 		Class entityClass = operation.getEntityType();
+		entityClass = OrientdbSessionFactory.getReplaceClass(entityClass);
 		String entityName = entityClass.getSimpleName();
 		BaseEntityHandler handler = OrientdbSessionFactory.getEntityHandler(entityClass);
 		LOG.info("-> deleteBulk(" + statement + "," + entityName + ").parameter:" + parameter);
@@ -412,6 +415,50 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	protected void updateBulk(DbBulkOperation operation) {
 		// TODO: implement
 
+	}
+
+	protected void updateEntity(DbEntityOperation operation) {
+		Object entity = operation.getEntity();
+		String entityName = entity.getClass().getSimpleName();
+		String id = getValue(entity, "getId");
+		LOG.info("-> updateEntity(" + entityName+","+id+")");
+		updateById( entity, id );
+		LOG.info("<- updateEntity(" + entityName+"):ok");
+	}
+	private void updateById(Object entity, String id) {
+		Class entityClass = OrientdbSessionFactory.getReplaceClass(entity.getClass());
+		String entityName = entity.getClass().getSimpleName();
+		OCommandRequest query = new OSQLSynchQuery("select  from " + entityName + " where id=?");
+		Iterable<Element> result = orientGraph.command(query).execute(id);
+		Iterator<Element> it = result.iterator();	
+		if( !it.hasNext()){
+			LOG.info(" - UpdateById(" + entityName+","+id + ").not found");
+			return;
+		}
+		try {
+			Element e = it.next();
+
+			BaseEntityHandler handler = OrientdbSessionFactory.getEntityHandler(entityClass);
+			List<Map<String, Object>> entityMeta = handler.getMetadata();
+			for (Map<String, Object> m : entityMeta) {
+				if (m.get("namedId") != null) {
+					continue;
+				}
+				String getter = (String) m.get("getter");
+				String name = (String) m.get("name");
+				Method method = entityClass.getMethod(getter);
+				Object value = method.invoke(entity);
+				if( name.equals("id")){
+					LOG.info("- IdField(" + name + "):" + value);
+				}
+				e.setProperty(name, value);
+			}
+			return;
+		} catch (Exception e) {
+			LOG.throwing("OrientdbPersistenceSession", "updateById", e);
+			e.printStackTrace();
+		}
+		return;
 	}
 
 	private <Any> Any getValue(Object obj, String methodName) {

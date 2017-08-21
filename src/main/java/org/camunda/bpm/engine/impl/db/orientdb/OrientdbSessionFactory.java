@@ -160,6 +160,9 @@ public class OrientdbSessionFactory implements SessionFactory {
 	}
 	public static Class getReplaceClass(Class  entity) {
 		Class ret = entityReplaceMap.get(entity);
+		if( ret != null){
+	  	LOG.info("Attention.replacing " + entity.getSimpleName() + " -> " + ret.getSimpleName());	
+		}
 		return ret == null ? entity : ret;
 	}
 

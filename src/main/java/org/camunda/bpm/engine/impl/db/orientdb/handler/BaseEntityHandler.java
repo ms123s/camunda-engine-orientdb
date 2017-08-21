@@ -384,6 +384,7 @@ public abstract class BaseEntityHandler {
 	private void createClassAndProperties() {
 		try {
 			String entityName = this.entityClass.getSimpleName();
+			LOG.info("createClassAndProperties:" + entityName);
 			OSchemaProxy schema = this.orientGraph.getRawGraph().getMetadata().getSchema();
 			if (schema.getClass(entityName) != null) {
 				return;
@@ -396,7 +397,7 @@ public abstract class BaseEntityHandler {
 				}
 				String ptype = (String) ((OType) f.get("otype")).toString();
 				String sql = "CREATE PROPERTY " + entityName + "." + pname + " " + ptype;
-				LOG.info("executeUpdate:" + sql);
+				//LOG.info("executeUpdate:" + sql);
 				executeUpdate(this.orientGraph, sql);
 			}
 			//m_orientdbService.executeUpdate(orientGraph, "CREATE INDEX History.key ON History ( key ) NOTUNIQUE");
