@@ -26,6 +26,7 @@ import org.camunda.bpm.engine.impl.interceptor.LogInterceptor;
 import org.camunda.bpm.engine.impl.persistence.StrongUuidGenerator;
 import org.camunda.bpm.engine.impl.interceptor.CommandContextFactory;
 import org.camunda.bpm.engine.ProcessEngineException;
+import org.camunda.bpm.engine.delegate.VariableListener;
 
 import com.orientechnologies.orient.client.remote.OServerAdmin;
 import com.orientechnologies.orient.core.command.OCommandRequest;
@@ -80,6 +81,7 @@ public class OrientdbProcessEngineConfiguration extends ProcessEngineConfigurati
 	private CommandContextFactory createDefaultCommandContextFactory() {
 		return new CommandContextFactory();
 	}
+
 	protected void init() {
 		invokePreInit();
 
@@ -125,24 +127,23 @@ public class OrientdbProcessEngineConfiguration extends ProcessEngineConfigurati
 		initMetrics();
 		initCommandCheckers();
 
-
 		invokePostInit();
 	}
 
 	protected void initTransactionContextFactory() {
-		if (transactionContextFactory==null) {
+		if (transactionContextFactory == null) {
 			transactionContextFactory = new StandaloneTransactionContextFactory();
 		}
 	}
 
-	protected Collection< ? extends CommandInterceptor> getDefaultCommandInterceptorsTxRequired() {
+	protected Collection<? extends CommandInterceptor> getDefaultCommandInterceptorsTxRequired() {
 		List<CommandInterceptor> defaultCommandInterceptorsTxRequired = new ArrayList<CommandInterceptor>();
 		defaultCommandInterceptorsTxRequired.add(new LogInterceptor());
 		defaultCommandInterceptorsTxRequired.add(new CommandContextInterceptor(commandContextFactory, this));
 		return defaultCommandInterceptorsTxRequired;
 	}
 
-	protected Collection< ? extends CommandInterceptor> getDefaultCommandInterceptorsTxRequiresNew() {
+	protected Collection<? extends CommandInterceptor> getDefaultCommandInterceptorsTxRequiresNew() {
 		List<CommandInterceptor> defaultCommandInterceptorsTxRequired = new ArrayList<CommandInterceptor>();
 		defaultCommandInterceptorsTxRequired.add(new LogInterceptor());
 		defaultCommandInterceptorsTxRequired.add(new CommandContextInterceptor(commandContextFactory, this, true));
@@ -150,7 +151,7 @@ public class OrientdbProcessEngineConfiguration extends ProcessEngineConfigurati
 	}
 
 	protected void initIdGenerator() {
-		if(idGenerator == null) {
+		if (idGenerator == null) {
 			// TODO: use hazelcast IdGenerator ?
 			idGenerator = new StrongUuidGenerator();
 		}
@@ -158,13 +159,22 @@ public class OrientdbProcessEngineConfiguration extends ProcessEngineConfigurati
 
 	@Override
 	protected void initPersistenceProviders() {
-		addSessionFactory(new OrientdbSessionFactory(graphFactory));
+		addSessionFactory(new OrientdbSessionFactory(graphFactory, variableListeners));
 		addSessionFactory(new OrientdbPersistenceProviderFactory());
 	}
-
 
 	public void close() {
 		super.close();
 	}
 
+	protected List<VariableListener> variableListeners;
+
+	public List<VariableListener> getVariableListeners() {
+		return variableListeners;
+	}
+
+	public void setVariableListeners(List<VariableListener> variableListeners) {
+		this.variableListeners = variableListeners;
+	}
 }
+

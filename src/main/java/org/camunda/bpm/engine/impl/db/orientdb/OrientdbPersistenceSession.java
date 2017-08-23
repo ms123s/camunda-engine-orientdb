@@ -38,6 +38,8 @@ import org.camunda.bpm.engine.impl.db.orientdb.handler.*;
 import org.camunda.bpm.engine.impl.db.ListQueryParameterObject;
 import org.camunda.bpm.engine.impl.AbstractQuery;
 
+import org.camunda.bpm.engine.impl.persistence.entity.VariableInstanceEntity;
+
 import static org.camunda.bpm.engine.impl.util.EnsureUtil.ensureNotNull;
 import com.tinkerpop.blueprints.impls.orient.OrientGraph;
 import com.tinkerpop.blueprints.Vertex;
@@ -352,6 +354,11 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		Class entityClass = OrientdbSessionFactory.getReplaceClass(entity.getClass());
 		String entityName = entityClass.getSimpleName();
 		LOG.info("-> insertEntity(" + entityName + ")");
+
+		if( entityName.equals("VariableInstanceEntity")){
+			LOG.info("fireEvent:");
+			OrientdbSessionFactory.fireEvent( (VariableInstanceEntity) entity, "insert");
+		}
 		BaseEntityHandler handler = OrientdbSessionFactory.getEntityHandler(entityClass);
 
 		if (entity instanceof HasDbRevision) {

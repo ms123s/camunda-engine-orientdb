@@ -16,6 +16,7 @@ package org.camunda.bpm.engine.impl.db.orientdb;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.List;
 import org.camunda.bpm.engine.impl.db.DbEntity;
 import org.camunda.bpm.engine.impl.interceptor.Session;
 import org.camunda.bpm.engine.impl.interceptor.SessionFactory;
@@ -37,6 +38,11 @@ import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 import org.camunda.bpm.engine.impl.db.DbEntity;
 import java.util.logging.Logger;
+import org.camunda.bpm.engine.delegate.VariableListener;
+import org.camunda.bpm.engine.delegate.DelegateVariableInstance;
+import org.camunda.bpm.engine.impl.variable.listener.DelegateCaseVariableInstanceImpl;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 /**
  * @author Manfred Sattler
@@ -48,12 +54,15 @@ public class OrientdbSessionFactory implements SessionFactory {
 	private static Map<Class, BaseEntityHandler> entityHandlerMap;
 	private static Map<String, Class> entityClassMap;
 	private static Map<Class, Class> entityReplaceMap;
+	private static List<VariableListener> variableListeners;
 
-	public OrientdbSessionFactory(OrientGraphFactory f) {
+	public OrientdbSessionFactory(OrientGraphFactory f, List<VariableListener> vl) {
 		this.graphFactory = f;
+		this.variableListeners = vl;
 		initHandler();
 		initEntityClasses();
 	}
+
 	private void initEntityClasses() {
 		/*ConfigurationBuilder cb = new ConfigurationBuilder();
 		cb.addClassLoader( TaskEntity.class.getClassLoader());
@@ -65,8 +74,8 @@ public class OrientdbSessionFactory implements SessionFactory {
 		Set<Class<? extends DbEntity>> classes = r.getSubTypesOf(DbEntity.class);*/
 
 		entityClassMap = new HashMap<String, Class>();
-		for( Class c : entityHandlerMap.keySet()){
-			entityClassMap.put( c.getSimpleName(), c );
+		for (Class c : entityHandlerMap.keySet()) {
+			entityClassMap.put(c.getSimpleName(), c);
 		}
 		initEntityReplace();
 	}
@@ -81,6 +90,7 @@ public class OrientdbSessionFactory implements SessionFactory {
 		entityReplaceMap.put(HistoricIncidentEventEntityHandler.class, HistoricIncidentEntityHandler.class);
 		entityReplaceMap.put(HistoricJobLogEventEntityHandler.class, HistoricJobLogEventHandler.class);
 	}
+
 	private void initHandler() {
 		OrientGraph orientGraph = this.graphFactory.getTx();
 		entityHandlerMap = new HashMap<Class, BaseEntityHandler>();
@@ -160,13 +170,14 @@ public class OrientdbSessionFactory implements SessionFactory {
 		return entityHandlerMap.get(entityClass);
 	}
 
-	public static Class getEntityClass(String  entityName) {
+	public static Class getEntityClass(String entityName) {
 		return entityClassMap.get(entityName);
 	}
-	public static Class getReplaceClass(Class  entity) {
+
+	public static Class getReplaceClass(Class entity) {
 		Class ret = entityReplaceMap.get(entity);
-		if( ret != null){
-	  	LOG.info("Attention.replacing " + entity.getSimpleName() + " -> " + ret.getSimpleName());	
+		if (ret != null) {
+			LOG.info("Attention.replacing " + entity.getSimpleName() + " -> " + ret.getSimpleName());
 		}
 		return ret == null ? entity : ret;
 	}
@@ -179,5 +190,27 @@ public class OrientdbSessionFactory implements SessionFactory {
 		return new OrientdbPersistenceSession(graphFactory.getTx(), true);
 	}
 
+	private static void dump(String msg, Object o) {
+		ReflectionToStringBuilder rb = new ReflectionToStringBuilder(o, ToStringStyle.JSON_STYLE);
+		rb.setExcludeNullValues(true);
+		LOG.info("+++" + msg + ":\n" + rb.toString());
+	}
+
+	@SuppressWarnings({ "unchecked" })
+	public static void fireEvent(final VariableInstanceEntity v, String eventName) {
+		DelegateVariableInstance d = DelegateCaseVariableInstanceImpl.fromVariableInstance(v);
+		dump("fireEvent:", d);
+		((DelegateCaseVariableInstanceImpl) d).setEventName(eventName);
+		if (variableListeners != null) {
+			for (VariableListener variableListener : variableListeners) {
+				try {
+					LOG.info("OrientGraphFactory.fireEvent.notify(" + eventName + "):" + d);
+					variableListener.notify(d);
+				} catch (Exception e) {
+					LOG.info("OrientGraphFactory.fireEvent:" + e);
+				}
+			}
+		}
+	}
 }
 
