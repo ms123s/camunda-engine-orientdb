@@ -192,7 +192,7 @@ public class OrientdbSessionFactory implements SessionFactory {
 				try {
 					variableListener.notify(properties);
 				} catch (Exception e) {
-					LOG.info("OrientGraphFactory.fireEvent:" + e);
+					LOG.info("OrientdbSessionFactory.fireEvent:" + e);
 				}
 			}
 		}
