@@ -30,17 +30,11 @@ import org.camunda.bpm.engine.impl.dmn.entity.repository.*;
 import org.camunda.bpm.engine.impl.cmmn.entity.repository.*;
 import org.camunda.bpm.engine.impl.cmmn.entity.runtime.*;
 import com.tinkerpop.blueprints.impls.orient.OrientGraph;
+import org.camunda.bpm.engine.impl.cfg.orientdb.VariableListener;
 
 import com.tinkerpop.blueprints.impls.orient.OrientGraphFactory;
-import org.reflections.util.ConfigurationBuilder;
-import org.reflections.util.ClasspathHelper;
-import org.reflections.Reflections;
-import org.reflections.scanners.SubTypesScanner;
 import org.camunda.bpm.engine.impl.db.DbEntity;
 import java.util.logging.Logger;
-import org.camunda.bpm.engine.delegate.VariableListener;
-import org.camunda.bpm.engine.delegate.DelegateVariableInstance;
-import org.camunda.bpm.engine.impl.variable.listener.DelegateCaseVariableInstanceImpl;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
@@ -54,25 +48,17 @@ public class OrientdbSessionFactory implements SessionFactory {
 	private static Map<Class, BaseEntityHandler> entityHandlerMap;
 	private static Map<String, Class> entityClassMap;
 	private static Map<Class, Class> entityReplaceMap;
-	private static List<VariableListener> variableListeners;
+	private List<VariableListener> variableListeners;
 
 	public OrientdbSessionFactory(OrientGraphFactory f, List<VariableListener> vl) {
 		this.graphFactory = f;
 		this.variableListeners = vl;
+		LOG.info("OrientGraphFactory:"+this.variableListeners);
 		initHandler();
 		initEntityClasses();
 	}
 
 	private void initEntityClasses() {
-		/*ConfigurationBuilder cb = new ConfigurationBuilder();
-		cb.addClassLoader( TaskEntity.class.getClassLoader());
-		cb.setScanners(new SubTypesScanner());
-		ClassLoader[] cl = new ClassLoader[1];
-		cl[0] = TaskEntity.class.getClassLoader();
-		cb.setUrls(ClasspathHelper.forPackage("org.camunda",cl));
-		Reflections r = new Reflections( cb );
-		Set<Class<? extends DbEntity>> classes = r.getSubTypesOf(DbEntity.class);*/
-
 		entityClassMap = new HashMap<String, Class>();
 		for (Class c : entityHandlerMap.keySet()) {
 			entityClassMap.put(c.getSimpleName(), c);
@@ -187,7 +173,7 @@ public class OrientdbSessionFactory implements SessionFactory {
 	}
 
 	public Session openSession() {
-		return new OrientdbPersistenceSession(graphFactory.getTx(), true);
+		return new OrientdbPersistenceSession(graphFactory.getTx(), this);
 	}
 
 	private static void dump(String msg, Object o) {
@@ -197,15 +183,14 @@ public class OrientdbSessionFactory implements SessionFactory {
 	}
 
 	@SuppressWarnings({ "unchecked" })
-	public static void fireEvent(final VariableInstanceEntity v, String eventName) {
-		DelegateVariableInstance d = DelegateCaseVariableInstanceImpl.fromVariableInstance(v);
-		dump("fireEvent:", d);
-		((DelegateCaseVariableInstanceImpl) d).setEventName(eventName);
+	public void fireEvent(final HistoricVariableUpdateEventEntity hv) {
+		Map<String,Object> properties = new HashMap<String,Object>();
+		ObjectValueCopy.copyProperties( hv, properties);
+		LOG.info("variable.fireEvent:"+ properties);
 		if (variableListeners != null) {
 			for (VariableListener variableListener : variableListeners) {
 				try {
-					LOG.info("OrientGraphFactory.fireEvent.notify(" + eventName + "):" + d);
-					variableListener.notify(d);
+					variableListener.notify(properties);
 				} catch (Exception e) {
 					LOG.info("OrientGraphFactory.fireEvent:" + e);
 				}

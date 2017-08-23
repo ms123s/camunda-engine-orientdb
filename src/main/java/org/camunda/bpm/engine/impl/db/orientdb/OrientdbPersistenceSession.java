@@ -38,7 +38,7 @@ import org.camunda.bpm.engine.impl.db.orientdb.handler.*;
 import org.camunda.bpm.engine.impl.db.ListQueryParameterObject;
 import org.camunda.bpm.engine.impl.AbstractQuery;
 
-import org.camunda.bpm.engine.impl.persistence.entity.VariableInstanceEntity;
+import org.camunda.bpm.engine.impl.history.event.HistoricVariableUpdateEventEntity;
 
 import static org.camunda.bpm.engine.impl.util.EnsureUtil.ensureNotNull;
 import com.tinkerpop.blueprints.impls.orient.OrientGraph;
@@ -65,11 +65,13 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	long sessionId;
 	private List<String> prefixList = new ArrayList<>(Arrays.asList("selectLatest", "select"));
 	private List<String> suffixList = new ArrayList<>(Arrays.asList("CountBy", "IdsBy", "By"));
+	OrientdbSessionFactory sessionFactory;
 
 	protected OrientGraph orientGraph;
 
-	public OrientdbPersistenceSession(OrientGraph g, boolean openTransaction) {
+	public OrientdbPersistenceSession(OrientGraph g, OrientdbSessionFactory sf) {
 		this.orientGraph = g;
+		this.sessionFactory = sf;
 		g.getRawGraph().activateOnCurrentThread();
 		this.isOpen = true;
 		sessionId = new java.util.Date().getTime();
@@ -355,8 +357,8 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		String entityName = entityClass.getSimpleName();
 		LOG.info("-> insertEntity(" + entityName + ")");
 
-		if (entityName.equals("VariableInstanceEntity")) {
-			OrientdbSessionFactory.fireEvent((VariableInstanceEntity) entity, "create");
+		if (entityName.equals("HistoricVariableUpdateEventEntity")) {
+			this.sessionFactory.fireEvent((HistoricVariableUpdateEventEntity) entity);
 		}
 		BaseEntityHandler handler = OrientdbSessionFactory.getEntityHandler(entityClass);
 
@@ -393,7 +395,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		Class entityClass = OrientdbSessionFactory.getReplaceClass(entity.getClass());
 		String entityName = entity.getClass().getSimpleName();
 		if (entityName.equals("VariableInstanceEntity")) {
-			OrientdbSessionFactory.fireEvent((VariableInstanceEntity) entity, "delete");
+			//this.sessionFactory.fireEvent((VariableInstanceEntity) entity, "delete");
 		}
 		String id = getValue(entity, "getId");
 		LOG.info("-> deleteEntity(" + entityName + "):" + id);
@@ -425,7 +427,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 
 		if (parameterList.size() > 0) {
 			if (entityName.equals("VariableInstanceEntity")) {
-				fireEventForVariableInstanceEntityDelete(entityClass, statement, parameterList, handler);
+				//fireEventForVariableInstanceEntityDelete(entityClass, statement, parameterList, handler);
 			}
 			OCommandRequest up = handler.buildDelete(entityName, statement, parameterList);
 			orientGraph.command(up).execute();
@@ -444,7 +446,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		Object entity = operation.getEntity();
 		String entityName = entity.getClass().getSimpleName();
 		if (entityName.equals("VariableInstanceEntity")) {
-			OrientdbSessionFactory.fireEvent((VariableInstanceEntity) entity, "update");
+			//this.sessionFactory.fireEvent((VariableInstanceEntity) entity, "update");
 		}
 		String id = getValue(entity, "getId");
 		LOG.info("-> updateEntity(" + entityName + "," + id + ")");
@@ -502,7 +504,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			if (props != null) {
 				Object entity = entityClass.newInstance();
 				setEntityValues(entityClass, entity, props);
-				OrientdbSessionFactory.fireEvent((VariableInstanceEntity) entity, "delete");
+				//this.sessionFactory.fireEvent((VariableInstanceEntity) entity, "delete");
 				return entity;
 			}
 		} catch (Exception e) {

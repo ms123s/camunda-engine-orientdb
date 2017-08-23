@@ -26,7 +26,6 @@ import org.camunda.bpm.engine.impl.interceptor.LogInterceptor;
 import org.camunda.bpm.engine.impl.persistence.StrongUuidGenerator;
 import org.camunda.bpm.engine.impl.interceptor.CommandContextFactory;
 import org.camunda.bpm.engine.ProcessEngineException;
-import org.camunda.bpm.engine.delegate.VariableListener;
 
 import com.orientechnologies.orient.client.remote.OServerAdmin;
 import com.orientechnologies.orient.core.command.OCommandRequest;
@@ -60,7 +59,6 @@ public class OrientdbProcessEngineConfiguration extends ProcessEngineConfigurati
 		super();
 
 		graphFactory = f;
-		// explicitly disable unsupported features
 		setHistory(HISTORY_FULL);
 
 		setCmmnEnabled(false);
