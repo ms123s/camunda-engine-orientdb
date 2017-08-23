@@ -355,9 +355,8 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		String entityName = entityClass.getSimpleName();
 		LOG.info("-> insertEntity(" + entityName + ")");
 
-		if( entityName.equals("VariableInstanceEntity")){
-			LOG.info("fireEvent:");
-			OrientdbSessionFactory.fireEvent( (VariableInstanceEntity) entity, "insert");
+		if (entityName.equals("VariableInstanceEntity")) {
+			OrientdbSessionFactory.fireEvent((VariableInstanceEntity) entity, "create");
 		}
 		BaseEntityHandler handler = OrientdbSessionFactory.getEntityHandler(entityClass);
 
@@ -393,6 +392,9 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		Object entity = operation.getEntity();
 		Class entityClass = OrientdbSessionFactory.getReplaceClass(entity.getClass());
 		String entityName = entity.getClass().getSimpleName();
+		if (entityName.equals("VariableInstanceEntity")) {
+			OrientdbSessionFactory.fireEvent((VariableInstanceEntity) entity, "delete");
+		}
 		String id = getValue(entity, "getId");
 		LOG.info("-> deleteEntity(" + entityName + "):" + id);
 		OCommandRequest del = new OCommandSQL("Delete vertex " + entityName + " where id=?");
@@ -422,6 +424,9 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		LOG.info("  - CParameterList:" + parameterList);
 
 		if (parameterList.size() > 0) {
+			if (entityName.equals("VariableInstanceEntity")) {
+				fireEventForVariableInstanceEntityDelete(entityClass, statement, parameterList, handler);
+			}
 			OCommandRequest up = handler.buildDelete(entityName, statement, parameterList);
 			orientGraph.command(up).execute();
 		} else {
@@ -438,6 +443,9 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	protected void updateEntity(DbEntityOperation operation) {
 		Object entity = operation.getEntity();
 		String entityName = entity.getClass().getSimpleName();
+		if (entityName.equals("VariableInstanceEntity")) {
+			OrientdbSessionFactory.fireEvent((VariableInstanceEntity) entity, "update");
+		}
 		String id = getValue(entity, "getId");
 		LOG.info("-> updateEntity(" + entityName + "," + id + ")");
 		updateById(entity, id);
@@ -479,6 +487,28 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			e.printStackTrace();
 		}
 		return;
+	}
+
+	private Object fireEventForVariableInstanceEntityDelete(Class entityClass, String statement, List<CParameter> parameterList, BaseEntityHandler handler) {
+		OCommandRequest query = handler.buildQuery(entityClass.getSimpleName(), statement, parameterList);
+		Iterable<Element> result = orientGraph.command(query).execute();
+		Map<String, Object> props = null;
+		for (Element elem : result) {
+			props = ((OrientVertex) elem).getProperties();
+			break;
+		}
+
+		try {
+			if (props != null) {
+				Object entity = entityClass.newInstance();
+				setEntityValues(entityClass, entity, props);
+				OrientdbSessionFactory.fireEvent((VariableInstanceEntity) entity, "delete");
+				return entity;
+			}
+		} catch (Exception e) {
+			LOG.info("OrientdbPersistenceSession.getVariableInstanceEntity:" + e);
+		}
+		return null;
 	}
 
 	private <Any> Any getValue(Object obj, String methodName) {
