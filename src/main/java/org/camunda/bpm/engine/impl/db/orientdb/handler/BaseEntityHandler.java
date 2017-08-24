@@ -282,6 +282,9 @@ public abstract class BaseEntityHandler {
 		boolean hasNamedId = false;
 		String idName = getIdNameFromClassName(clazz);
 		for (Method m : methods) {
+			if(m.getParameterTypes().length > 0){
+				continue;
+			}
 			Class returnType = m.getReturnType();
 			String name = m.getName();
 			String baseName = getBaseName(name);
