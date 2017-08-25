@@ -127,7 +127,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			return entity;
 		} catch (Exception e) {
 			LOG.info("OrientdbPersistenceSession.selectOne:" + e.getMessage());
-			LOG.throwing("OrientdbPersistenceSession", "selectOne", e);
+//			LOG.throwing("OrientdbPersistenceSession", "selectOne", e);
 			e.printStackTrace();
 		}
 		LOG.info("<-selectOne(" + entityName + ").return:null");
@@ -181,7 +181,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			}
 		} catch (Exception e) {
 			LOG.info("OrientdbPersistenceSession.selectList:" + e.getMessage());
-			LOG.throwing("OrientdbPersistenceSession", "selectList", e);
+//			LOG.throwing("OrientdbPersistenceSession", "selectList", e);
 			e.printStackTrace();
 		}
 		LOG.info("<-selectList4(" + entityName + ").return:null");
@@ -281,7 +281,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			return entity;
 		} catch (Exception e) {
 			LOG.info("OrientdbPersistenceSession.selectById:" + e.getMessage());
-			LOG.throwing("OrientdbPersistenceSession", "selectById", e);
+//			LOG.throwing("OrientdbPersistenceSession", "selectById", e);
 			e.printStackTrace();
 		}
 		LOG.info("<-selectById(" + entityName + ").return:null");
@@ -309,8 +309,18 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			Class[] args = new Class[1];
 			args[0] = type;
 
-			Method method = entityClass.getMethod(setter, args);
-			method.invoke(entity, value);
+			Method method = null;
+			try{
+				method = entityClass.getMethod(setter, args);
+			}catch( Exception e){
+				method = entityClass.getDeclaredMethod(setter, args);
+				method.setAccessible(true);
+			}
+			if (  method == null ) {
+				info(this,"OrientdbPersistenceSession.setEntityValues.method("+setter+") is null in "+entityClass.getSimpleName());
+			}else{
+				method.invoke(entity, value);
+			}
 		}
 	}
 
