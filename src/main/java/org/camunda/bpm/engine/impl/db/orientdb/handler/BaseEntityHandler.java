@@ -384,6 +384,7 @@ public abstract class BaseEntityHandler {
 		return null;
 	}
 
+	private List<String> notRestrictedList = new ArrayList<>(Arrays.asList("DeploymentEntity","ProcessDefinitionEntity","PropertyEntity","ResourceEntity"));
 	private void createClassAndProperties() {
 		try {
 			String entityName = this.entityClass.getSimpleName();
@@ -392,7 +393,11 @@ public abstract class BaseEntityHandler {
 				return;
 			}
 			LOG.info("createClassAndProperties:" + entityName);
-			executeUpdate(this.orientGraph, "CREATE CLASS " + entityName + " EXTENDS V, ORestricted");
+			if( notRestrictedList.contains( entityName)){
+				executeUpdate(this.orientGraph, "CREATE CLASS " + entityName + " EXTENDS V");
+			}else{
+				executeUpdate(this.orientGraph, "CREATE CLASS " + entityName + " EXTENDS V, ORestricted");
+			}
 			for (Map<String, Object> f : this.entityMetadata) {
 				String pname = (String) f.get("name");
 				if (f.get("namedId") != null) {

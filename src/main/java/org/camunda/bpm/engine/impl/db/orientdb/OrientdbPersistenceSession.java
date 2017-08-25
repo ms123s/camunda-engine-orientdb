@@ -76,6 +76,8 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		this.isOpen = true;
 		sessionId = new java.util.Date().getTime();
 		LOG.info("openSession:" + sessionId);
+		System.err.println("openSession:" + sessionId);
+		this.orientGraph.begin();
 	}
 
 	public Object selectOne(String statement, Object parameter) {
@@ -87,6 +89,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		LOG.info("->selectOne(" + statement + "," + entityName + "):" + parameter);
 
 		BaseEntityHandler entityHandler = OrientdbSessionFactory.getEntityHandler(entityClass);
+		boolean isCount = statement.indexOf("Count") > 0;
 
 		List<CParameter> parameterList = getCParameterList(statement, parameter, entityHandler);
 		LOG.info("  - CParameterList:" + parameterList);
@@ -95,11 +98,15 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		Iterable<Element> result = orientGraph.command(query).execute();
 		LOG.info("  - result:" + result);
 		Map<String, Object> props = null;
+		int count = 0;
 		for (Element elem : result) {
+			count++;
 			props = ((OrientVertex) elem).getProperties();
-			break;
+			if( !isCount ){
+				break;
+			}
 		}
-		if (props == null) {
+		if (count == 0) {
 			if (statement.indexOf("Count") > 0) {
 				LOG.info("<-selectOne(" + entityName + ").count:0");
 				return new Long(0);
@@ -109,11 +116,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			}
 		}
 		try {
-			if (statement.indexOf("Count") > 0) {
-				int count = 0;
-				for (Element elem : result) {
-					count++;
-				}
+			if (isCount) {
 				LOG.info("<-selectOne.count(" + entityName + ").return:" + count);
 				return new Long(count);
 			}
@@ -384,9 +387,9 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			}
 			LOG.info("<- insertEntity(" + entityName + "):ok");
 		} catch (Exception e) {
-			LOG.info("OrientdbPersistenceSession.insertEntity:" + e.getMessage());
-			LOG.throwing("OrientdbPersistenceSession", "insertEntity", e);
-			e.printStackTrace();
+			LOG.info("OrientdbPersistenceSession.insertEntity(" + entityName + "):" + e.getMessage());
+			System.err.println("OrientdbPersistenceSession.insertEntity(" + entityName + "):" + e);
+			throw new RuntimeException("OrientdbPersistenceSession.insertEntity(" + entityName + ")", e);
 		}
 	}
 
@@ -484,11 +487,9 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			}
 			return;
 		} catch (Exception e) {
-			LOG.info("OrientdbPersistenceSession.updateById:" + e.getMessage());
-			LOG.throwing("OrientdbPersistenceSession", "updateById", e);
-			e.printStackTrace();
+			LOG.info("OrientdbPersistenceSession.updateById(" + entityName + "):" + e.getMessage());
+			throw new RuntimeException("OrientdbPersistenceSession.updateById(" + entityName + ")", e);
 		}
-		return;
 	}
 
 	private Object fireEventForVariableInstanceEntityDelete(Class entityClass, String statement, List<CParameter> parameterList, BaseEntityHandler handler) {
@@ -580,11 +581,14 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 
 	public void commit() {
 		LOG.info("commitSession:" + sessionId);
+		System.err.println("commitSession:" + sessionId);
 		orientGraph.commit();
 	}
 
 	public void rollback() {
 		orientGraph.rollback();
+		LOG.info("rollbackSession:" + sessionId);
+		System.err.println("rollbackSession:" + sessionId);
 	}
 
 	public void flush() {
@@ -595,23 +599,23 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		// nothing to do
 		if (this.isOpen) {
 			LOG.info("closeSession:" + sessionId);
+			System.err.println("closeSession:" + sessionId);
 			orientGraph.shutdown();
 		}
 		this.isOpen = false;
 	}
 
 	public void dbSchemaCheckVersion() {
-		// TODO: implement
 	}
 
 	public int executeUpdate(String s, Object o) {
 		LOG.info("executeUpdate:" + s + "/" + o);
-		return 0;
+		throw new RuntimeException("OrientdbPersistenceSession.executeUpdate not implemented");
 	}
 
 	public int executeNonEmptyUpdateStmt(String s, Object o) {
 		LOG.info("executeNonEmptyUpdateStmt:" + s + "/" + o);
-		return 0;
+		throw new RuntimeException("OrientdbPersistenceSession.executeNonEmptyUpdateStmt not implemented");
 	}
 
 	public void lock(String statement, Object parameter) {
