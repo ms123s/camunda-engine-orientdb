@@ -31,6 +31,8 @@ import org.camunda.bpm.engine.impl.cmmn.entity.repository.*;
 import org.camunda.bpm.engine.impl.cmmn.entity.runtime.*;
 import com.tinkerpop.blueprints.impls.orient.OrientGraph;
 import org.camunda.bpm.engine.impl.cfg.orientdb.VariableListener;
+import com.orientechnologies.orient.core.command.OCommandRequest;
+import com.orientechnologies.orient.core.sql.OCommandSQL;
 
 import com.tinkerpop.blueprints.impls.orient.OrientGraphFactory;
 import org.camunda.bpm.engine.impl.db.DbEntity;
@@ -53,9 +55,21 @@ public class OrientdbSessionFactory implements SessionFactory {
 	public OrientdbSessionFactory(OrientGraphFactory f, List<VariableListener> vl) {
 		this.graphFactory = f;
 		this.variableListeners = vl;
-		LOG.info("OrientGraphFactory:"+this.variableListeners);
-		initHandler();
-		initEntityClasses();
+		OrientGraph orientGraph = null;
+		try{
+			orientGraph = this.graphFactory.getTx();
+
+			LOG.info("OrientGraphFactory:"+this.variableListeners);
+
+			initHandler(orientGraph);
+			initEntityClasses();
+		}catch(Exception e){
+			LOG.info("OrientGraphFactory():init:"+e);
+			throw new RuntimeException("OrientGraphFactory.init", e);
+		}finally{
+			orientGraph.shutdown();
+		}
+		
 	}
 
 	private void initEntityClasses() {
@@ -77,8 +91,7 @@ public class OrientdbSessionFactory implements SessionFactory {
 		entityReplaceMap.put(HistoricJobLogEventEntityHandler.class, HistoricJobLogEventHandler.class);
 	}
 
-	private void initHandler() {
-		OrientGraph orientGraph = this.graphFactory.getTx();
+	private void initHandler(OrientGraph orientGraph) {
 		entityHandlerMap = new HashMap<Class, BaseEntityHandler>();
 		entityHandlerMap.put(HistoricDecisionInputInstanceEntity.class, new HistoricDecisionInputInstanceEntityHandler(orientGraph));
 		entityHandlerMap.put(HistoricDetailEventEntity.class, new HistoricDetailEventEntityHandler(orientGraph));
@@ -149,7 +162,6 @@ public class OrientdbSessionFactory implements SessionFactory {
 		entityHandlerMap.put(FilterEntity.class, new FilterEntityHandler(orientGraph));
 		entityHandlerMap.put(DecisionRequirementsDefinitionEntity.class, new DecisionRequirementsDefinitionEntityHandler(orientGraph));
 		entityHandlerMap.put(TimerEntity.class, new TimerEntityHandler(orientGraph));
-		orientGraph.shutdown();
 	}
 
 	public static BaseEntityHandler getEntityHandler(Class entityClass) {

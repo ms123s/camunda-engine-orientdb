@@ -21,11 +21,14 @@ import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.command.OCommandRequest;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OSchemaProxy;
+import com.orientechnologies.orient.core.metadata.schema.OSchema;
+import com.orientechnologies.orient.core.metadata.schema.OProperty;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.sql.OCommandSQL;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
 import com.orientechnologies.orient.core.sql.OCommandSQL;
 import com.tinkerpop.blueprints.impls.orient.OrientGraph;
+import com.tinkerpop.blueprints.Vertex;
 import java.lang.reflect.*;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -93,10 +96,19 @@ public abstract class BaseEntityHandler {
 	public void modifyMetadata() {
 	}
 
+	public void createAdditionalProperties(OSchema schema, OClass oClass) {
+	}
+
 	public void modifyCParameterList(String statement, List<CParameter> parameterList) {
 	}
 
+	public void addToClauseList(List<Clause> clauseList, Object parameter) {
+	}
+
 	public void postProcessQuery(Query q, String statement, List<CParameter> parameterList) {
+	}
+
+	public void insertAdditional(OrientGraph orientGraph, Vertex v, Object entity, Class entityClass) {
 	}
 
 	public CParameter getCParameter(List<CParameter> parameterList, String name) {
@@ -195,7 +207,7 @@ public abstract class BaseEntityHandler {
 		}
 	}
 
-	public OCommandRequest buildQuery(String entityName, String statement, List<CParameter> parameterList) {
+	public OCommandRequest buildQuery(String entityName, String statement, List<CParameter> parameterList, Object parameter) {
 		modifyCParameterList(statement, parameterList);
 		checkParameterList(parameterList);
 
@@ -219,6 +231,7 @@ public abstract class BaseEntityHandler {
 		if (statement.indexOf("Latest") > 0) {
 			isLatest = true;
 		}
+		addToClauseList(clauseList, parameter);
 		Clause w = and(clauseList.toArray(new Clause[clauseList.size()]));
 		Query q = new Query().from(entityName).where(w);
 		if (isLatest && this.metaByFieldMap.get("version") != null) {
@@ -282,7 +295,7 @@ public abstract class BaseEntityHandler {
 		boolean hasNamedId = false;
 		String idName = getIdNameFromClassName(clazz);
 		for (Method m : methods) {
-			if(m.getParameterTypes().length > 0){
+			if (m.getParameterTypes().length > 0) {
 				continue;
 			}
 			Class returnType = m.getReturnType();
@@ -333,7 +346,22 @@ public abstract class BaseEntityHandler {
 			Method method = obj.getClass().getMethod(methodName, (Class[]) null);
 			return (Any) method.invoke(obj);
 		} catch (Exception e) {
-			throw new RuntimeException("BaseEntityHandler.getValue:" + obj.getClass().getSimpleName() + "." + methodName);
+			LOG.info("BaseEntityHandler.getValue:" + obj.getClass().getSimpleName() + "." + methodName + " not found");
+			return null;
+		}
+	}
+
+	protected <Any> Any getValueByField(Object obj, String fieldName) {
+		try {
+			if (obj instanceof Map) {
+				return (Any) ((Map) obj).get(fieldName);
+			}
+			Field field = obj.getClass().getDeclaredField(fieldName);
+			field.setAccessible(true);
+			return (Any) field.get(obj);
+		} catch (Exception e) {
+			LOG.info("BaseEntityHandler.getValueByField:" + obj.getClass().getSimpleName() + "." + fieldName + " not found");
+			return null;
 		}
 	}
 
@@ -384,8 +412,9 @@ public abstract class BaseEntityHandler {
 		return null;
 	}
 
-	private List<String> notRestrictedList = new ArrayList<>(Arrays.asList("DeploymentEntity","ProcessDefinitionEntity","PropertyEntity","ResourceEntity"));
-	private void createClassAndProperties() {
+	private List<String> notRestrictedList = new ArrayList<>(Arrays.asList("IdentityLinkEntity", "DeploymentEntity", "ProcessDefinitionEntity", "PropertyEntity", "ResourceEntity"));
+
+	protected void createClassAndProperties() {
 		try {
 			String entityName = this.entityClass.getSimpleName();
 			OSchemaProxy schema = this.orientGraph.getRawGraph().getMetadata().getSchema();
@@ -393,26 +422,58 @@ public abstract class BaseEntityHandler {
 				return;
 			}
 			LOG.info("createClassAndProperties:" + entityName);
-			if( notRestrictedList.contains( entityName)){
-				executeUpdate(this.orientGraph, "CREATE CLASS " + entityName + " EXTENDS V");
-			}else{
-				executeUpdate(this.orientGraph, "CREATE CLASS " + entityName + " EXTENDS V, ORestricted");
+			OClass oClass = getOrCreateClass(schema, entityName);
+			if (notRestrictedList.contains(entityName)) {
+				setSuperClasses(schema, oClass, false);
+			} else {
+				setSuperClasses(schema, oClass, true);
 			}
 			for (Map<String, Object> f : this.entityMetadata) {
-				String pname = (String) f.get("name");
+				String pName = (String) f.get("name");
 				if (f.get("namedId") != null) {
 					continue;
 				}
-				String ptype = (String) ((OType) f.get("otype")).toString();
-				String sql = "CREATE PROPERTY " + entityName + "." + pname + " " + ptype;
-				//LOG.info("executeUpdate:" + sql);
-				executeUpdate(this.orientGraph, sql);
+				OType oType = (OType) f.get("otype");
+				getOrCreateProperty(oClass, pName, oType);
 			}
+			createAdditionalProperties(schema, oClass);
 			//m_orientdbService.executeUpdate(orientGraph, "CREATE INDEX History.key ON History ( key ) NOTUNIQUE");
 		} catch (Exception e) {
-			LOG.throwing("BaseEntityHandler", "createClassAndProperties", e);
-			e.printStackTrace();
+			throw new RuntimeException("BaseEntityHandler.createClassAndProperties", e);
 		}
+	}
+
+	protected OClass getOrCreateClass(OSchema schema, String className) {
+		OClass oClass = schema.getClass(className);
+		if (oClass == null) {
+			oClass = schema.createClass(className);
+		}
+		return oClass;
+	}
+
+	protected void setSuperClasses(OSchema schema, OClass oClass, boolean restricted) {
+		List<OClass> superList = new ArrayList<OClass>();
+		superList.add(schema.getClass("V"));
+		if (restricted) {
+			superList.add(schema.getClass("ORestricted"));
+		}
+		oClass.setSuperClasses(superList);
+	}
+
+	protected OProperty getOrCreateProperty(OClass oClass, String propertyName, OType oType) {
+		OProperty prop = oClass.getProperty(propertyName);
+		if (prop == null) {
+			prop = oClass.createProperty(propertyName, oType);
+		}
+		return prop;
+	}
+
+	protected OProperty getOrCreateLinkedProperty(OClass oClass, String propertyName, OType type, OClass linkedClass) {
+		OProperty prop = oClass.getProperty(propertyName);
+		if (prop == null) {
+			prop = oClass.createProperty(propertyName, type, linkedClass);
+		}
+		return prop;
 	}
 
 	protected void removeByGetter(String getter) {
@@ -476,47 +537,12 @@ public abstract class BaseEntityHandler {
 		return new String(c);
 	}
 
-	/*	private String[] prefixes = new String[] { "management", "task", "filter", "identity", "history", "runtime", "repository" };
-	 private String[] ops = new String[] { "In", "Like", "LessThanOrEqual", "LessThan", "GreaterThanOrEqual", "GreaterThan", "Equal", "NotEqual" };
-
-	 private boolean hasQuery(String name) {
-	 for (String prefix : prefixes) {
-	 try {
-	 Class clazz = Class.forName("org.camunda.bpm.engine." + prefix + "." + name + "Query");
-	 Method[] meths = clazz.getDeclaredMethods();
-	 for (Method m : meths) {
-	 //				System.err.println("\tyyy.method("+name+"):"+m.getName());
-	 }
-	 return true;
-	 } catch (Exception e) {
-	 //System.err.println("yyy.Exception("+name+"):"+e.getMessage());
-	 }
-	 }
-	 return false;
-	 }
-
-
-	 protected Map getMetaData(Class clazz) {
-	 String name = clazz.getSimpleName();
-	 String ename = name.substring(0, name.length() - 6);
-	 List fields = getSimpleFields(clazz);
-	 //		boolean b = hasQuery( ename);
-	 return null;
-	 }*/
-
-	private List<Map<String, Object>> getSimpleFields(Class clazz) {
-		List<Map<String, Object>> fieldList = new ArrayList<Map<String, Object>>();
-		Field[] fields = clazz.getDeclaredFields();
-		for (Field f : fields) {
-			if (!Modifier.isStatic(f.getModifiers()) && isPrimitiveOrPrimitiveWrapperOrString(f.getType())) {
-				Map<String, Object> map = new HashMap<String, Object>();
-				map.put("type", f.getType());
-				map.put("name", f.getName());
-				map.put("otype", OType.getTypeByClass(f.getType()));
-				fieldList.add(map);
-			}
+	protected  <E> Collection<E> makeCollection(Iterable<E> iter) {
+		Collection<E> list = new ArrayList<E>();
+		for (E item : iter) {
+			list.add(item);
 		}
-		return fieldList;
+		return list;
 	}
 
 	private String getIdNameFromClassName(Class c) {

@@ -54,12 +54,12 @@ public class JobEntityHandler extends BaseEntityHandler{
 	}
 
 	@Override
-	public OCommandRequest buildQuery( String entityName, String statement, List<CParameter> parameterList){
+	public OCommandRequest buildQuery( String entityName, String statement, List<CParameter> parameterList,Object parameter){
 		modifyCParameterList( statement, parameterList );
 
 		CParameter ph = getCParameter( parameterList, "handlerConfigurationWithFollowUpJobCreatedProperty");
 		if( ph == null){
-			return super.buildQuery( entityName, statement, parameterList);
+			return super.buildQuery( entityName, statement, parameterList,parameter);
 		}
 		Object handlerConfigurationWithFollowUpJobCreatedProperty = ph.value;
 		List<Clause> clauseList = new ArrayList<Clause>();

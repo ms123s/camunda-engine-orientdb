@@ -93,7 +93,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 
 		List<CParameter> parameterList = getCParameterList(statement, parameter, entityHandler);
 		LOG.info("  - CParameterList:" + parameterList);
-		OCommandRequest query = entityHandler.buildQuery(entityName, statement, parameterList);
+		OCommandRequest query = entityHandler.buildQuery(entityName, statement, parameterList, parameter);
 
 		Iterable<Element> result = orientGraph.command(query).execute();
 		LOG.info("  - result:" + result);
@@ -148,7 +148,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 
 		List<CParameter> parameterList = getCParameterList(statement, parameter, entityHandler);
 		LOG.info("  - CParameterList:" + parameterList);
-		OCommandRequest query = entityHandler.buildQuery(entityName, statement, parameterList);
+		OCommandRequest query = entityHandler.buildQuery(entityName, statement, parameterList, parameter);
 
 		Iterable<Element> result = orientGraph.command(query).execute();
 		List<Map<String, Object>> propsList = new ArrayList<Map<String, Object>>();
@@ -317,7 +317,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 				method.setAccessible(true);
 			}
 			if (method == null) {
-				info(this, "OrientdbPersistenceSession.setEntityValues.method(" + setter + ") is null in " + entityClass.getSimpleName());
+				LOG.info("OrientdbPersistenceSession.setEntityValues.method(" + setter + ") is null in " + entityClass.getSimpleName());
 			} else {
 				method.invoke(entity, value);
 			}
@@ -395,6 +395,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 				}
 				v.setProperty(name, value);
 			}
+			handler.insertAdditional( this. orientGraph, v, entity, entityClass);
 			LOG.info("<- insertEntity(" + entityName + "):ok");
 		} catch (Exception e) {
 			LOG.info("OrientdbPersistenceSession.insertEntity(" + entityName + "):" + e.getMessage());
@@ -503,7 +504,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	}
 
 	private Object fireEventForVariableInstanceEntityDelete(Class entityClass, String statement, List<CParameter> parameterList, BaseEntityHandler handler) {
-		OCommandRequest query = handler.buildQuery(entityClass.getSimpleName(), statement, parameterList);
+		OCommandRequest query = handler.buildQuery(entityClass.getSimpleName(), statement, parameterList, null);
 		Iterable<Element> result = orientGraph.command(query).execute();
 		Map<String, Object> props = null;
 		for (Element elem : result) {
