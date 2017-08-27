@@ -46,6 +46,7 @@ public class IdentityLinkEntityHandler extends BaseEntityHandler {
 	public void insertAdditional(OrientGraph orientGraph, Vertex v, Object entity, Class entityClass) {
 		String processDefId = getValue(entity, "getProcessDefId");
 		String taskId = getValue(entity, "getTaskId");
+		LOG.info("IdentityLinkEntity.insertAdditional("+processDefId+","+taskId+"):"+v);
 		Iterable<Element> result = null;
 		if( processDefId!=null){
 			OCommandRequest query = new OSQLSynchQuery("select from ProcessDefinitionEntity where id=?");
