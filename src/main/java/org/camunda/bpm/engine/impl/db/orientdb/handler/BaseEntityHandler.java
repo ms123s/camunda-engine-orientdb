@@ -108,7 +108,7 @@ public abstract class BaseEntityHandler {
 	public void postProcessQuery(Query q, String statement, List<CParameter> parameterList) {
 	}
 
-	public void insertAdditional(OrientGraph orientGraph, Vertex v, Object entity, Class entityClass) {
+	public void insertAdditional(OrientGraph orientGraph, Vertex v, Object entity, Class entityClass, Map<String, Vertex> entityCache) {
 	}
 
 	public CParameter getCParameter(List<CParameter> parameterList, String name) {
@@ -537,7 +537,7 @@ public abstract class BaseEntityHandler {
 		return new String(c);
 	}
 
-	protected  <E> Collection<E> makeCollection(Iterable<E> iter) {
+	protected <E> Collection<E> makeCollection(Iterable<E> iter) {
 		Collection<E> list = new ArrayList<E>();
 		for (E item : iter) {
 			list.add(item);

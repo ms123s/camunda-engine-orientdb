@@ -1,6 +1,5 @@
 package org.camunda.bpm.engine.impl.db.orientdb.handler;
 
-
 import com.orientechnologies.orient.core.command.OCommandRequest;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
 import com.tinkerpop.blueprints.Element;
@@ -12,9 +11,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.logging.Logger;
 import java.util.Map;
+import com.github.raymanrt.orientqb.query.Clause;
 import org.camunda.bpm.engine.impl.db.orientdb.CParameter;
 import org.camunda.bpm.engine.impl.persistence.entity.IdentityLinkEntity;
 import static com.github.raymanrt.orientqb.query.Operator.EQ;
+import static com.github.raymanrt.orientqb.query.Clause.or;
 
 /**
  * @author Manfred Sattler
@@ -43,27 +44,36 @@ public class IdentityLinkEntityHandler extends BaseEntityHandler {
 	}
 
 	@Override
-	public void insertAdditional(OrientGraph orientGraph, Vertex v, Object entity, Class entityClass) {
+	public void insertAdditional(OrientGraph orientGraph, Vertex v, Object entity, Class entityClass, Map<String, Vertex> entityCache) {
 		String processDefId = getValue(entity, "getProcessDefId");
 		String taskId = getValue(entity, "getTaskId");
-		LOG.info("IdentityLinkEntity.insertAdditional("+processDefId+","+taskId+"):"+v);
-		Iterable<Element> result = null;
-		if( processDefId!=null){
-			OCommandRequest query = new OSQLSynchQuery("select from ProcessDefinitionEntity where id=?");
-			result = orientGraph.command(query).execute(processDefId);
-		}else if( taskId != null){
-			OCommandRequest query = new OSQLSynchQuery("select from TaskEntity where id=?");
-			result = orientGraph.command(query).execute(taskId);
+		LOG.info("IdentityLinkEntity.insertAdditional(" + processDefId + "," + taskId + "):" + v);
+		Vertex cachedEntity = entityCache.get(processDefId != null ? processDefId : taskId);
+		Collection<Element> result = null;
+		if (cachedEntity != null) {
+			result = new ArrayList<Element>();
+			result.add(cachedEntity);
+		}
+		if (processDefId != null) {
+			if (result == null) {
+				OCommandRequest query = new OSQLSynchQuery("select from ProcessDefinitionEntity where id=?");
+				result = orientGraph.command(query).execute(processDefId);
+			}
+		} else if (taskId != null) {
+			if (result == null) {
+				OCommandRequest query = new OSQLSynchQuery("select from TaskEntity where id=?");
+				result = orientGraph.command(query).execute(taskId);
+			}
 		}
 		for (Element elem : result) {
 			OrientElementIterable<Element> iter = elem.getProperty("identityLink");
-			if( iter == null){
-				LOG.info("insertAdditional.IdentityLinkEntity.identityLink:" + v);
+			if (iter == null) {
+				LOG.info("IdentityLinkEntity.insertAdditional.identityLink:" + v);
 				elem.setProperty("identityLink", v);
-			}else{
-				Collection<Element> col = makeCollection( iter );
-				LOG.info("insertAdditional.IdentityLinkEntity.identityLink("+iter.getClass().getName()+","+col+"):" + v);
-				col.add( v );
+			} else {
+				Collection<Element> col = makeCollection(iter);
+				LOG.info("IdentityLinkEntity.insertAdditional.identityLink(" + iter.getClass().getName() + "," + col + "):" + v);
+				col.add(v);
 				elem.setProperty("identityLink", col);
 			}
 			break;

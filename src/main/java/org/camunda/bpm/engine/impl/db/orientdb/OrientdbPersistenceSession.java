@@ -66,6 +66,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	private List<String> prefixList = new ArrayList<>(Arrays.asList("selectLatest", "select"));
 	private List<String> suffixList = new ArrayList<>(Arrays.asList("CountBy", "IdsBy", "By"));
 	OrientdbSessionFactory sessionFactory;
+	private Map<String,Vertex> entityCache = new HashMap<String,Vertex>();
 
 	protected OrientGraph orientGraph;
 
@@ -384,7 +385,8 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		try {
 			Vertex v = this.orientGraph.addVertex("class:" + entityName);
 			List<Map<String, Object>> entityMeta = handler.getMetadata();
-Object n = null;
+			Object id = null;
+			Object n = null;
 			for (Map<String, Object> m : entityMeta) {
 				if (m.get("namedId") != null) {
 					continue;
@@ -396,11 +398,15 @@ Object n = null;
 				if (value != null /*name.equals("id")*/) {
 					LOG.info("- Field(" + name + "):" + value);
 				}
+				if( name.equals("id"))id=value;
 				if( name.equals("name"))n=value;
 				v.setProperty(name, value);
 			}
-			handler.insertAdditional( this. orientGraph, v, entity, entityClass);
-			LOG.info("<- insertEntity(" + entityName +","+n+ "):ok");
+			if( id != null){
+				entityCache.put( (String)id, v);
+			}
+			handler.insertAdditional( this. orientGraph, v, entity, entityClass,entityCache);
+			LOG.info("<- insertEntity(" + entityName +","+n+","+id+ "):ok");
 		} catch (Exception e) {
 			LOG.info("OrientdbPersistenceSession.insertEntity(" + entityName + "):" + e.getMessage());
 			System.err.println("OrientdbPersistenceSession.insertEntity(" + entityName + "):" + e);
