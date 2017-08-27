@@ -52,7 +52,7 @@ public class OrientdbSessionFactory implements SessionFactory {
 	private static Map<Class, Class> entityReplaceMap;
 	private List<VariableListener> variableListeners;
 
-	public OrientdbSessionFactory(OrientGraphFactory f, List<VariableListener> vl) {
+	public OrientdbSessionFactory(OrientGraphFactory f, List<VariableListener> vl, String history) {
 		this.graphFactory = f;
 		this.variableListeners = vl;
 		OrientGraph orientGraph = null;
@@ -112,7 +112,6 @@ public class OrientdbSessionFactory implements SessionFactory {
 		entityHandlerMap.put(HistoricBatchEntity.class, new HistoricBatchEntityHandler(orientGraph));
 		entityHandlerMap.put(HistoricFormPropertyEventEntity.class, new HistoricFormPropertyEventEntityHandler(orientGraph));
 		entityHandlerMap.put(ExternalTaskEntity.class, new ExternalTaskEntityHandler(orientGraph));
-		entityHandlerMap.put(TaskEntity.class, new TaskEntityHandler(orientGraph));
 		entityHandlerMap.put(ProcessDefinitionStatisticsEntity.class, new ProcessDefinitionStatisticsEntityHandler(orientGraph));
 		entityHandlerMap.put(HistoricCaseInstanceEntity.class, new HistoricCaseInstanceEntityHandler(orientGraph));
 		entityHandlerMap.put(HistoricDetailVariableInstanceUpdateEntity.class, new HistoricDetailVariableInstanceUpdateEntityHandler(orientGraph));
@@ -145,6 +144,7 @@ public class OrientdbSessionFactory implements SessionFactory {
 		entityHandlerMap.put(HistoricActivityInstanceEventEntity.class, new HistoricActivityInstanceEventEntityHandler(orientGraph));
 		entityHandlerMap.put(UserEntity.class, new UserEntityHandler(orientGraph));
 		entityHandlerMap.put(HistoricCaseActivityInstanceEntity.class, new HistoricCaseActivityInstanceEntityHandler(orientGraph));
+		entityHandlerMap.put(TaskEntity.class, new TaskEntityHandler(orientGraph));
 		entityHandlerMap.put(ProcessDefinitionEntity.class, new ProcessDefinitionEntityHandler(orientGraph));
 		entityHandlerMap.put(CaseDefinitionEntity.class, new CaseDefinitionEntityHandler(orientGraph));
 		entityHandlerMap.put(TenantEntity.class, new TenantEntityHandler(orientGraph));

@@ -64,10 +64,6 @@ public class ProcessDefinitionEntityHandler extends BaseEntityHandler {
 	}
 
 	@Override
-	public void postProcessQuery(Query q, String statement, List<CParameter> parameterList) {
-	}
-
-	@Override
 	public void addToClauseList(List<Clause> clauseList, Object parameter) {
 		String authorizationUserId = getValueByField(parameter, "authorizationUserId");
 		if (authorizationUserId != null) {

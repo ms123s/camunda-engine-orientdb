@@ -59,7 +59,7 @@ public class OrientdbProcessEngineConfiguration extends ProcessEngineConfigurati
 		super();
 
 		graphFactory = f;
-		setHistory(HISTORY_FULL);
+		setHistory(HISTORY_NONE);
 
 		setCmmnEnabled(false);
 		setDmnEnabled(false);
@@ -69,6 +69,7 @@ public class OrientdbProcessEngineConfiguration extends ProcessEngineConfigurati
 		setDbMetricsReporterActivate(false);
 		setDeploymentLockUsed(false);
 		setTenantCheckEnabled(false);
+		setEnableExpressionsInAdhocQueries(true);
 		System.err.println("OrientdbProcessEngineConfiguration");
 		setExecutionTreePrefetchEnabled(false);
 		CommandContextFactory ccf = createDefaultCommandContextFactory();
@@ -157,7 +158,7 @@ public class OrientdbProcessEngineConfiguration extends ProcessEngineConfigurati
 
 	@Override
 	protected void initPersistenceProviders() {
-		addSessionFactory(new OrientdbSessionFactory(graphFactory, variableListeners));
+		addSessionFactory(new OrientdbSessionFactory(graphFactory, variableListeners,getHistory()));
 		addSessionFactory(new OrientdbPersistenceProviderFactory());
 	}
 
