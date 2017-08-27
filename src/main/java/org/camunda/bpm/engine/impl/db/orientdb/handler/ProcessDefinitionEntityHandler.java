@@ -11,6 +11,7 @@ import java.util.Map;
 import org.camunda.bpm.engine.impl.db.orientdb.CParameter;
 import org.camunda.bpm.engine.impl.persistence.entity.ProcessDefinitionEntity;
 import com.github.raymanrt.orientqb.query.Clause;
+import com.github.raymanrt.orientqb.query.clause.VerbatimClause;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OSchemaProxy;
 import com.orientechnologies.orient.core.metadata.schema.OSchema;
@@ -21,6 +22,7 @@ import static com.github.raymanrt.orientqb.query.Operator.EQ;
 import static com.github.raymanrt.orientqb.query.Operator.GT;
 import static com.github.raymanrt.orientqb.query.Operator.LIKE;
 import static com.github.raymanrt.orientqb.query.Operator.LT;
+import static com.github.raymanrt.orientqb.query.Operator.CONTAINS;
 
 /**
  * @author Manfred Sattler
@@ -67,7 +69,7 @@ public class ProcessDefinitionEntityHandler extends BaseEntityHandler {
 	public void addToClauseList(List<Clause> clauseList, Object parameter) {
 		String authorizationUserId = getValueByField(parameter, "authorizationUserId");
 		if (authorizationUserId != null) {
-			clauseList.add(clause("identityLink.userId", EQ, authorizationUserId));
+			clauseList.add(new VerbatimClause("identityLink CONTAINS (userId='"+authorizationUserId+"')" ));
 		}
 	}
 }
