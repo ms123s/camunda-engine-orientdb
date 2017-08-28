@@ -53,12 +53,10 @@ public class TaskEntityHandler extends BaseEntityHandler {
 
 	@Override
 	public void addToClauseList(List<Clause> clauseList, Object parameter) {
-		String candidateGroupsStr = getValueByField(parameter, "candidateGroup");
-		if (candidateGroupsStr != null) {
+		List<String> candidateGroups = getValueByField(parameter, "candidateGroups");
+		if (candidateGroups != null && candidateGroups.size()>0) {
 			List<Clause> orList = new ArrayList<Clause>();
-			String[] candidateGroups = candidateGroupsStr.split(",");
 			for (String group : candidateGroups) {
-				LOG.info("TaskEntity.addToClauseList(" + group + ")");
 				orList.add(clause("identityLink.groupId", EQ, group));
 			}
 			clauseList.add(or(orList.toArray(new Clause[orList.size()])));
