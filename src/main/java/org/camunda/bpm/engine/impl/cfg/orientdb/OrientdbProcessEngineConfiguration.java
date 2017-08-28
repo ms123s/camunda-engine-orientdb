@@ -58,11 +58,9 @@ public class OrientdbProcessEngineConfiguration extends ProcessEngineConfigurati
 
 	public OrientdbProcessEngineConfiguration() {
 		super();
-		OrientGraphFactory f = initDB("camunda2", "root", "simpl4");
-		f.setStandardElementConstraints(false);
-		graphFactory = f;
-		setHistory(HISTORY_FULL);
+		createDatabaseFactory("camunda2", "root", "simpl4");
 
+		setHistory(HISTORY_FULL);
 		setCmmnEnabled(false);
 		setDmnEnabled(false);
 		setAuthorizationEnabled(false);
@@ -79,12 +77,13 @@ public class OrientdbProcessEngineConfiguration extends ProcessEngineConfigurati
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private OrientGraphFactory initDB(String database, String user, String pw) {
+	private void createDatabaseFactory(String database, String user, String pw) {
 		try {
 			Class clazz = Class.forName("org.simpl4.OrientDB");
 			Object object = clazz.newInstance();
 			Method method = clazz.getMethod("getFactory", new Class[] { String.class, String.class, String.class });
-			return (OrientGraphFactory) method.invoke(object, new Object[] { database, user, pw });
+			graphFactory = (OrientGraphFactory) method.invoke(object, new Object[] { database, user, pw });
+			graphFactory.setStandardElementConstraints(false);
 		} catch (Exception e) {
 			throw new RuntimeException("Error init database", e);
 		}
@@ -93,9 +92,7 @@ public class OrientdbProcessEngineConfiguration extends ProcessEngineConfigurati
 	public OrientdbProcessEngineConfiguration(OrientGraphFactory f) {
 		super();
 
-		f.setStandardElementConstraints(false);
-		graphFactory = f;
-
+		setDatabaseFactory( f );
 		setHistory(HISTORY_FULL);
 		setCmmnEnabled(false);
 		setDmnEnabled(false);
@@ -114,6 +111,11 @@ public class OrientdbProcessEngineConfiguration extends ProcessEngineConfigurati
 
 	private CommandContextFactory createDefaultCommandContextFactory() {
 		return new CommandContextFactory();
+	}
+
+	private void setDatabaseFactory( OrientGraphFactory f){
+		f.setStandardElementConstraints(false);
+		graphFactory = f;
 	}
 
 	protected void init() {
