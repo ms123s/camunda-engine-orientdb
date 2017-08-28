@@ -40,7 +40,7 @@ import com.tinkerpop.blueprints.impls.orient.OrientBaseGraph;
 import com.tinkerpop.blueprints.impls.orient.OrientGraph;
 import com.tinkerpop.blueprints.impls.orient.OrientGraphFactory;
 import com.orientechnologies.orient.server.config.OServerUserConfiguration;
-import org.simpl4.OrientDB;
+import java.lang.reflect.Method;
 
 /**
  * @author Manfred Sattler
@@ -57,11 +57,8 @@ public class OrientdbProcessEngineConfiguration extends ProcessEngineConfigurati
 	public static String manager = null;
 
 	public OrientdbProcessEngineConfiguration() {
-	 this(new OrientDB().getFactory("camunda2", "root", "simpl4"));
-	}
-	public OrientdbProcessEngineConfiguration(OrientGraphFactory f) {
 		super();
-
+		OrientGraphFactory f = initDB("camunda2", "root", "simpl4");
 		f.setStandardElementConstraints(false);
 		graphFactory = f;
 		setHistory(HISTORY_FULL);
@@ -75,7 +72,40 @@ public class OrientdbProcessEngineConfiguration extends ProcessEngineConfigurati
 		setDeploymentLockUsed(false);
 		setTenantCheckEnabled(false);
 		setEnableExpressionsInAdhocQueries(true);
-		System.err.println("OrientdbProcessEngineConfiguration");
+		setExecutionTreePrefetchEnabled(false);
+		CommandContextFactory ccf = createDefaultCommandContextFactory();
+		ccf.setProcessEngineConfiguration(this);
+		setCommandContextFactory(ccf);
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private OrientGraphFactory initDB(String database, String user, String pw) {
+		try {
+			Class clazz = Class.forName("org.simpl4.OrientDB");
+			Object object = clazz.newInstance();
+			Method method = clazz.getMethod("getFactory", new Class[] { String.class, String.class, String.class });
+			return (OrientGraphFactory) method.invoke(object, new Object[] { database, user, pw });
+		} catch (Exception e) {
+			throw new RuntimeException("Error init database", e);
+		}
+	}
+
+	public OrientdbProcessEngineConfiguration(OrientGraphFactory f) {
+		super();
+
+		f.setStandardElementConstraints(false);
+		graphFactory = f;
+
+		setHistory(HISTORY_FULL);
+		setCmmnEnabled(false);
+		setDmnEnabled(false);
+		setAuthorizationEnabled(false);
+		setMetricsEnabled(false);
+		setJobExecutorActivate(false);
+		setDbMetricsReporterActivate(false);
+		setDeploymentLockUsed(false);
+		setTenantCheckEnabled(false);
+		setEnableExpressionsInAdhocQueries(true);
 		setExecutionTreePrefetchEnabled(false);
 		CommandContextFactory ccf = createDefaultCommandContextFactory();
 		ccf.setProcessEngineConfiguration(this);
@@ -163,7 +193,7 @@ public class OrientdbProcessEngineConfiguration extends ProcessEngineConfigurati
 
 	@Override
 	protected void initPersistenceProviders() {
-		addSessionFactory(new OrientdbSessionFactory(graphFactory, variableListeners,getHistory()));
+		addSessionFactory(new OrientdbSessionFactory(graphFactory, variableListeners, getHistory()));
 		addSessionFactory(new OrientdbPersistenceProviderFactory());
 	}
 
