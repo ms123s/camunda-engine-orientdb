@@ -16,7 +16,7 @@ dependencies {
  	compile files("jars/orientdb-graphdb-${orientdb_version}.jar")
  	compile files("jars/orientdb-server-${orientdb_version}.jar")
  	compile files("jars/orientdb-tools-${orientdb_version}.jar")
- 	compile files("jars/orientqb-0.2.1-SNAPSHOT.jar")
+ 	compile files("jars/orientdb-groovy-0.1.2.jar")
  	compile files("jars/reflections-0.9.11.jar")
  	compile files("jars/servlet-api-2.5.jar")
   compile files("jars/slf4j-jdk14-1.7.5.jar")

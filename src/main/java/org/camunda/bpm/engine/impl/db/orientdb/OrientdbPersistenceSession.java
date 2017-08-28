@@ -66,7 +66,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	private List<String> prefixList = new ArrayList<>(Arrays.asList("selectLatest", "select"));
 	private List<String> suffixList = new ArrayList<>(Arrays.asList("CountBy", "IdsBy", "By"));
 	OrientdbSessionFactory sessionFactory;
-	private Map<String,Vertex> entityCache = new HashMap<String,Vertex>();
+	private Map<String, Vertex> entityCache = new HashMap<String, Vertex>();
 
 	protected OrientGraph orientGraph;
 
@@ -125,6 +125,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			setEntityValues(entityClass, entity, props);
 			dump("selectOne(" + entityName + ")", entity);
 			LOG.info("<-selectOne(" + entityName + ").return:" + entity);
+			fireEntityLoaded(entity);
 			return entity;
 		} catch (Exception e) {
 			LOG.info("OrientdbPersistenceSession.selectOne:" + e.getMessage());
@@ -174,6 +175,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 					Object entity = entityClass.newInstance();
 					setEntityValues(entityClass, entity, props);
 					dump("selectList(" + entityName + ")", entity);
+					fireEntityLoaded(entity);
 					entityList.add(entity);
 				}
 				LOG.info("<-selectList3(" + entityName + ").return:" + entityList);
@@ -278,6 +280,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			setEntityValues(entityClass, entity, props);
 			dump("selectById(" + entityName + "," + id + ")", entity);
 			LOG.info("<-selectById(" + entityName + ").return:" + entity);
+			fireEntityLoaded(entity);
 			return entity;
 		} catch (Exception e) {
 			LOG.info("OrientdbPersistenceSession.selectById:" + e.getMessage());
@@ -369,10 +372,9 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		Class entityClass = OrientdbSessionFactory.getReplaceClass(entity.getClass());
 		String entityName = entityClass.getSimpleName();
 		LOG.info("-> insertEntity(" + entityName + ")");
-		if (entityName.equals("ByteArrayEntity")) {
-//			if( true) new Exception("ByteArrayEntity Insert").printStackTrace();
-		}
 
+		dump("insertEntity.operation:", operation);
+		dump("insertEntity.entity:", entity);
 		if (entityName.equals("HistoricVariableUpdateEventEntity")) {
 			this.sessionFactory.fireEvent((HistoricVariableUpdateEventEntity) entity);
 		}
@@ -398,15 +400,17 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 				if (value != null /*name.equals("id")*/) {
 					LOG.info("- Field(" + name + "):" + value);
 				}
-				if( name.equals("id"))id=value;
-				if( name.equals("name"))n=value;
+				if (name.equals("id"))
+					id = value;
+				if (name.equals("name"))
+					n = value;
 				v.setProperty(name, value);
 			}
-			if( id != null){
-				entityCache.put( (String)id, v);
+			if (id != null) {
+				entityCache.put((String) id, v);
 			}
-			handler.insertAdditional( this. orientGraph, v, entity, entityClass,entityCache);
-			LOG.info("<- insertEntity(" + entityName +","+n+","+id+ "):ok");
+			handler.insertAdditional(this.orientGraph, v, entity, entityClass, entityCache);
+			LOG.info("<- insertEntity(" + entityName + "," + n + "," + id + "):ok");
 		} catch (Exception e) {
 			LOG.info("OrientdbPersistenceSession.insertEntity(" + entityName + "):" + e.getMessage());
 			System.err.println("OrientdbPersistenceSession.insertEntity(" + entityName + "):" + e);
@@ -421,20 +425,18 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		if (entityName.equals("VariableInstanceEntity")) {
 			//this.sessionFactory.fireEvent((VariableInstanceEntity) entity, "delete");
 		}
-		if (entityName.equals("ByteArrayEntity")) {
-			if( true) new Exception("ByteArrayEntity Delete").printStackTrace();
-			return;
-		}
+		dump("deleteEntity.operation:", operation);
+		dump("deleteEntity.entity:", entity);
 		String id = getValue(entity, "getId");
-		String name=null;
-		try{
+		String name = null;
+		try {
 			name = getValue(entity, "getName");
-		}catch(Exception e){
+		} catch (Exception e) {
 		}
 		LOG.info("-> deleteEntity(" + entityName + "):" + id);
 		OCommandRequest del = new OCommandSQL("Delete vertex " + entityName + " where id=?");
 		orientGraph.command(del).execute(id);
-		LOG.info("<- deleteEntity(" + entityName+","+name + "):ok");
+		LOG.info("<- deleteEntity(" + entityName + "," + name + "):ok");
 	}
 
 	protected void deleteBulk(DbBulkOperation operation) {
@@ -554,7 +556,8 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	}
 
 	private void dump(String msg, Object o) {
-		if( true) return;
+		if (true)
+			return;
 		ReflectionToStringBuilder rb = new ReflectionToStringBuilder(o, ToStringStyle.JSON_STYLE);
 		rb.setExcludeNullValues(true);
 		LOG.info("   +++" + msg + ":" + rb.toString());
