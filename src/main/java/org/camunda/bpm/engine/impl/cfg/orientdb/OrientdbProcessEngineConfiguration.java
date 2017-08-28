@@ -40,6 +40,7 @@ import com.tinkerpop.blueprints.impls.orient.OrientBaseGraph;
 import com.tinkerpop.blueprints.impls.orient.OrientGraph;
 import com.tinkerpop.blueprints.impls.orient.OrientGraphFactory;
 import com.orientechnologies.orient.server.config.OServerUserConfiguration;
+import org.simpl4.OrientDB;
 
 /**
  * @author Manfred Sattler
@@ -55,11 +56,15 @@ public class OrientdbProcessEngineConfiguration extends ProcessEngineConfigurati
 
 	public static String manager = null;
 
+	public OrientdbProcessEngineConfiguration() {
+	 this(new OrientDB().getFactory("camunda2", "root", "simpl4"));
+	}
 	public OrientdbProcessEngineConfiguration(OrientGraphFactory f) {
 		super();
 
+		f.setStandardElementConstraints(false);
 		graphFactory = f;
-		setHistory(HISTORY_NONE);
+		setHistory(HISTORY_FULL);
 
 		setCmmnEnabled(false);
 		setDmnEnabled(false);

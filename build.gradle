@@ -36,6 +36,7 @@ dependencies {
  	compile files("jars/servlet-api-2.5.jar")
  	compile files("jars/slf4j-api-1.7.21.jar")
   compile files("jars/slf4j-jdk14-1.7.5.jar")
+  compile files("jars/jcl-over-slf4j-1.7.5.jar")
  	compile files("jars/spring-beans-4.3.9.RELEASE.jar")
  	compile files("jars/spring-core-4.3.9.RELEASE.jar")
 }

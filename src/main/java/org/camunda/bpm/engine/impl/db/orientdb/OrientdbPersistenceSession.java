@@ -360,6 +360,8 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			name = "Job";
 		} else if (statement.startsWith("selectVariablesBy")) {
 			name = "VariableInstance";
+		} else if (statement.startsWith("selectUserOperationLogEntries")) {
+			name = "UserOperationLogEntryEvent";
 		} else if (!name.endsWith("Statistics") && name.endsWith("s")) {
 			name = name.substring(0, name.length() - 1);
 		}
@@ -648,8 +650,10 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	}
 
 	public int executeNonEmptyUpdateStmt(String s, Object o) {
-		LOG.info("executeNonEmptyUpdateStmt:" + s + "/" + o);
-		throw new RuntimeException("OrientdbPersistenceSession.executeNonEmptyUpdateStmt not implemented");
+		LOG.info("executeNonEmptyUpdateStmt("+s+"):");
+		dump( "executeNonEmptyUpdateStmt", o);
+//	throw new RuntimeException("OrientdbPersistenceSession.executeNonEmptyUpdateStmt not implemented");
+		return 0;
 	}
 
 	public void lock(String statement, Object parameter) {
