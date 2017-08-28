@@ -7,10 +7,10 @@ This is work in progress.
 Still not tested enough, but first processes work, also with history
 
 
-**For the testcase, you need to initialize the database in**
+_**For the testcase, you need to initialize the database in**_
 
 **OrientdbProcessEngineConfiguration.java**
-```
+```java
 
 OrientGraphFactory f = initDB("camunda2", "root", "simpl4");
 ```
