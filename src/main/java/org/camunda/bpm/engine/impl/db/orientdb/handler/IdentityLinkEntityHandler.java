@@ -1,9 +1,9 @@
 package org.camunda.bpm.engine.impl.db.orientdb.handler;
 
+import com.github.raymanrt.orientqb.query.Clause;
 import com.orientechnologies.orient.core.command.OCommandRequest;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
 import com.tinkerpop.blueprints.Element;
-import com.tinkerpop.blueprints.impls.orient.OrientElementIterable;
 import com.tinkerpop.blueprints.impls.orient.OrientGraph;
 import com.tinkerpop.blueprints.Vertex;
 import java.util.ArrayList;
@@ -11,11 +11,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.logging.Logger;
 import java.util.Map;
-import com.github.raymanrt.orientqb.query.Clause;
 import org.camunda.bpm.engine.impl.db.orientdb.CParameter;
 import org.camunda.bpm.engine.impl.persistence.entity.IdentityLinkEntity;
-import static com.github.raymanrt.orientqb.query.Operator.EQ;
 import static com.github.raymanrt.orientqb.query.Clause.or;
+import static com.github.raymanrt.orientqb.query.Operator.EQ;
 
 /**
  * @author Manfred Sattler
@@ -49,10 +48,11 @@ public class IdentityLinkEntityHandler extends BaseEntityHandler {
 		String taskId = getValue(entity, "getTaskId");
 		LOG.info("IdentityLinkEntity.insertAdditional(" + processDefId + "," + taskId + "):" + v);
 		Vertex cachedEntity = entityCache.get(processDefId != null ? processDefId : taskId);
-		Collection<Element> result = null;
+		Iterable<Element> result = null;
 		if (cachedEntity != null) {
-			result = new ArrayList<Element>();
-			result.add(cachedEntity);
+			List<Element> el = new ArrayList<Element>();
+			el.add(cachedEntity);
+			result = el; 
 		}
 		if (processDefId != null) {
 			if (result == null) {
@@ -66,7 +66,7 @@ public class IdentityLinkEntityHandler extends BaseEntityHandler {
 			}
 		}
 		for (Element elem : result) {
-			OrientElementIterable<Element> iter = elem.getProperty("identityLink");
+			Iterable<Element> iter = elem.getProperty("identityLink");
 			if (iter == null) {
 				LOG.info("IdentityLinkEntity.insertAdditional.identityLink:" + v);
 				elem.setProperty("identityLink", v);
