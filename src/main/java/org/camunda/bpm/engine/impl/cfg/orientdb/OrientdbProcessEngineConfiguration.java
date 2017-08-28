@@ -85,7 +85,7 @@ public class OrientdbProcessEngineConfiguration extends ProcessEngineConfigurati
 			graphFactory = (OrientGraphFactory) method.invoke(object, new Object[] { database, user, pw });
 			graphFactory.setStandardElementConstraints(false);
 		} catch (Exception e) {
-			throw new RuntimeException("Error init database", e);
+			throw new RuntimeException("Error createDatabaseFactory", e);
 		}
 	}
 
