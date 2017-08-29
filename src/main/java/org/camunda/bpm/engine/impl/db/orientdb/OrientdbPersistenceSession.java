@@ -94,9 +94,10 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 
 		List<CParameter> parameterList = getCParameterList(statement, parameter, entityHandler);
 		LOG.info("  - CParameterList:" + parameterList);
-		OCommandRequest query = entityHandler.buildQuery(entityName, statement, parameterList, parameter);
+		Map<String,Object> queryParams = new HashMap<String,Object>();
+		OCommandRequest query = entityHandler.buildQuery(entityName, statement, parameterList, parameter, queryParams);
 
-		Iterable<Element> result = orientGraph.command(query).execute();
+		Iterable<Element> result = orientGraph.command(query).execute(queryParams);
 		LOG.info("  - result:" + result);
 		Map<String, Object> props = null;
 		int count = 0;
@@ -149,9 +150,10 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 
 		List<CParameter> parameterList = getCParameterList(statement, parameter, entityHandler);
 		LOG.info("  - CParameterList:" + parameterList);
-		OCommandRequest query = entityHandler.buildQuery(entityName, statement, parameterList, parameter);
+		Map<String,Object> queryParams = new HashMap<String,Object>();
+		OCommandRequest query = entityHandler.buildQuery(entityName, statement, parameterList, parameter, queryParams);
 
-		Iterable<Element> result = orientGraph.command(query).execute();
+		Iterable<Element> result = orientGraph.command(query).execute(queryParams);
 		List<Map<String, Object>> propsList = new ArrayList<Map<String, Object>>();
 		for (Element elem : result) {
 			Map<String, Object> props = ((OrientVertex) elem).getProperties();
@@ -172,8 +174,9 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			} else {
 				List<Object> entityList = new ArrayList<Object>();
 				for (Map<String, Object> props : propsList) {
-					Object entity = entityClass.newInstance();
-					setEntityValues(entityClass, entity, props);
+					Class subClass = entityHandler.getSubClass( entityClass, props);
+					Object entity = subClass.newInstance();
+					setEntityValues(subClass, entity, props);
 					dump("selectList(" + entityName + ")", entity);
 					fireEntityLoaded(entity);
 					entityList.add(entity);
@@ -182,11 +185,11 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 				return entityList;
 			}
 		} catch (Exception e) {
-			LOG.info("OrientdbPersistenceSession.selectList:" + e.getMessage());
+			LOG.info("OrientdbPersistenceSession.selectList("+statement+","+entityName+"):" + e.getMessage());
 			//			LOG.throwing("OrientdbPersistenceSession", "selectList", e);
 			e.printStackTrace();
 		}
-		LOG.info("<-selectList4(" + entityName + ").return:null");
+		LOG.info("<-selectList4(" + entityName + ").return:emptyList");
 		return new ArrayList();
 	}
 
@@ -466,8 +469,9 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			if (entityName.equals("VariableInstanceEntity")) {
 				//fireEventForVariableInstanceEntityDelete(entityClass, statement, parameterList, handler);
 			}
-			OCommandRequest up = handler.buildDelete(entityName, statement, parameterList);
-			orientGraph.command(up).execute();
+			Map<String,Object> queryParams = new HashMap<String,Object>();
+			OCommandRequest up = handler.buildDelete(entityName, statement, parameterList, queryParams);
+			orientGraph.command(up).execute(queryParams);
 		} else {
 			throw new RuntimeException("OrientdbPersistenceSession.deleteBulk(" + statement + "," + entityName + "):no parameter");
 		}
@@ -527,8 +531,9 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	}
 
 	private Object fireEventForVariableInstanceEntityDelete(Class entityClass, String statement, List<CParameter> parameterList, BaseEntityHandler handler) {
-		OCommandRequest query = handler.buildQuery(entityClass.getSimpleName(), statement, parameterList, null);
-		Iterable<Element> result = orientGraph.command(query).execute();
+		Map<String,Object> queryParams = new HashMap<String,Object>();
+		OCommandRequest query = handler.buildQuery(entityClass.getSimpleName(), statement, parameterList, null, queryParams);
+		Iterable<Element> result = orientGraph.command(query).execute(queryParams);
 		Map<String, Object> props = null;
 		for (Element elem : result) {
 			props = ((OrientVertex) elem).getProperties();

@@ -85,10 +85,10 @@ public class OrientdbSessionFactory implements SessionFactory {
 		entityReplaceMap.put(HistoricProcessInstanceEventEntity.class, HistoricProcessInstanceEntity.class);
 		entityReplaceMap.put(HistoricActivityInstanceEventEntity.class, HistoricActivityInstanceEntity.class);
 		entityReplaceMap.put(HistoricTaskInstanceEventEntity.class, HistoricTaskInstanceEntity.class);
-		entityReplaceMap.put(HistoricFormPropertyEventEntityHandler.class, HistoricFormPropertyEntityHandler.class);
-		entityReplaceMap.put(HistoricIdentityLinkLogEventEntityHandler.class, HistoricIdentityLinkLogEntityHandler.class);
-		entityReplaceMap.put(HistoricIncidentEventEntityHandler.class, HistoricIncidentEntityHandler.class);
-		entityReplaceMap.put(HistoricJobLogEventEntityHandler.class, HistoricJobLogEventHandler.class);
+		entityReplaceMap.put(HistoricFormPropertyEventEntityHandler.class, HistoricFormPropertyEntityHandler.class); //@@@MS Handler???
+		entityReplaceMap.put(HistoricIdentityLinkLogEventEntityHandler.class, HistoricIdentityLinkLogEntityHandler.class); //@@@MS Handler???
+		entityReplaceMap.put(HistoricIncidentEventEntityHandler.class, HistoricIncidentEntityHandler.class); //@@@MS Handler???
+		entityReplaceMap.put(HistoricJobLogEventEntityHandler.class, HistoricJobLogEventHandler.class); //@@@MS Handler???
 	}
 
 	private void initHandler(OrientGraph orientGraph) {

@@ -141,8 +141,9 @@ public class OrientdbProcessEngineConfiguration extends ProcessEngineConfigurati
 		initServices();
 		initIdGenerator();
 		initDeployers();
-		//    initJobProvider();
-		//    initJobExecutor();
+		initJobProvider();
+		initBatchHandlers();
+		initJobExecutor();
 		//    initDataSource();
 		//    initTransactionFactory();
 		//    initSqlSessionFactory();

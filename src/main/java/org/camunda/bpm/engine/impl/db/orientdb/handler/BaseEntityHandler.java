@@ -102,13 +102,16 @@ public abstract class BaseEntityHandler {
 	public void modifyCParameterList(String statement, List<CParameter> parameterList) {
 	}
 
-	public void addToClauseList(List<Clause> clauseList, Object parameter) {
+	public void addToClauseList(List<Clause> clauseList, Object parameter, Map<String,Object> variables) {
 	}
 
 	public void postProcessQuery(Query q, String statement, List<CParameter> parameterList) {
 	}
 
 	public void insertAdditional(OrientGraph orientGraph, Vertex v, Object entity, Class entityClass, Map<String, Vertex> entityCache) {
+	}
+	public Class getSubClass(Class entityClass, Map<String,Object> properties) {
+		return entityClass;
 	}
 
 	public CParameter getCParameter(List<CParameter> parameterList, String name) {
@@ -207,7 +210,7 @@ public abstract class BaseEntityHandler {
 		}
 	}
 
-	public OCommandRequest buildQuery(String entityName, String statement, List<CParameter> parameterList, Object parameter) {
+	public OCommandRequest buildQuery(String entityName, String statement, List<CParameter> parameterList, Object parameter, Map<String,Object> queryParams) {
 		modifyCParameterList(statement, parameterList);
 		checkParameterList(parameterList);
 
@@ -231,7 +234,7 @@ public abstract class BaseEntityHandler {
 		if (statement.indexOf("Latest") > 0) {
 			isLatest = true;
 		}
-		addToClauseList(clauseList, parameter);
+		addToClauseList(clauseList, parameter,queryParams);
 		Clause w = and(clauseList.toArray(new Clause[clauseList.size()]));
 		Query q = new Query().from(entityName).where(w);
 		if (isLatest && this.metaByFieldMap.get("version") != null) {
@@ -241,23 +244,20 @@ public abstract class BaseEntityHandler {
 
 		postProcessQuery(q, statement, parameterList);
 
-		OCommandRequest query = new OSQLSynchQuery(q.toString());
-		OCommandContext qcontext = query.getContext();
+		OSQLSynchQuery query = new OSQLSynchQuery(q.toString());
 		boolean hasVar = false;
 		for (CParameter p : parameterList) {
 			if (p.value instanceof Date) {
-				qcontext.setVariable(p.name, p.value);
-				hasVar = true;
+				queryParams.put(p.name, p.value);
 			}
 		}
-		LOG.info("  - query:" + q);
-		if (hasVar) {
-			LOG.info("  - query.params:" + qcontext);
-		}
+
+		LOG.info("  - oquery:" + query);
+		LOG.info("  - query.params:" + queryParams);
 		return query;
 	}
 
-	public OCommandRequest buildDelete(String entityName, String statement, List<CParameter> parameterList) {
+	public OCommandRequest buildDelete(String entityName, String statement, List<CParameter> parameterList, Map<String,Object> queryParams) {
 		modifyCParameterList(statement, parameterList);
 		checkParameterList(parameterList);
 
@@ -353,6 +353,10 @@ public abstract class BaseEntityHandler {
 
 	protected <Any> Any getValueByField(Object obj, String fieldName) {
 		try {
+			if( obj == null){
+				LOG.info("BaseEntityHandler.getValueByField("+fieldName +") obj is null");
+				return null;
+			}
 			if (obj instanceof Map) {
 				return (Any) ((Map) obj).get(fieldName);
 			}
@@ -550,6 +554,11 @@ public abstract class BaseEntityHandler {
 		int len = name.length();
 		String base = c.getSimpleName().substring(0, len - "Entity".length());
 		return firstToLower(base) + "Id";
+	}
+	protected void dump(String msg, Object o) {
+		ReflectionToStringBuilder rb = new ReflectionToStringBuilder(o, ToStringStyle.JSON_STYLE);
+		rb.setExcludeNullValues(true);
+		LOG.info("   +++" + msg + ":" + rb.toString());
 	}
 }
 

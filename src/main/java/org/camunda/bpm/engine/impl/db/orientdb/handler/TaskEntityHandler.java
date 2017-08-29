@@ -9,6 +9,7 @@ import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.tinkerpop.blueprints.impls.orient.OrientGraph;
 import java.util.logging.Logger;
 import java.util.List;
+import java.util.Map;
 import java.util.ArrayList;
 import org.camunda.bpm.engine.impl.persistence.entity.TaskEntity;
 import static com.github.raymanrt.orientqb.query.Clause.clause;
@@ -52,7 +53,7 @@ public class TaskEntityHandler extends BaseEntityHandler {
 	}
 
 	@Override
-	public void addToClauseList(List<Clause> clauseList, Object parameter) {
+	public void addToClauseList(List<Clause> clauseList, Object parameter, Map<String,Object> queryParams) {
 		List<String> candidateGroups = getValueByField(parameter, "candidateGroups");
 		if (candidateGroups != null && candidateGroups.size()>0) {
 			List<Clause> orList = new ArrayList<Clause>();

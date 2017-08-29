@@ -1,29 +1,37 @@
 package org.camunda.bpm.engine.impl.db.orientdb.handler;
 
-import java.util.logging.Logger;
-import java.util.Map;
-import java.util.List;
-import java.util.ArrayList;
-
-import org.camunda.bpm.engine.impl.persistence.entity.JobEntity;
-import com.tinkerpop.blueprints.impls.orient.OrientGraph;
 
 import com.github.raymanrt.orientqb.query.Clause;
 import com.github.raymanrt.orientqb.query.Projection;
 import com.github.raymanrt.orientqb.query.Query;
+import com.orientechnologies.orient.core.command.OCommandRequest;
+import com.orientechnologies.orient.core.metadata.schema.OClass;
+import com.orientechnologies.orient.core.metadata.schema.OProperty;
+import com.orientechnologies.orient.core.metadata.schema.OSchema;
+import com.orientechnologies.orient.core.metadata.schema.OType;
+import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
+import com.tinkerpop.blueprints.impls.orient.OrientGraph;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Date;
+import java.util.logging.Logger;
+import java.util.Map;
+import org.camunda.bpm.engine.impl.db.orientdb.CParameter;
+import org.camunda.bpm.engine.impl.persistence.entity.JobEntity;
+import org.camunda.bpm.engine.impl.persistence.entity.MessageEntity;
+import org.camunda.bpm.engine.impl.persistence.entity.TimerEntity;
 import static com.github.raymanrt.orientqb.query.Clause.and;
 import static com.github.raymanrt.orientqb.query.Clause.clause;
 import static com.github.raymanrt.orientqb.query.Clause.not;
 import static com.github.raymanrt.orientqb.query.Clause.or;
 import static com.github.raymanrt.orientqb.query.Operator.EQ;
+import static com.github.raymanrt.orientqb.query.Operator.GT;
+import static com.github.raymanrt.orientqb.query.Operator.LT;
 import static com.github.raymanrt.orientqb.query.Operator.NULL;
 import static com.github.raymanrt.orientqb.query.Parameter.parameter;
 import static com.github.raymanrt.orientqb.query.Projection.ALL;
 import static com.github.raymanrt.orientqb.query.Projection.projection;
 import static com.github.raymanrt.orientqb.query.Variable.variable;
-import org.camunda.bpm.engine.impl.db.orientdb.CParameter;
-import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
-import com.orientechnologies.orient.core.command.OCommandRequest;
 
 /**
  * @author Manfred Sattler
@@ -54,12 +62,12 @@ public class JobEntityHandler extends BaseEntityHandler{
 	}
 
 	@Override
-	public OCommandRequest buildQuery( String entityName, String statement, List<CParameter> parameterList,Object parameter){
+	public OCommandRequest buildQuery( String entityName, String statement, List<CParameter> parameterList,Object parameter, Map<String,Object> queryParams){
 		modifyCParameterList( statement, parameterList );
 
 		CParameter ph = getCParameter( parameterList, "handlerConfigurationWithFollowUpJobCreatedProperty");
 		if( ph == null){
-			return super.buildQuery( entityName, statement, parameterList,parameter);
+			return super.buildQuery( entityName, statement, parameterList,parameter, queryParams);
 		}
 		Object handlerConfigurationWithFollowUpJobCreatedProperty = ph.value;
 		List<Clause> clauseList = new ArrayList<Clause>();
@@ -87,5 +95,47 @@ public class JobEntityHandler extends BaseEntityHandler{
 		LOG.info("  - query:" + q);
 		OCommandRequest query = new OSQLSynchQuery( q.toString() );
 		return query;
+	}
+	@Override
+	public void createAdditionalProperties(OSchema schema, OClass oClass) {
+		getOrCreateProperty(oClass, "type", OType.STRING);
+	}
+	@Override
+	public Class getSubClass(Class entityClass, Map<String,Object> properties) {
+		String type = (String)properties.get("type");
+		LOG.info("getSubClass.JobEntityHandler("+type+")");
+		if( "TimerEntity".equals(type)){
+			return TimerEntity.class;
+		}
+		if( "MessageEntity".equals(type)){
+			return MessageEntity.class;
+		}
+		return entityClass;
+	}
+	@Override
+	public void addToClauseList(List<Clause> clauseList, Object parameter, Map<String,Object> queryParams) {
+		dump( "parameter",parameter);
+		Date now = getValueByField(getValueByField(parameter, "parameter"),"now");
+		if( now == null){
+			LOG.info("JobEntityHandler.addToClauseList:parameter \"now\" is null");
+			now = new java.util.Date();
+		}
+		clauseList.add(clause( "retries", GT, 0 ));
+		Clause dueDate =	or(
+				projection("duedate").isNull(),
+				clause( "duedate", LT, parameter("duedate") )
+		);
+		queryParams.put( "duedate", now);
+		clauseList.add(dueDate);
+
+		Clause lockOwner =	or(
+				projection("lockOwner").isNull(),
+				clause( "lockExpTime", LT, parameter("lockExpTime") )
+		);
+		queryParams.put( "lockExpTime", now);
+		clauseList.add(lockOwner);
+
+
+		clauseList.add( clause("suspensionState", EQ, 1));
 	}
 }
