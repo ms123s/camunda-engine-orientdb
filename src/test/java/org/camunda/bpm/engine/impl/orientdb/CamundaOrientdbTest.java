@@ -39,21 +39,18 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
-import com.orientechnologies.orient.core.record.impl.ODocument;
+//import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
+//import com.orientechnologies.orient.core.record.impl.ODocument;
 
 import junit.framework.AssertionFailedError;
 
-@RunWith(OrienteerTestRunner.class)
-@Singleton
+//@Singleton
+@RunWith(OrientdbTestRunner.class)
 public class CamundaOrientdbTest {
 
 	private static final Logger LOG = LoggerFactory.getLogger(CamundaOrientdbTest.class);
 
-	@Inject
-	private OrientdbTester tester;
+	private OrientdbTester tester = new OrientdbTester();
 
 	@Rule
 	public ProcessEngineRule processEngineRule = new ProcessEngineRule(
@@ -294,8 +291,8 @@ public class CamundaOrientdbTest {
 	public void testUserTask() {
 		ProcessInstance processInstance = processEngineRule.getRuntimeService().startProcessInstanceByKey("user-task");
 		assertProcessNotEnded(processInstance.getId());
-		ODatabaseDocument db = tester.getDatabase();
-/*@@@MS		for(ODocument doc : db.browseClass(TaskEntityHandler.OCLASS_NAME)){
+/*		ODatabaseDocument db = tester.getDatabase();
+@@@MS		for(ODocument doc : db.browseClass(TaskEntityHandler.OCLASS_NAME)){
 			System.out.println("Task: "+doc);
 		}*/
 		List<Task> tasks = processEngineRule.getTaskService().createTaskQuery().taskAssignee("admin").processInstanceId(processInstance.getId()).list();
