@@ -1,16 +1,9 @@
 package org.camunda.bpm.engine.impl.orientdb;
 
-import org.camunda.bpm.engine.impl.orientdb.camunda.OProcessApplicationReference;
-import org.camunda.bpm.engine.impl.orientdb.camunda.OProcessEngineConfiguration;
-import org.camunda.bpm.engine.impl.orientdb.camunda.handler.ExecutionEntityHandler;
-import org.camunda.bpm.engine.impl.orientdb.camunda.handler.HandlersManager;
-import org.camunda.bpm.engine.impl.orientdb.camunda.handler.TaskEntityHandler;
-import org.camunda.bpm.engine.impl.orientdb.camunda.handler.UserEntityHandler;
-import org.orienteer.core.OrienteerWebApplication;
-import org.orienteer.core.module.IOrienteerModule;
+//import org.camunda.bpm.engine.impl.orientdb.camunda.handler.TaskEntityHandler;
 
-import org.orienteer.junit.OrienteerTestRunner;
-import org.orienteer.junit.OrienteerTester;
+import org.simpl4.OrientdbTestRunner;
+import org.simpl4.OrientdbTester;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,12 +48,12 @@ import junit.framework.AssertionFailedError;
 
 @RunWith(OrienteerTestRunner.class)
 @Singleton
-public class TestBPMModule {
+public class CamundaOrientdbTest {
 
-	private static final Logger LOG = LoggerFactory.getLogger(TestBPMModule.class);
+	private static final Logger LOG = LoggerFactory.getLogger(CamundaOrientdbTest.class);
 
 	@Inject
-	private OrienteerTester tester;
+	private OrientdbTester tester;
 
 	@Rule
 	public ProcessEngineRule processEngineRule = new ProcessEngineRule(
@@ -68,11 +61,6 @@ public class TestBPMModule {
 
 	@Test
 	public void testModuleLoaded() {
-		OrienteerWebApplication app = tester.getApplication();
-		assertNotNull(app);
-		IOrienteerModule module = app.getModuleByName("bpm");
-		assertNotNull(module);
-		assertTrue(module instanceof BPMModule);
 	}
 	
 	@Test
@@ -307,9 +295,9 @@ public class TestBPMModule {
 		ProcessInstance processInstance = processEngineRule.getRuntimeService().startProcessInstanceByKey("user-task");
 		assertProcessNotEnded(processInstance.getId());
 		ODatabaseDocument db = tester.getDatabase();
-		for(ODocument doc : db.browseClass(TaskEntityHandler.OCLASS_NAME)){
+/*@@@MS		for(ODocument doc : db.browseClass(TaskEntityHandler.OCLASS_NAME)){
 			System.out.println("Task: "+doc);
-		}
+		}*/
 		List<Task> tasks = processEngineRule.getTaskService().createTaskQuery().taskAssignee("admin").processInstanceId(processInstance.getId()).list();
 		assertNotNull(tasks);
 		assertFalse(tasks.isEmpty());
@@ -333,7 +321,7 @@ public class TestBPMModule {
 	public void testExecuteScriptSimple() {
 		touchedFromScript=false;
 		Map<String, Object> variables = new HashMap<>();
-		variables.put("script", "org.camunda.bpm.engine.impl.orientdb.TestBPMModule.touchFromScript();");
+		variables.put("script", "org.camunda.bpm.engine.impl.orientdb.CamundaOrientdbTest.touchFromScript();");
 		ProcessInstance processInstance = processEngineRule.getRuntimeService().startProcessInstanceByKey("execute-script", variables);
 		assertProcessEnded(processInstance.getId());
 		assertTrue(touchedFromScript);
@@ -344,7 +332,7 @@ public class TestBPMModule {
 	public void testExecuteOrientDBScript() {
 		touchedFromScript=false;
 		Map<String, Object> variables = new HashMap<>();
-		variables.put("script", "org.camunda.bpm.engine.impl.orientdb.TestBPMModule.touchFromScript();");
+		variables.put("script", "org.camunda.bpm.engine.impl.orientdb.CamundaOrientdbTest.touchFromScript();");
 		ProcessInstance processInstance = processEngineRule.getRuntimeService().startProcessInstanceByKey("execute-script", variables);
 		assertProcessEnded(processInstance.getId());
 		assertTrue(touchedFromScript);
