@@ -360,6 +360,8 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			name = "HistoricVariableInstance";
 		} else if (statement.startsWith("selectHistoricDetail")) {
 			name = "HistoricDetailEvent";
+		} else if (statement.startsWith("selectMessageStartEventSubscription")) {
+			name = "EventSubscription";
 		} else if (statement.startsWith("selectNextJobsToExecute")) {
 			name = "Job";
 		} else if (statement.startsWith("selectVariablesBy")) {
@@ -404,7 +406,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 				Method method = entityClass.getMethod(getter);
 				Object value = method.invoke(entity);
 				if (value != null /*name.equals("id")*/) {
-					LOG.info("- Field(" + name + "):" + value);
+					//LOG.info("- Field(" + name + "):" + value);
 				}
 				if (name.equals("id"))
 					id = value;

@@ -204,7 +204,7 @@ public abstract class BaseEntityHandler {
 
 	public void checkParameterList(List<CParameter> parameterList) {
 		for (CParameter p : parameterList) {
-			if (this.metaByFieldMap.get(p.name) == null && !p.name.equals("_isLatest")) {
+			if (p.noCheck == false && this.metaByFieldMap.get(p.name) == null && !p.name.equals("_isLatest")) {
 				throw new RuntimeException("BaseEntityHandler.checkParameterList(" + this.entityClass.getSimpleName() + "," + p.name + ") not found");
 			}
 			//			LOG.info("checked(" + entityClass.getSimpleName() + "." + p.name + ")");

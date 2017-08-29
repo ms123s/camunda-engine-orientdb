@@ -16,6 +16,7 @@ import org.camunda.bpm.engine.impl.test.PluggableProcessEngineTestCase;
 import org.camunda.bpm.engine.runtime.ActivityInstance;
 import org.camunda.bpm.engine.runtime.ProcessInstance;
 import org.camunda.bpm.model.bpmn.Bpmn;
+import org.junit.*;
 
 import static org.camunda.bpm.engine.variable.Variables.*;
 
@@ -25,7 +26,7 @@ import static org.camunda.bpm.engine.variable.Variables.*;
  */
 public class SmokeTest extends PluggableProcessEngineTestCase {
 
-/*
+  @Ignore
   public void testStartToEnd() {
 
     deploymentId = repositoryService.createDeployment()
@@ -40,6 +41,7 @@ public class SmokeTest extends PluggableProcessEngineTestCase {
 
   }
 
+  @Ignore
   public void testWaitState() {
 
     String taskId = "waitForMessage";
@@ -62,6 +64,6 @@ public class SmokeTest extends PluggableProcessEngineTestCase {
     // signal process instance to finish
     runtimeService.signal(pi.getId());
 
-  }*/
+  }
 
 }
