@@ -4,10 +4,15 @@ import java.util.logging.Logger;
 
 import com.github.raymanrt.orientqb.query.Clause;
 import com.orientechnologies.orient.core.command.OCommandRequest;
+import com.orientechnologies.orient.core.metadata.schema.OClass;
+import com.orientechnologies.orient.core.metadata.schema.OSchema;
+import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
+import com.github.raymanrt.orientqb.query.clause.VerbatimClause;
 import com.tinkerpop.blueprints.Element;
 import com.tinkerpop.blueprints.impls.orient.OrientGraph;
 import com.tinkerpop.blueprints.Vertex;
+import org.camunda.bpm.engine.impl.EventSubscriptionQueryValue;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -27,6 +32,7 @@ public class ExecutionEntityHandler extends BaseEntityHandler{
 	public ExecutionEntityHandler(OrientGraph g) {
 		super( g, ExecutionEntity.class);
 	}
+
 	@Override
 	public void modifyCParameterList(String statement, List<CParameter> parameterList) {
 		LOG.info("ExecutionEntity.modifyCParameterList("+statement+","+parameterList);
@@ -45,6 +51,7 @@ public class ExecutionEntityHandler extends BaseEntityHandler{
 		parameterList.remove(getCParameter(parameterList, "orderingProperties"));
 		parameterList.remove(getCParameter(parameterList, "applyOrdering"));
 	}
+
 	@Override
 	public List<CParameter> getCParameterList(String statement, Object p) {
 		if( p instanceof String ){
@@ -61,44 +68,65 @@ public class ExecutionEntityHandler extends BaseEntityHandler{
 		}
 		List<CParameter> list = super.getCParameterList(statement,p);
 		if( statement.equals("selectProcessInstanceByQueryCriteria")){
-			List<CParameter> parameterList = new ArrayList<CParameter>();
 			list.add( new CParameter( "parentId", EQ, null));
+		}
+		if( statement.equals("selectExecutionsByQueryCriteria")){
 		}
 		return list;
 	}
+
+	@Override
+		public void addToClauseList(List<Clause> clauseList, Object parameter, Map<String,Object> queryParams) {
+		List<EventSubscriptionQueryValue> evList = getValue( parameter, "getEventSubscriptions");
+		if( evList != null){
+			for( EventSubscriptionQueryValue ev : evList){	
+				clauseList.add(new VerbatimClause("eventSubscriptions CONTAINS (eventName='"+ev.getEventName()+"' and eventType='"+ev.getEventType()+"')" ));
+			}
+		}
+	}
+
 	@Override
 	public void insertAdditional(OrientGraph orientGraph, Vertex v, Object entity, Class entityClass, Map<String, Vertex> entityCache) {
-		String executionId = getValue(entity, "getId");
-		LOG.info("ExecutionEntity.insertAdditional(" + executionId +"):" + v);
-		Vertex cachedEntity = entityCache.get(executionId);
+if( true) return;
+		String eventSubscriptionsId = getValue(entity, "getId");
+		LOG.info("ExecutionEntity.insertAdditional(" + eventSubscriptionsId +"):" + v);
+		Vertex cachedEntity = entityCache.get(eventSubscriptionsId);
 		Iterable<Element> result = null;
 		if (cachedEntity != null) {
+			LOG.info("ExecutionEntity.insertAdditional.fromCache(" + cachedEntity +"):"+entityCache);
 			List<Element> el = new ArrayList<Element>();
 			el.add(cachedEntity);
 			result = el; 
 		}
-		if (executionId != null) {
+		if (eventSubscriptionsId != null) {
 			if (result == null) {
-				OCommandRequest query = new OSQLSynchQuery("select from ExecutionEntity where id=?");
-				result = orientGraph.command(query).execute(executionId);
+				OCommandRequest query = new OSQLSynchQuery("select from EventSubscriptionEntity where id=?");
+				result = orientGraph.command(query).execute(eventSubscriptionsId);
 			}
 		} 
 		if( result == null){
-			LOG.info("ExecutionEntity.insertAdditional(" + executionId +"):not found");
+			LOG.info("ExecutionEntity.insertAdditional(" + eventSubscriptionsId +"):not found");
 			return;
 		}
 		for (Element elem : result) {
 			Iterable<Element> iter = elem.getProperty("execution");
 			if (iter == null) {
-				LOG.info("ExecutionEntity.insertAdditional.execution:" + v);
-				elem.setProperty("identityLink", v);
+				LOG.info("EventSubscriptionEntity("+elem+").insertAdditional.execution:" + v);
+				elem.setProperty("execution", v);
 			} else {
 				Collection<Element> col = makeCollection(iter);
-				LOG.info("ExecutionEntity.insertAdditional.execution(" + iter.getClass().getName() + "," + col + "):" + v);
+				LOG.info("EventSubscriptionEntity("+elem+").insertAdditional.execution(" + iter.getClass().getName() + "," + col + "):" + v);
 				col.add(v);
 				elem.setProperty("execution", col);
 			}
 			break;
 		}
+	}
+
+	@Override
+	public void createAdditionalProperties(OSchema schema, OClass oClass) {
+		OClass oLinkedClass = getOrCreateClass( schema, "EventSubscriptionEntity");
+		getOrCreateLinkedProperty(oClass, "eventSubscriptions", OType.LINKSET, oLinkedClass);
+		LOG.info("createAdditional.ExecutionEntity("+oLinkedClass+","+oClass+")");
 	}
 }

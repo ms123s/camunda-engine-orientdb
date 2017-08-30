@@ -423,16 +423,16 @@ public abstract class BaseEntityHandler {
 		try {
 			String entityName = this.entityClass.getSimpleName();
 			OSchemaProxy schema = this.orientGraph.getRawGraph().getMetadata().getSchema();
-			if (schema.getClass(entityName) != null) {
+			/*if (schema.getClass(entityName) != null) {
 				return;
-			}
+			}*/
 			LOG.info("createClassAndProperties:" + entityName);
 			OClass oClass = getOrCreateClass(schema, entityName);
-			if (notRestrictedList.contains(entityName)) {
+			/*if (notRestrictedList.contains(entityName)) {
 				setSuperClasses(schema, oClass, false);
 			} else {
 				setSuperClasses(schema, oClass, true);
-			}
+			}*/
 			for (Map<String, Object> f : this.entityMetadata) {
 				String pName = (String) f.get("name");
 				if (f.get("namedId") != null) {
@@ -452,6 +452,11 @@ public abstract class BaseEntityHandler {
 		OClass oClass = schema.getClass(className);
 		if (oClass == null) {
 			oClass = schema.createClass(className);
+			if (notRestrictedList.contains(className)) {
+				setSuperClasses(schema, oClass, false);
+			} else {
+				setSuperClasses(schema, oClass, true);
+			}
 		}
 		return oClass;
 	}
