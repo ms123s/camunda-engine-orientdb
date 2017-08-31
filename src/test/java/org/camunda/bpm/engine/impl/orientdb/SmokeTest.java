@@ -1,4 +1,4 @@
-/* Licensed under the Apache License, Version 2.0 (the "License");
+/* Xicensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -28,8 +28,8 @@ public class SmokeTest extends PluggableProcessEngineTestCase {
 
   public void testStartToEnd() {
 
-/*
-    deploymentId = repositoryService.createDeployment()
+
+  /*  deploymentId = repositoryService.createDeployment()
       .addModelInstance("process1.bpmn", Bpmn.createExecutableProcess("testProcess")
           .startEvent()
           .endEvent()
@@ -37,14 +37,14 @@ public class SmokeTest extends PluggableProcessEngineTestCase {
       .deploy()
     .getId();
 
-    runtimeService.startProcessInstanceByKey("testProcess", createVariables().putValue("foo", stringValue("bar")));
-*/
+    runtimeService.startProcessInstanceByKey("testProcess", createVariables().putValue("foo", stringValue("bar")));*/
+
   }
 
   public void testWaitState() {
-/*
 
-    String taskId = "waitForMessage";
+
+/*    String taskId = "waitForMessage";
 
     deploymentId = repositoryService.createDeployment()
       .addModelInstance("process1.bpmn", Bpmn.createExecutableProcess("testProcess")
@@ -62,8 +62,8 @@ public class SmokeTest extends PluggableProcessEngineTestCase {
     assertTrue(activityInstance.getActivityInstances(taskId).length == 1);
 
     // signal process instance to finish
-    runtimeService.signal(pi.getId());
-*/
+    runtimeService.signal(pi.getId());*/
+
 
   }
 

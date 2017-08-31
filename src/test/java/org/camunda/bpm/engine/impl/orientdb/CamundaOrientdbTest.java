@@ -63,6 +63,7 @@ public class CamundaOrientdbTest {
 	}
 	
 	@Test
+	@Ignore
 	public void testDeployProcess() {
 
 		BpmnModelInstance model = Bpmn.createExecutableProcess("testProcess").done();
@@ -191,7 +192,7 @@ public class CamundaOrientdbTest {
 	@Test
 	@Ignore
 	@Deployment(resources = { "example-sequence.bpmn" })
-	public void testCorrelateByBusinessKey() {
+	public void testCorrelateByBusinessKey() { 
 		RuntimeService runtimeService = processEngineRule.getRuntimeService();
 		ProcessInstance processInstance = runtimeService.startProcessInstanceByKey("Process_1", "business key");
 		assertProcessNotEnded(processInstance.getId());
@@ -208,7 +209,7 @@ public class CamundaOrientdbTest {
 	@Test
 	@Ignore
 	@Deployment(resources = { "example-sequence.bpmn" })
-	public void testCorrelateByVariables() {
+	public void testCorrelateByVariables() { //failed
 		RuntimeService runtimeService = processEngineRule.getRuntimeService();
 		Map<String, Object> vars = new HashMap<String, Object>();
 		vars.put("testString", "testVarString");
@@ -255,7 +256,7 @@ public class CamundaOrientdbTest {
 
 	@Test
 	@Ignore
-	@Deployment(resources = { "asynch-test.bpmn" })
+	@Deployment(resources = { "asynch-test.bpmn" }) //failed
 	public void testParallelExecution() throws InterruptedException {
 		AsynchTestDelegate.resetExecuted();
 		ProcessInstance processInstance = processEngineRule.getRuntimeService().startProcessInstanceByKey("asynchtest");
@@ -273,9 +274,8 @@ public class CamundaOrientdbTest {
 	 * Test external task entities
 	 */
 	@Test
-	@Ignore
 	@Deployment(resources = {"external-task.bpmn"})
-	public void testExternalTask() {
+	public void testExternalTask() { //failed
 		ProcessInstance processInstance = processEngineRule.getRuntimeService().startProcessInstanceByKey("externaltask");
 		assertProcessNotEnded(processInstance.getId());
 		List<ExternalTask> tasks = processEngineRule.getExternalTaskService().createExternalTaskQuery()
@@ -337,20 +337,6 @@ public class CamundaOrientdbTest {
 		assertTrue(touchedFromScript);
 	}
 	
-	@Test
-	@Ignore
-	@Deployment(resources = {"execute-script.bpmn"})
-	public void testExecuteOrientDBScript() {
-		touchedFromScript=false;
-		Map<String, Object> variables = new HashMap<>();
-		variables.put("script", "org.camunda.bpm.engine.impl.orientdb.CamundaOrientdbTest.touchFromScript();");
-		ProcessInstance processInstance = processEngineRule.getRuntimeService().startProcessInstanceByKey("execute-script", variables);
-		assertProcessEnded(processInstance.getId());
-		assertTrue(touchedFromScript);
-	}
-	
-	
-
 	private static class InterruptTask extends TimerTask {
 		protected boolean timeLimitExceeded = false;
 		protected Thread thread;

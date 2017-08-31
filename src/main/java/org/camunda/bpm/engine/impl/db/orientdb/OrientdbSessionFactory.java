@@ -164,8 +164,13 @@ public class OrientdbSessionFactory implements SessionFactory {
 		entityHandlerMap.put(TimerEntity.class, new TimerEntityHandler(orientGraph));
 	}
 
-	public static BaseEntityHandler getEntityHandler(Class entityClass) {
-		return entityHandlerMap.get(entityClass);
+	public static BaseEntityHandler getEntityHandler(Class entityClass, OrientGraph orientGraph) {
+		BaseEntityHandler bh = entityHandlerMap.get(entityClass);
+		if( bh == null){
+			throw new RuntimeException("OrientdbSessionFactory.getEntityHandler:entityClass("+entityClass+"):not found");
+		}
+		bh.setOrientGraph( orientGraph);
+		return bh;
 	}
 
 	public static Class getEntityClass(String entityName) {

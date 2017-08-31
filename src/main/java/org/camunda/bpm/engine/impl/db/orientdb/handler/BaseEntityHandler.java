@@ -92,6 +92,9 @@ public abstract class BaseEntityHandler {
 	public List<Map<String, Object>> getMetadata() {
 		return this.entityMetadata;
 	}
+	public void setOrientGraph( OrientGraph orientGraph){
+		this.orientGraph=orientGraph;
+	}
 
 	public void modifyMetadata() {
 	}

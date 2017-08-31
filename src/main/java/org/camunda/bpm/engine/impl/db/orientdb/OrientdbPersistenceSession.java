@@ -89,7 +89,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		Class entityClass = OrientdbSessionFactory.getEntityClass(entityName);
 		LOG.info("->selectOne(" + statement + "," + entityName + "):" + parameter);
 
-		BaseEntityHandler entityHandler = OrientdbSessionFactory.getEntityHandler(entityClass);
+		BaseEntityHandler entityHandler = OrientdbSessionFactory.getEntityHandler(entityClass, this.orientGraph);
 		boolean isCount = statement.indexOf("Count") > 0;
 
 		List<CParameter> parameterList = getCParameterList(statement, parameter, entityHandler);
@@ -146,7 +146,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		Class entityClass = OrientdbSessionFactory.getEntityClass(entityName);
 		LOG.info("  - entityClass:" + entityClass);
 
-		BaseEntityHandler entityHandler = OrientdbSessionFactory.getEntityHandler(entityClass);
+		BaseEntityHandler entityHandler = OrientdbSessionFactory.getEntityHandler(entityClass, this.orientGraph);
 
 		List<CParameter> parameterList = getCParameterList(statement, parameter, entityHandler);
 		LOG.info("  - CParameterList:" + parameterList);
@@ -279,7 +279,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			return null;
 		}
 		try {
-			BaseEntityHandler entityHandler = OrientdbSessionFactory.getEntityHandler(entityClass);
+			BaseEntityHandler entityHandler = OrientdbSessionFactory.getEntityHandler(entityClass, this.orientGraph);
 			Class subClass = entityHandler.getSubClass(entityClass, props);
 			T entity = (T) subClass.newInstance();
 			setEntityValues(entityClass, entity, props);
@@ -296,7 +296,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	}
 
 	private void setEntityValues(Class entityClass, Object entity, Map<String, Object> props) throws Exception {
-		BaseEntityHandler handler = OrientdbSessionFactory.getEntityHandler(entityClass);
+		BaseEntityHandler handler = OrientdbSessionFactory.getEntityHandler(entityClass, this.orientGraph);
 		List<Map<String, Object>> entityMeta = handler.getMetadata();
 		for (Map<String, Object> m : entityMeta) {
 			String name = (String) m.get("name");
@@ -364,6 +364,8 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			name = "EventSubscription";
 		} else if (statement.startsWith("selectNextJobsToExecute")) {
 			name = "Job";
+		} else if (statement.startsWith("selectExternalTasksForTopics")) {
+			name = "ExternalTask";
 		} else if (statement.startsWith("selectVariablesBy")) {
 			name = "VariableInstance";
 		} else if (statement.startsWith("selectUserOperationLogEntries")) {
@@ -386,7 +388,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		if (entityName.equals("HistoricVariableUpdateEventEntity")) {
 			this.sessionFactory.fireEvent((HistoricVariableUpdateEventEntity) entity);
 		}
-		BaseEntityHandler handler = OrientdbSessionFactory.getEntityHandler(entityClass);
+		BaseEntityHandler handler = OrientdbSessionFactory.getEntityHandler(entityClass, this.orientGraph);
 
 		if (entity instanceof HasDbRevision) {
 			((HasDbRevision) entity).setRevision(1);
@@ -436,10 +438,10 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		Class entityClass = OrientdbSessionFactory.getReplaceClass(entity.getClass());
 		String entityName = entity.getClass().getSimpleName();
 		if (entityName.equals("ExecutionEntity")) {
-			return;
+//			return;
 		}
 		if (entityName.equals("EventSubscriptionEntity")) {
-			return;
+//			return;
 		}
 		dump("deleteEntity.operation:", operation);
 		dump("deleteEntity.entity:", entity);
@@ -471,7 +473,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		Class entityClass = operation.getEntityType();
 		entityClass = OrientdbSessionFactory.getReplaceClass(entityClass);
 		String entityName = entityClass.getSimpleName();
-		BaseEntityHandler handler = OrientdbSessionFactory.getEntityHandler(entityClass);
+		BaseEntityHandler handler = OrientdbSessionFactory.getEntityHandler(entityClass, this.orientGraph);
 		LOG.info("-> deleteBulk(" + statement + "," + entityName + ").parameter:" + parameter);
 		List<CParameter> parameterList = getCParameterList(statement, parameter, handler);
 		LOG.info("  - CParameterList:" + parameterList);
@@ -519,7 +521,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		try {
 			Element e = it.next();
 
-			BaseEntityHandler handler = OrientdbSessionFactory.getEntityHandler(entityClass);
+			BaseEntityHandler handler = OrientdbSessionFactory.getEntityHandler(entityClass, this.orientGraph);
 			List<Map<String, Object>> entityMeta = handler.getMetadata();
 			for (Map<String, Object> m : entityMeta) {
 				if (m.get("namedId") != null) {

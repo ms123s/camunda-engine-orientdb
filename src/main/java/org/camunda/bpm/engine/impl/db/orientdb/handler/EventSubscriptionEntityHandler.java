@@ -39,6 +39,10 @@ public class EventSubscriptionEntityHandler extends BaseEntityHandler{
 	}
 
 	@Override
+	public void modifyCParameterList(String statement, List<CParameter> parameterList) {
+		parameterList.remove(getCParameter(parameterList, "lockResult"));
+	}
+	@Override
 	public List<CParameter> getCParameterList(String statement, Object p) {
 		LOG.info("EventSubscriptionEntity.getCParameterList("+statement+"):"+p);
 		if (statement.equals("selectMessageStartEventSubscriptionByName")) {
