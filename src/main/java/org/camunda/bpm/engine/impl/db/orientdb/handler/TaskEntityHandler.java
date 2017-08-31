@@ -53,7 +53,7 @@ public class TaskEntityHandler extends BaseEntityHandler {
 	}
 
 	@Override
-	public void addToClauseList(List<Clause> clauseList, Object parameter, Map<String,Object> queryParams) {
+	public void addToClauseList(List<Clause> clauseList, String statement, Object parameter, Map<String,Object> queryParams) {
 		List<String> candidateGroups = getValueByField(parameter, "candidateGroups");
 		if (candidateGroups != null && candidateGroups.size()>0) {
 			List<Clause> orList = new ArrayList<Clause>();

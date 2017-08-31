@@ -10,15 +10,18 @@ import com.orientechnologies.orient.core.metadata.schema.OSchema;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
 import com.tinkerpop.blueprints.impls.orient.OrientGraph;
+import org.camunda.bpm.engine.impl.db.ListQueryParameterObject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Date;
 import java.util.logging.Logger;
 import java.util.Map;
+import com.tinkerpop.blueprints.Element;
 import org.camunda.bpm.engine.impl.db.orientdb.CParameter;
 import org.camunda.bpm.engine.impl.persistence.entity.JobEntity;
 import org.camunda.bpm.engine.impl.persistence.entity.MessageEntity;
 import org.camunda.bpm.engine.impl.persistence.entity.TimerEntity;
+import com.github.raymanrt.orientqb.query.Parameter;
 import static com.github.raymanrt.orientqb.query.Clause.and;
 import static com.github.raymanrt.orientqb.query.Clause.clause;
 import static com.github.raymanrt.orientqb.query.Clause.not;
@@ -31,6 +34,7 @@ import static com.github.raymanrt.orientqb.query.Parameter.parameter;
 import static com.github.raymanrt.orientqb.query.Projection.ALL;
 import static com.github.raymanrt.orientqb.query.Projection.projection;
 import static com.github.raymanrt.orientqb.query.Variable.variable;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 /**
  * @author Manfred Sattler
@@ -103,7 +107,6 @@ public class JobEntityHandler extends BaseEntityHandler {
 	@Override
 	public Class getSubClass(Class entityClass, Map<String, Object> properties) {
 		String type = (String) properties.get("type");
-		LOG.info("getSubClass.JobEntityHandler(" + type + ")");
 		if ("TimerEntity".equals(type)) {
 			return TimerEntity.class;
 		}
@@ -113,24 +116,67 @@ public class JobEntityHandler extends BaseEntityHandler {
 		return entityClass;
 	}
 
-	@Override
-	public void addToClauseList(List<Clause> clauseList, Object parameter, Map<String, Object> queryParams) {
-		//dump( "parameter",parameter);
-		Date now = getValueByField(getValueByField(parameter, "parameter"), "now");
-		if (now == null) {
-			LOG.info("JobEntityHandler.addToClauseList:parameter \"now\" is null");
-			now = new java.util.Date();
+	public Iterable<Element> selectNextJobsToExecute(ListQueryParameterObject query) {
+		LOG.info("selectNextJobsToExecute");
+		Map<String, Object> params = getValue(query, "getParameter");
+		LOG.info("selectNextJobsToExecute(" + params + ")");
+		Date now = (Date) params.get("now");
+		int maxResults = query.getMaxResults();
+		String orderBy = null;//query.getOrderBy();
+		return queryList("select from JobEntity" +
+			 " where retries > 0" +
+			 " and (duedate is null or duedate <= ?)" +
+			 " and (lockOwner is null or lockExpirationTime < ?)" +
+			 " and suspensionState = 1" +
+			 ((orderBy != null) ? " order by " +
+			 orderBy : "") +
+			 " LIMIT ?", now, now, maxResults);
+	}
+
+	public Iterable<Element> selectJobsByConfiguration(ListQueryParameterObject query) {
+		LOG.info("selectJobsByConfiguration");
+		Map<String, Object> params = getValue(query, "getParameter");
+		String config = (String) params.get("handlerConfiguration");
+		String followUpConfig = (String) params.get("handlerConfigurationWithFollowUpJobCreatedProperty");
+		String type = (String) params.get("handlerType");
+		List<String> args = new ArrayList<>();
+		Query q = new Query().from("JobEntity");
+		q.where(Clause.clause("jobHandlerType", EQ, Parameter.PARAMETER));
+		args.add(type);
+		Clause eqConfig = Clause.clause("JobHandlerConfigurationRaw", EQ, Parameter.PARAMETER);
+		if (isEmpty(followUpConfig)) {
+			q.where(eqConfig);
+			args.add(config);
+		} else {
+			q.where(Clause.or(eqConfig, eqConfig));
+			args.add(config);
+			args.add(followUpConfig);
 		}
-		clauseList.add(clause("retries", GT, 0));
-		Clause dueDate = or(projection("duedate").isNull(), clause("duedate", LT, parameter("duedate")));
-		queryParams.put("duedate", now);
-		clauseList.add(dueDate);
+		return queryList(q.toString(), args.toArray());
+	}
 
-		Clause lockOwner = or(projection("lockOwner").isNull(), clause("lockExpirationTime", LT, parameter("lockExpirationTime")));
-		queryParams.put("lockExpirationTime", now);
-		clauseList.add(lockOwner);
+	@Override
+	public void addToClauseList(List<Clause> clauseList, String statement, Object parameter, Map<String, Object> queryParams) {
+		if( "selectNextJobsToExecute".equals(statement)){
+			ListQueryParameterObject query = (ListQueryParameterObject) parameter;
+			Map<String, Object> param = getValue(query,"getParameter");
+			Date now = getValueFromMap(param, "now");
+			//	  String orderBy = query.getOrderBy();
+			if( now == null){
+				now = new Date();
+			}
 
-		clauseList.add(clause("suspensionState", EQ, 1));
+			clauseList.add(clause("retries", GT, 0));
+			Clause dueDate = or(projection("duedate").isNull(), clause("duedate", LT, parameter("duedate")));
+			queryParams.put("duedate", now);
+			clauseList.add(dueDate);
+
+			Clause lockOwner = or(projection("lockOwner").isNull(), clause("lockExpirationTime", LT, parameter("lockExpirationTime")));
+			queryParams.put("lockExpirationTime", now);
+			clauseList.add(lockOwner);
+
+			clauseList.add(clause("suspensionState", EQ, 1));
+		}
 	}
 }
 

@@ -1,4 +1,4 @@
-package org.camunda.bpm.engine.impl.orientdb;
+package org.simpl4;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -15,6 +15,7 @@ public class AsynchTestDelegate implements JavaDelegate {
 	public void execute(DelegateExecution execution) throws Exception {
 		long delay = 30*executed.incrementAndGet();
 	    log.info("TestDelegate called for execution: "+execution.getCurrentActivityName()+" executed: "+executed);
+	    System.err.println("TestDelegate called for execution: "+execution.getCurrentActivityName()+" executed: "+executed);
 	    //Delay is required due to the following issue: https://app.camunda.com/jira/browse/CAM-6370
 	    //TODO: remove when issue will be resolved
 	    Thread.sleep(delay);

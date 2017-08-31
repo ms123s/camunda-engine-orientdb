@@ -88,7 +88,7 @@ public class ExecutionEntityHandler extends BaseEntityHandler {
 	}
 
 	@Override
-	public void addToClauseList(List<Clause> clauseList, Object parameter, Map<String, Object> queryParams) {
+	public void addToClauseList(List<Clause> clauseList, String statement, Object parameter, Map<String, Object> queryParams) {
 		List<EventSubscriptionQueryValue> evList = getValue(parameter, "getEventSubscriptions");
 		if (evList != null) {
 			for (EventSubscriptionQueryValue ev : evList) {

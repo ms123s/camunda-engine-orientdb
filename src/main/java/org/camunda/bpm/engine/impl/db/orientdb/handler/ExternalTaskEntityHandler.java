@@ -36,7 +36,7 @@ public class ExternalTaskEntityHandler extends BaseEntityHandler{
 		parameterList.remove(getCParameter(parameterList, "applyOrdering"));
 	}
 	@Override
-	public void addToClauseList(List<Clause> clauseList, Object parameter, Map<String, Object> queryParams) {
+	public void addToClauseList(List<Clause> clauseList, String statement, Object parameter, Map<String, Object> queryParams) {
 		List<String> topics = getValueByField(parameter, "topics");
 		if (topics != null && topics.size()>0) {
 			List<Clause> orList = new ArrayList<Clause>();

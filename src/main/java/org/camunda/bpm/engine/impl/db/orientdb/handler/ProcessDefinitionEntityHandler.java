@@ -66,7 +66,7 @@ public class ProcessDefinitionEntityHandler extends BaseEntityHandler {
 	}
 
 	@Override
-	public void addToClauseList(List<Clause> clauseList, Object parameter, Map<String,Object> queryParams) {
+	public void addToClauseList(List<Clause> clauseList, String statement, Object parameter, Map<String,Object> queryParams) {
 		String authorizationUserId = getValueByField(parameter, "authorizationUserId");
 		if (authorizationUserId != null) {
 			clauseList.add(new VerbatimClause("identityLink CONTAINS (userId='"+authorizationUserId+"')" ));

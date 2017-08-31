@@ -3,6 +3,11 @@ apply plugin:'java'
 apply plugin:'groovy'
 apply plugin: 'osgi'
 
+compileJava {
+    options.encoding = 'UTF-8'
+    options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+}
+
 sourceSets.main.groovy.srcDirs += ["src/main/java"]
 ext.camunda_version='7.7.0'
 ext.orientdb_version='2.2.11'

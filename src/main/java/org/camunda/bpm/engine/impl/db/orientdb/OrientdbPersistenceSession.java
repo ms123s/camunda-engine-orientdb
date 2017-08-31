@@ -122,8 +122,9 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 				LOG.info("<-selectOne.count(" + entityName + ").return:" + count);
 				return new Long(count);
 			}
-			Object entity = entityClass.newInstance();
-			setEntityValues(entityClass, entity, props);
+			Class subClass = entityHandler.getSubClass(entityClass, props);
+			Object entity = subClass.newInstance();
+			setEntityValues(subClass, entity, props);
 			dump("selectOne(" + entityName + ")", entity);
 			LOG.info("<-selectOne(" + entityName + ").return:" + entity);
 			fireEntityLoaded(entity);
@@ -146,14 +147,24 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		Class entityClass = OrientdbSessionFactory.getEntityClass(entityName);
 		LOG.info("  - entityClass:" + entityClass);
 
+		Iterable<Element> result = null;
 		BaseEntityHandler entityHandler = OrientdbSessionFactory.getEntityHandler(entityClass, this.orientGraph);
+		Method m = getStatementMethod(entityHandler, statement, parameter);
+		if( m != null ){
+			result = callStatementMethod( m, entityHandler, statement, parameter );
+			LOG.info(" - selectList("+statement+"):result from callStatementMethod:"+result);
+		}
 
-		List<CParameter> parameterList = getCParameterList(statement, parameter, entityHandler);
-		LOG.info("  - CParameterList:" + parameterList);
-		Map<String, Object> queryParams = new HashMap<String, Object>();
-		OCommandRequest query = entityHandler.buildQuery(entityName, statement, parameterList, parameter, queryParams);
+		if( result == null){
+			List<CParameter> parameterList = getCParameterList(statement, parameter, entityHandler);
+			LOG.info("  - CParameterList:" + parameterList);
+			Map<String, Object> queryParams = new HashMap<String, Object>();
+			OCommandRequest query = entityHandler.buildQuery(entityName, statement, parameterList, parameter, queryParams);
 
-		Iterable<Element> result = orientGraph.command(query).execute(queryParams);
+			result = orientGraph.command(query).execute(queryParams);
+		}
+
+
 		List<Map<String, Object>> propsList = new ArrayList<Map<String, Object>>();
 		for (Element elem : result) {
 			Map<String, Object> props = ((OrientVertex) elem).getProperties();
@@ -408,7 +419,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 				Method method = entityClass.getMethod(getter);
 				Object value = method.invoke(entity);
 				if (value != null /*name.equals("id")*/) {
-					LOG.info("- Field(" + name + "):" + value);
+					//LOG.info("- Field(" + name + "):" + value);
 				}
 				if (name.equals("id"))
 					id = value;
@@ -576,10 +587,36 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	}
 
 	private void dump(String msg, Object o) {
-//		if (true) return;
+		if (true) return;
 		ReflectionToStringBuilder rb = new ReflectionToStringBuilder(o, ToStringStyle.JSON_STYLE);
 		rb.setExcludeNullValues(true);
 		LOG.info("   +++" + msg + ":" + rb.toString());
+	}
+
+	private Method getStatementMethod(Object o, String statement, Object parameter) {
+		if( !(parameter instanceof ListQueryParameterObject)){
+			LOG.info("getStatementMethod("+statement+"):Parameter noz ListQueryParameterObject");
+			return null;
+		}
+		try {
+			Class[] params = new Class[1];
+			params[0] = ListQueryParameterObject.class;
+			Method method = o.getClass().getMethod(statement, params);
+			return method;
+		} catch (Exception e) {
+			return null;
+		}
+	}
+
+	private <Any> Any callStatementMethod(Method method, Object o, String statement, Object queryParams){
+		LOG.info("callStatementMethod("+statement+"):"+method);
+		try{
+			Object[] params = new Object[1];
+			params[0] = queryParams;
+			return (Any) method.invoke(o, params);
+		}catch( Exception	e){
+			throw new RuntimeException("OrientdbPersistenceSession.callStatementMethod("+statement+") error:",e);
+		}
 	}
 
 	protected String getDbVersion() {
@@ -635,10 +672,10 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	public void commit() {
 		LOG.info("commitSession:" + sessionId);
 		System.err.println("commitSession:" + sessionId);
-try{//@@@MS
-		orientGraph.commit();
-}catch(com.orientechnologies.orient.core.exception.ORecordNotFoundException e){
-}
+		try{//@@@MS
+			orientGraph.commit();
+		}catch(com.orientechnologies.orient.core.exception.ORecordNotFoundException e){
+		}
 	}
 
 	public void rollback() {

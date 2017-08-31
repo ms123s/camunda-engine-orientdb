@@ -29,6 +29,7 @@ import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
 import com.orientechnologies.orient.core.sql.OCommandSQL;
 import com.tinkerpop.blueprints.impls.orient.OrientGraph;
 import com.tinkerpop.blueprints.Vertex;
+import com.tinkerpop.blueprints.Element;
 import java.lang.reflect.*;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -92,8 +93,9 @@ public abstract class BaseEntityHandler {
 	public List<Map<String, Object>> getMetadata() {
 		return this.entityMetadata;
 	}
-	public void setOrientGraph( OrientGraph orientGraph){
-		this.orientGraph=orientGraph;
+
+	public void setOrientGraph(OrientGraph orientGraph) {
+		this.orientGraph = orientGraph;
 	}
 
 	public void modifyMetadata() {
@@ -105,7 +107,7 @@ public abstract class BaseEntityHandler {
 	public void modifyCParameterList(String statement, List<CParameter> parameterList) {
 	}
 
-	public void addToClauseList(List<Clause> clauseList, Object parameter, Map<String, Object> variables) {
+	public void addToClauseList(List<Clause> clauseList, String statement, Object parameter, Map<String, Object> variables) {
 	}
 
 	public void postProcessQuery(Query q, String statement, List<CParameter> parameterList) {
@@ -129,23 +131,19 @@ public abstract class BaseEntityHandler {
 
 	public List<CParameter> getCParameterList(String statement, Object p) {
 		if (p instanceof String) {
-			LOG.info("getCParameterList.String: " + p);
 			int index = statement.indexOf("By");
 			String byString = null;
 			if (index > 0) {
 				byString = statement.substring(index + 2);
 				byString = firstToLower(byString);
 			}
-			LOG.info("byString1: " + byString);
 			if (byString != null) {
-				LOG.info("byString2: " + byString);
 				if (this.metaByFieldMap.get(byString) == null) {
 					byString = byString + "Id";
 					LOG.info("byString3: " + byString);
 					if (this.metaByFieldMap.get(byString) == null) {
 						byString = null;
 					}
-					LOG.info("byString4: " + byString);
 				}
 				if (byString != null) {
 					List<CParameter> parameterList = new ArrayList<CParameter>();
@@ -238,7 +236,7 @@ public abstract class BaseEntityHandler {
 		if (statement.indexOf("Latest") > 0) {
 			isLatest = true;
 		}
-		addToClauseList(clauseList, parameter, queryParams);
+		addToClauseList(clauseList, statement, parameter, queryParams);
 		Clause w = and(clauseList.toArray(new Clause[clauseList.size()]));
 		Query q = new Query().from(entityName).where(w);
 		if (isLatest && this.metaByFieldMap.get("version") != null) {
@@ -343,6 +341,12 @@ public abstract class BaseEntityHandler {
 			fieldList.add(map);
 		}
 		return fieldList;
+	}
+
+	protected <Any> Any getValueFromMap(Map<String, Object> map, String key) {
+		if (map == null || map.get(key) == null)
+			return null;
+		return (Any) map.get(key);
 	}
 
 	protected <Any> Any getValue(Object obj, String methodName) {
@@ -558,15 +562,21 @@ public abstract class BaseEntityHandler {
 		return list;
 	}
 
-	protected <T> Collection<T>  makeCollection( Iterable<T> it1, Iterable<T> it2){
+	protected <T> Collection<T> makeCollection(Iterable<T> it1, Iterable<T> it2) {
 		Collection<T> result = new ArrayList<T>();
-		for( T it : it1){
-			result.add( it );
+		for (T it : it1) {
+			result.add(it);
 		}
-		for( T it : it2){
-			result.add( it );
+		for (T it : it2) {
+			result.add(it);
 		}
 		return result;
+	}
+
+	protected Iterable<Element> queryList(String sql, Object... args) {
+		LOG.info("queryList:"+sql);
+		Iterable<Element> iter = this.orientGraph.command(new OSQLSynchQuery<>(sql)).execute(args);
+		return iter;
 	}
 
 	private String getIdNameFromClassName(Class c) {
@@ -577,6 +587,10 @@ public abstract class BaseEntityHandler {
 	}
 
 	protected void dump(String msg, Object o) {
+		if (o == null) {
+			LOG.info("   +++" + msg + ":null");
+			return;
+		}
 		ReflectionToStringBuilder rb = new ReflectionToStringBuilder(o, ToStringStyle.JSON_STYLE);
 		rb.setExcludeNullValues(true);
 		LOG.info("   +++" + msg + ":" + rb.toString());
