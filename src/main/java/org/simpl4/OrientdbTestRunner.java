@@ -8,17 +8,9 @@ public class OrientdbTestRunner extends BlockJUnit4ClassRunner {
 		super(classToRun);
 	}
 
-//	@Override
-//	public Object createTest() {
-//		return getInjector().getInstance(getTestClass().getJavaClass());
-//	}
-
 	@Override
 	public Object createTest() throws Exception{
-		//Ensure that wicket tester and corresponding application started
-		//getInjector().getInstance(WicketTester.class);
 		return super.createTest();
 	}
-
 }
 
