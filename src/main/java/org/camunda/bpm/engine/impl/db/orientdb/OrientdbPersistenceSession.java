@@ -145,7 +145,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		LOG.info("-> selectList(" + statement + "," + entityName + "):" + parameter);
 
 		Class entityClass = OrientdbSessionFactory.getEntityClass(entityName);
-		LOG.info("  - entityClass:" + entityClass);
+		//LOG.info("  - entityClass:" + entityClass);
 
 		Iterable<Element> result = null;
 		BaseEntityHandler entityHandler = OrientdbSessionFactory.getEntityHandler(entityClass, this.orientGraph);
@@ -205,14 +205,14 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	}
 
 	private List<CParameter> getCParameterList(String statement, Object parameter, BaseEntityHandler handler) {
-		LOG.info("  - getParameterList(" + statement + "):" + parameter);
+		//LOG.info("  - getParameterList(" + statement + "):" + parameter);
 		if (parameter instanceof AbstractQuery) {
 			return handler.getCParameterList(statement, parameter);
 		} else if (parameter instanceof ListQueryParameterObject) {
-			LOG.info("   - ListQueryParameterObject");
+			//LOG.info("   - ListQueryParameterObject");
 			if (((ListQueryParameterObject) parameter).getParameter() instanceof String) {
 				Object obj = ((ListQueryParameterObject) parameter).getParameter();
-				LOG.info("   - String1:" + obj);
+				LOG.info("  - String1:" + obj);
 				if (statement.endsWith("ByKey")) {
 					List<CParameter> parameterList = new ArrayList<CParameter>();
 					CParameter p = new CParameter("key", EQ, obj);
@@ -435,7 +435,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 				}
 				vl.add(v);
 			}
-			handler.insertAdditional(this.orientGraph, v, entity, entityClass, entityCache);
+			handler.insertAdditional(v, entity, entityCache);
 			LOG.info("<- insertEntity(" + entityName + "," + n + "," + id + "):ok");
 		} catch (Exception e) {
 			LOG.info("OrientdbPersistenceSession.insertEntity(" + entityName + "):" + e.getMessage());
@@ -449,10 +449,13 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		Class entityClass = OrientdbSessionFactory.getReplaceClass(entity.getClass());
 		String entityName = entity.getClass().getSimpleName();
 		if (entityName.equals("ExecutionEntity")) {
-//			return;
+			return;
 		}
 		if (entityName.equals("EventSubscriptionEntity")) {
-//			return;
+			return;
+		}
+		if (entityName.equals("VariableInstanceEntity")) {
+			return;
 		}
 		dump("deleteEntity.operation:", operation);
 		dump("deleteEntity.entity:", entity);
@@ -543,7 +546,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 				Method method = entityClass.getMethod(getter);
 				Object value = method.invoke(entity);
 				if (value != null /*name.equals("id")*/) {
-					LOG.info("- Field(" + name + "):" + value);
+			//		LOG.info("- Field(" + name + "):" + value);
 				}
 				e.setProperty(name, value);
 			}
@@ -609,7 +612,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	}
 
 	private <Any> Any callStatementMethod(Method method, Object o, String statement, Object queryParams){
-		LOG.info("callStatementMethod("+statement+"):"+method);
+		LOG.info("   - callStatementMethod("+statement+"):"+method.getName());
 		try{
 			Object[] params = new Object[1];
 			params[0] = queryParams;

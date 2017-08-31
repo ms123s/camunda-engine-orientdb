@@ -134,7 +134,6 @@ public class JobEntityHandler extends BaseEntityHandler {
 	}
 
 	public Iterable<Element> selectJobsByConfiguration(ListQueryParameterObject query) {
-		LOG.info("selectJobsByConfiguration");
 		Map<String, Object> params = getValue(query, "getParameter");
 		String config = (String) params.get("handlerConfiguration");
 		String followUpConfig = (String) params.get("handlerConfigurationWithFollowUpJobCreatedProperty");

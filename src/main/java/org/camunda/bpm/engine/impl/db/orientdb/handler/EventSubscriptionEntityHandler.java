@@ -60,13 +60,13 @@ public class EventSubscriptionEntityHandler extends BaseEntityHandler{
 	}
 
 	@Override
-	public void insertAdditional(OrientGraph orientGraph, Vertex v, Object entity, Class entityClass, Map<Object, List<Vertex>> entityCache) {
+	public void insertAdditional(Vertex v, Object entity, Map<Object, List<Vertex>> entityCache) {
 		String executionId = getValue(entity, "getExecutionId");
 		LOG.info("EventSubscriptionEntity.insertAdditional(" + executionId +"):" + v);
 		Iterable<Vertex> result  = entityCache.get(executionId);
 		if (executionId != null) {
 			OCommandRequest query = new OSQLSynchQuery("select from ExecutionEntity where id=?");
-			Iterable<Vertex> result2 = orientGraph.command(query).execute(executionId);
+			Iterable<Vertex> result2 = this.orientGraph.command(query).execute(executionId);
 			if( result2 != null){
 				result = makeCollection( result, result2);
 			}
@@ -80,7 +80,9 @@ public class EventSubscriptionEntityHandler extends BaseEntityHandler{
 			Iterable<Element> iter = elem.getProperty("eventSubscriptions");
 			if (iter == null) {
 				LOG.info("ExecutionEntity("+elem+").insertAdditional.eventSubscription:" + v);
-				elem.setProperty("eventSubscriptions", v);
+				List<Element> l = new ArrayList<Element>();
+				l.add( v );
+				elem.setProperty("eventSubscriptions", l);
 			} else {
 				Collection<Element> col = makeCollection(iter);
 				LOG.info("ExecutionEntity("+elem+").insertAdditional.eventSubscription(" + iter.getClass().getName() + "," + col + "):" + v);

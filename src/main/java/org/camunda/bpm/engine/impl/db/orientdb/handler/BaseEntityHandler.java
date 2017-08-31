@@ -113,7 +113,7 @@ public abstract class BaseEntityHandler {
 	public void postProcessQuery(Query q, String statement, List<CParameter> parameterList) {
 	}
 
-	public void insertAdditional(OrientGraph orientGraph, Vertex v, Object entity, Class entityClass, Map<Object, List<Vertex>> entityCache) {
+	public void insertAdditional(Vertex v, Object entity, Map<Object, List<Vertex>> entityCache) {
 	}
 
 	public Class getSubClass(Class entityClass, Map<String, Object> properties) {
@@ -354,7 +354,7 @@ public abstract class BaseEntityHandler {
 			Method method = obj.getClass().getMethod(methodName, (Class[]) null);
 			return (Any) method.invoke(obj);
 		} catch (Exception e) {
-			LOG.info("BaseEntityHandler.getValue:" + obj.getClass().getSimpleName() + "." + methodName + " not found");
+//			LOG.info("BaseEntityHandler.getValue:" + obj.getClass().getSimpleName() + "." + methodName + " not found");
 			return null;
 		}
 	}
@@ -574,7 +574,7 @@ public abstract class BaseEntityHandler {
 	}
 
 	protected Iterable<Element> queryList(String sql, Object... args) {
-		LOG.info("queryList:"+sql);
+		LOG.info("   - queryList:"+sql);
 		Iterable<Element> iter = this.orientGraph.command(new OSQLSynchQuery<>(sql)).execute(args);
 		return iter;
 	}
@@ -594,6 +594,39 @@ public abstract class BaseEntityHandler {
 		ReflectionToStringBuilder rb = new ReflectionToStringBuilder(o, ToStringStyle.JSON_STYLE);
 		rb.setExcludeNullValues(true);
 		LOG.info("   +++" + msg + ":" + rb.toString());
+	}
+
+	public void insertAdditional(Object entity, String idMethod, String destClass, String propertyName, Vertex v, Map<Object, List<Vertex>> entityCache) {
+		String id = getValue(entity, idMethod);
+		String entityName = entity.getClass().getSimpleName();
+		LOG.info(entityName+".insertAdditional(" + id +"):" + v);
+		Iterable<Vertex> result  = entityCache.get(id);
+		if (id != null) {
+			OCommandRequest query = new OSQLSynchQuery("select from "+destClass+" where id=?");
+			Iterable<Vertex> result2 = orientGraph.command(query).execute(id);
+			if( result2 != null){
+				result = makeCollection( result, result2);
+			}
+		} 
+		LOG.info(entityName+".resultFromCache(" + id +"):" + result);
+		if( result == null){
+			LOG.info(entityName+".insertAdditional(" + id +"):not found");
+			return;
+		}
+		for( Element elem : result ){
+			Iterable<Element> iter = elem.getProperty(propertyName);
+			if (iter == null) {
+				LOG.info(destClass+"("+elem+").insertAdditional."+propertyName+":" + v);
+				List<Element> l = new ArrayList<Element>();
+				l.add( v );
+				elem.setProperty(propertyName, l);
+			} else {
+				Collection<Element> col = makeCollection(iter);
+				LOG.info(destClass+"("+elem+").insertAdditional."+propertyName+"(" + iter.getClass().getName() + "," + col + "):" + v);
+				col.add(v);
+				elem.setProperty(propertyName, col);
+			}
+		}
 	}
 }
 

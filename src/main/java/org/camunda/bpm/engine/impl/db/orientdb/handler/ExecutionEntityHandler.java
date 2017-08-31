@@ -12,7 +12,9 @@ import com.github.raymanrt.orientqb.query.clause.VerbatimClause;
 import com.tinkerpop.blueprints.Element;
 import com.tinkerpop.blueprints.impls.orient.OrientGraph;
 import com.tinkerpop.blueprints.Vertex;
+import org.camunda.bpm.engine.impl.QueryOperator;
 import org.camunda.bpm.engine.impl.EventSubscriptionQueryValue;
+import org.camunda.bpm.engine.impl.QueryVariableValue;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -37,7 +39,6 @@ public class ExecutionEntityHandler extends BaseEntityHandler {
 
 	@Override
 	public void modifyCParameterList(String statement, List<CParameter> parameterList) {
-		LOG.info("ExecutionEntity.modifyCParameterList(" + statement + "," + parameterList);
 		for (CParameter p : parameterList) {
 			if (p.name.equals("suspensionState")) {
 				if ("active".equals(String.valueOf(p.value))) {
@@ -47,7 +48,6 @@ public class ExecutionEntityHandler extends BaseEntityHandler {
 				}
 			}
 		}
-		LOG.info("ExecutionEntity.modifyCParameterList2(" + statement + "," + parameterList);
 		parameterList.remove(getCParameter(parameterList, "deploymentAware"));
 		parameterList.remove(getCParameter(parameterList, "now"));
 		parameterList.remove(getCParameter(parameterList, "orderingProperties"));
@@ -74,7 +74,7 @@ public class ExecutionEntityHandler extends BaseEntityHandler {
 			list.add(new CParameter("parentId", EQ, null));
 		}
 		String businessKey = getValue(p, "getBusinessKey");
-		LOG.info("ExecutionEntity.getCParameterList.businessKey:" + businessKey);
+//		LOG.info("ExecutionEntity.getCParameterList.businessKey:" + businessKey);
 		if (businessKey != null) {
 			Iterable<Element> procIterable = this.orientGraph.command(new OSQLSynchQuery<>("select processInstanceId from ExecutionEntity where businessKey=?")).execute(businessKey);
 			Iterator<Element> iter = procIterable.iterator();
@@ -99,17 +99,28 @@ public class ExecutionEntityHandler extends BaseEntityHandler {
 				}
 			}
 		}
+dump("getVariables:",parameter);
+		List<QueryVariableValue> varList = getValue(parameter, "getQueryVariableValues");
+LOG.info("getVariables:varList"+varList);
+		if (varList != null) {
+			for (QueryVariableValue var : varList) {
+				String name = var.getName();
+				clauseList.add(new VerbatimClause("variables CONTAINS (name='" + name + "')"));
+			}
+		}
 	}
 
 	@Override
-	public void insertAdditional(OrientGraph orientGraph, Vertex v, Object entity, Class entityClass, Map<Object, List<Vertex>> entityCache) {
+	public void insertAdditional(Vertex v, Object entity, Map<Object, List<Vertex>> entityCache) {
 	}
 
 	@Override
 	public void createAdditionalProperties(OSchema schema, OClass oClass) {
 		OClass oLinkedClass = getOrCreateClass(schema, "EventSubscriptionEntity");
 		getOrCreateLinkedProperty(oClass, "eventSubscriptions", OType.LINKSET, oLinkedClass);
-		LOG.info("createAdditional.ExecutionEntity(" + oLinkedClass + "," + oClass + ")");
+
+		oLinkedClass = getOrCreateClass(schema, "VariableInstanceEntity");
+		getOrCreateLinkedProperty(oClass, "variables", OType.LINKSET, oLinkedClass);
 	}
 }
 
