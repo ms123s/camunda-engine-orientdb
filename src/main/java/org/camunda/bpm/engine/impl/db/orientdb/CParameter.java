@@ -18,6 +18,6 @@ public class CParameter{
 		this.noCheck = noc;
 	}
 	public String toString(){
-		return name+" " + op + " " + value + " " +noCheck;
+		return String.format(op.toString(),name,value);
 	}
 }

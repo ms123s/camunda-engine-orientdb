@@ -66,7 +66,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	private List<String> prefixList = new ArrayList<>(Arrays.asList("selectLatest", "select"));
 	private List<String> suffixList = new ArrayList<>(Arrays.asList("CountBy", "IdsBy", "By"));
 	OrientdbSessionFactory sessionFactory;
-	private Map<String, Vertex> entityCache = new HashMap<String, Vertex>();
+	private Map<Object, List<Vertex>> entityCache = new HashMap<Object, List<Vertex>>();
 
 	protected OrientGraph orientGraph;
 
@@ -406,7 +406,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 				Method method = entityClass.getMethod(getter);
 				Object value = method.invoke(entity);
 				if (value != null /*name.equals("id")*/) {
-					//LOG.info("- Field(" + name + "):" + value);
+					LOG.info("- Field(" + name + "):" + value);
 				}
 				if (name.equals("id"))
 					id = value;
@@ -415,7 +415,12 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 				v.setProperty(name, value);
 			}
 			if (id != null) {
-				entityCache.put((String) id, v);
+				List<Vertex> vl = entityCache.get(id);
+				if( vl == null){
+					vl = new ArrayList<Vertex>();
+					entityCache.put(id, vl);
+				}
+				vl.add(v);
 			}
 			handler.insertAdditional(this.orientGraph, v, entity, entityClass, entityCache);
 			LOG.info("<- insertEntity(" + entityName + "," + n + "," + id + "):ok");
@@ -430,8 +435,11 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		Object entity = operation.getEntity();
 		Class entityClass = OrientdbSessionFactory.getReplaceClass(entity.getClass());
 		String entityName = entity.getClass().getSimpleName();
-		if (entityName.equals("VariableInstanceEntity")) {
-			//this.sessionFactory.fireEvent((VariableInstanceEntity) entity, "delete");
+		if (entityName.equals("ExecutionEntity")) {
+			return;
+		}
+		if (entityName.equals("EventSubscriptionEntity")) {
+			return;
 		}
 		dump("deleteEntity.operation:", operation);
 		dump("deleteEntity.entity:", entity);
@@ -566,8 +574,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	}
 
 	private void dump(String msg, Object o) {
-		if (true)
-			return;
+//		if (true) return;
 		ReflectionToStringBuilder rb = new ReflectionToStringBuilder(o, ToStringStyle.JSON_STYLE);
 		rb.setExcludeNullValues(true);
 		LOG.info("   +++" + msg + ":" + rb.toString());
