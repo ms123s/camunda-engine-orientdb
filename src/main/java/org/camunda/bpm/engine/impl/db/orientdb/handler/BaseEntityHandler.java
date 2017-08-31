@@ -108,7 +108,7 @@ public abstract class BaseEntityHandler {
 	public void postProcessQuery(Query q, String statement, List<CParameter> parameterList) {
 	}
 
-	public void insertAdditional(OrientGraph orientGraph, Vertex v, Object entity, Class entityClass, Map<String, Vertex> entityCache) {
+	public void insertAdditional(OrientGraph orientGraph, Vertex v, Object entity, Class entityClass, Map<Object, List<Vertex>> entityCache) {
 	}
 
 	public Class getSubClass(Class entityClass, Map<String, Object> properties) {
@@ -553,6 +553,17 @@ public abstract class BaseEntityHandler {
 			list.add(item);
 		}
 		return list;
+	}
+
+	protected <T> Collection<T>  makeCollection( Iterable<T> it1, Iterable<T> it2){
+		Collection<T> result = new ArrayList<T>();
+		for( T it : it1){
+			result.add( it );
+		}
+		for( T it : it2){
+			result.add( it );
+		}
+		return result;
 	}
 
 	private String getIdNameFromClassName(Class c) {

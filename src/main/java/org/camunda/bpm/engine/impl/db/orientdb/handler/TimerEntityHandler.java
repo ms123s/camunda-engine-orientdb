@@ -31,7 +31,7 @@ public class TimerEntityHandler extends BaseEntityHandler{
 	}
 
 	@Override
-	public void insertAdditional(OrientGraph orientGraph, Vertex v, Object entity, Class entityClass, Map<String, Vertex> entityCache) {
+	public void insertAdditional(OrientGraph orientGraph, Vertex v, Object entity, Class entityClass, Map<Object, List<Vertex>> entityCache) {
 		v.setProperty( "type", "TimerEntity");
 	}
 	@Override

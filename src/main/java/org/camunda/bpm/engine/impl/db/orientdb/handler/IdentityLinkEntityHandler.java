@@ -43,27 +43,17 @@ public class IdentityLinkEntityHandler extends BaseEntityHandler {
 	}
 
 	@Override
-	public void insertAdditional(OrientGraph orientGraph, Vertex v, Object entity, Class entityClass, Map<String, Vertex> entityCache) {
+	public void insertAdditional(OrientGraph orientGraph, Vertex v, Object entity, Class entityClass, Map<Object, List<Vertex>> entityCache) {
 		String processDefId = getValue(entity, "getProcessDefId");
 		String taskId = getValue(entity, "getTaskId");
 		LOG.info("IdentityLinkEntity.insertAdditional(" + processDefId + "," + taskId + "):" + v);
-		Vertex cachedEntity = entityCache.get(processDefId != null ? processDefId : taskId);
-		Iterable<Element> result = null;
-		if (cachedEntity != null) {
-			List<Element> el = new ArrayList<Element>();
-			el.add(cachedEntity);
-			result = el; 
-		}
-		if (processDefId != null) {
-			if (result == null) {
-				OCommandRequest query = new OSQLSynchQuery("select from ProcessDefinitionEntity where id=?");
-				result = orientGraph.command(query).execute(processDefId);
-			}
-		} else if (taskId != null) {
-			if (result == null) {
-				OCommandRequest query = new OSQLSynchQuery("select from TaskEntity where id=?");
-				result = orientGraph.command(query).execute(taskId);
-			}
+		Iterable<Vertex> result = entityCache.get(processDefId != null ? processDefId : taskId);
+		if (result == null && processDefId != null) {
+			OCommandRequest query = new OSQLSynchQuery("select from ProcessDefinitionEntity where id=?");
+			result = orientGraph.command(query).execute(processDefId);
+		} else if (result == null && taskId != null) {
+			OCommandRequest query = new OSQLSynchQuery("select from TaskEntity where id=?");
+			result = orientGraph.command(query).execute(taskId);
 		}
 		for (Element elem : result) {
 			Iterable<Element> iter = elem.getProperty("identityLink");
@@ -76,7 +66,6 @@ public class IdentityLinkEntityHandler extends BaseEntityHandler {
 				col.add(v);
 				elem.setProperty("identityLink", col);
 			}
-			break;
 		}
 	}
 }

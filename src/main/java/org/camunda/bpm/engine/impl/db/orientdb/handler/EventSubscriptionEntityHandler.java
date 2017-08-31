@@ -53,35 +53,26 @@ public class EventSubscriptionEntityHandler extends BaseEntityHandler{
 	}
 	@Override
 	public void createAdditionalProperties(OSchema schema, OClass oClass) {
-if( true) return;
-		OClass oLinkedClass = getOrCreateClass( schema, "ExecutionEntity");
-		LOG.info("createAdditionalProperties.EventSubscriptionEntity("+oLinkedClass+","+oClass+")");
-		getOrCreateLinkedProperty(oClass, "execution", OType.LINKSET, oLinkedClass);
 	}
 
 	@Override
-	public void insertAdditional(OrientGraph orientGraph, Vertex v, Object entity, Class entityClass, Map<String, Vertex> entityCache) {
+	public void insertAdditional(OrientGraph orientGraph, Vertex v, Object entity, Class entityClass, Map<Object, List<Vertex>> entityCache) {
 		String executionId = getValue(entity, "getExecutionId");
 		LOG.info("EventSubscriptionEntity.insertAdditional(" + executionId +"):" + v);
-		Vertex cachedEntity = entityCache.get(executionId);
-		Iterable<Element> result = null;
-		if (cachedEntity != null) {
-			LOG.info("EventSubscriptionEntity.insertAdditional.fromCache(" + cachedEntity +"):"+entityCache);
-			List<Element> el = new ArrayList<Element>();
-			el.add(cachedEntity);
-			result = el; 
-		}
+		Iterable<Vertex> result  = entityCache.get(executionId);
 		if (executionId != null) {
-			if (result == null) {
-				OCommandRequest query = new OSQLSynchQuery("select from ExecutionEntity where id=?");
-				result = orientGraph.command(query).execute(executionId);
+			OCommandRequest query = new OSQLSynchQuery("select from ExecutionEntity where id=?");
+			Iterable<Vertex> result2 = orientGraph.command(query).execute(executionId);
+			if( result2 != null){
+				result = makeCollection( result, result2);
 			}
 		} 
+		LOG.info("EventSubscriptionEntity.resultFromCache(" + executionId +"):" + result);
 		if( result == null){
 			LOG.info("EventSubscriptionEntity.insertAdditional(" + executionId +"):not found");
 			return;
 		}
-		for (Element elem : result) {
+		for( Element elem : result ){
 			Iterable<Element> iter = elem.getProperty("eventSubscriptions");
 			if (iter == null) {
 				LOG.info("ExecutionEntity("+elem+").insertAdditional.eventSubscription:" + v);
@@ -92,7 +83,6 @@ if( true) return;
 				col.add(v);
 				elem.setProperty("eventSubscriptions", col);
 			}
-			break;
 		}
 	}
 }
