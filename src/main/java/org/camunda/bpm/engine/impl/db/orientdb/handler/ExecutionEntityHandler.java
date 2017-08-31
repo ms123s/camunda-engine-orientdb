@@ -16,7 +16,9 @@ import org.camunda.bpm.engine.impl.EventSubscriptionQueryValue;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Iterator;
 import java.util.logging.Logger;
+import java.lang.Iterable;
 import java.util.Map;
 import org.camunda.bpm.engine.impl.db.orientdb.CParameter;
 import org.camunda.bpm.engine.impl.persistence.entity.ExecutionEntity;
@@ -70,7 +72,16 @@ public class ExecutionEntityHandler extends BaseEntityHandler{
 		if( statement.equals("selectProcessInstanceByQueryCriteria")){
 			list.add( new CParameter( "parentId", EQ, null));
 		}
-		if( statement.equals("selectExecutionsByQueryCriteria")){
+		String businessKey = getValue( p,"getBusinessKey");
+		LOG.info("ExecutionEntity.getCParameterList.businessKey:"+businessKey);
+		if( businessKey != null ){
+			Iterable<Element> procIterable = this.orientGraph.command(new OSQLSynchQuery<>("select processInstanceId from ExecutionEntity where businessKey=?")).execute(businessKey);
+			Iterator<Element> iter = procIterable.iterator();
+			if( iter.hasNext()){
+				String processInstanceId = iter.next().getProperty("processInstanceId");
+				LOG.info("ExecutionEntity.getCParameterList.processInstanceId:"+processInstanceId);
+				list.add( new CParameter( "processInstanceId", EQ, processInstanceId));
+			}
 		}
 		return list;
 	}
