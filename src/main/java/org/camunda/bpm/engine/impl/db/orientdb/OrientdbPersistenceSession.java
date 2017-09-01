@@ -286,7 +286,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			break;
 		}
 		if (props == null) {
-			LOG.info("<-selectById(" + entityName + ").return:null");
+			LOG.info("<-selectById(" + entityName + ","+id+").return:null");
 			return null;
 		}
 		try {
@@ -295,12 +295,12 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			T entity = (T) subClass.newInstance();
 			setEntityValues(entityClass, entity, props);
 			dump("selectById(" + entityName + "," + id + ")", entity);
-			LOG.info("<-selectById(" + entityName + ").return:" + entity);
+			LOG.info("<-selectById(" + entityName + ","+id+").return:" + entity);
 			fireEntityLoaded(entity);
 			return entity;
 		} catch (Exception e) {
 			LOG.info("OrientdbPersistenceSession.selectById:" + e.getMessage());
-			throw new RuntimeException("OrientdbPersistenceSession.selectById(" + entityName + ")", e);
+			throw new RuntimeException("OrientdbPersistenceSession.selectById(" + entityName + ","+id+")", e);
 		}
 		//LOG.info("<-selectById(" + entityName + ").return:null");
 		//return null;

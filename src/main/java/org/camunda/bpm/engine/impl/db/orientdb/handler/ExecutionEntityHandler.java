@@ -103,22 +103,13 @@ public class ExecutionEntityHandler extends BaseEntityHandler {
 		List<QueryVariableValue> varList = getValue(parameter, "getQueryVariableValues");
 		if (varList != null) {
 			for (QueryVariableValue var : varList) {
-				LOG.info("QueryVariableValue:" + var);
-				String name = var.getName();
-				String op = convertOperator(var.getOperator());
-				LOG.info("   NAME:" + name);
-				LOG.info("   OP:" + op);
-				LOG.info("   VALUE:" + var.getValue());
 
 				SingleQueryVariableValueCondition cond = var.getValueConditions().get(0);
-				LOG.info("    - QVALUE:" + getQuotedValue(cond));
-				LOG.info("    - Type:" + cond.getType());
 				String valueField = getValueField(cond.getType());
-				LOG.info("    - TextValue:" + cond.getTextValue());
-				LOG.info("    - LongValue:" + cond.getLongValue());
-				LOG.info("    - DoubleValue:" + cond.getDoubleValue());
-
 				String value = getQuotedValue(cond);
+				String name = var.getName();
+				String op = convertOperator(var.getOperator());
+
 				Clause vars = or(new VerbatimClause("variables CONTAINS (name='" + name + "' and " + valueField + " " + op + " " + value + ")"), 
 												 new VerbatimClause("parent.variables CONTAINS (name='" + name + "' and " + valueField + " " + op + " " + value + ")"));
 				clauseList.add(vars);
