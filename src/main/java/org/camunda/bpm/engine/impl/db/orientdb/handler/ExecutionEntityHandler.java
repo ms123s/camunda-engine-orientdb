@@ -74,7 +74,7 @@ public class ExecutionEntityHandler extends BaseEntityHandler {
 			list.add(new CParameter("parentId", EQ, null));
 		}
 		String businessKey = getValue(p, "getBusinessKey");
-//		LOG.info("ExecutionEntity.getCParameterList.businessKey:" + businessKey);
+		//		LOG.info("ExecutionEntity.getCParameterList.businessKey:" + businessKey);
 		if (businessKey != null) {
 			Iterable<Element> procIterable = this.orientGraph.command(new OSQLSynchQuery<>("select processInstanceId from ExecutionEntity where businessKey=?")).execute(businessKey);
 			Iterator<Element> iter = procIterable.iterator();
@@ -92,6 +92,7 @@ public class ExecutionEntityHandler extends BaseEntityHandler {
 		List<EventSubscriptionQueryValue> evList = getValue(parameter, "getEventSubscriptions");
 		if (evList != null) {
 			for (EventSubscriptionQueryValue ev : evList) {
+				dump("  --  Event:", ev);
 				if (ev.getEventName() != null) {
 					clauseList.add(new VerbatimClause("eventSubscriptions CONTAINS (eventName='" + ev.getEventName() + "' and eventType='" + ev.getEventType() + "')"));
 				} else {
@@ -99,19 +100,42 @@ public class ExecutionEntityHandler extends BaseEntityHandler {
 				}
 			}
 		}
-dump("getVariables:",parameter);
 		List<QueryVariableValue> varList = getValue(parameter, "getQueryVariableValues");
-LOG.info("getVariables:varList"+varList);
 		if (varList != null) {
 			for (QueryVariableValue var : varList) {
 				String name = var.getName();
-				clauseList.add(new VerbatimClause("variables CONTAINS (name='" + name + "')"));
+				String value = String.valueOf(var.getValue());
+				Clause vars = or(new VerbatimClause("variables CONTAINS (name='" + name + "' and textValue='" + value + "')"), 
+												 new VerbatimClause("parent.variables CONTAINS (name='" + name + "' and textValue='" + value + "')"));
+				clauseList.add(vars);
 			}
 		}
 	}
 
 	@Override
 	public void insertAdditional(Vertex v, Object entity, Map<Object, List<Vertex>> entityCache) {
+		settingParent(entity, "getParentId", "ExecutionEntity", "parent", v, entityCache);
+	}
+
+	private void settingParent(Object entity, String idMethod, String destClass, String propertyName, Vertex v, Map<Object, List<Vertex>> entityCache) {
+		String id = getValue(entity, idMethod);
+		if (id == null) {
+			return;
+		}
+		Iterable<Vertex> result = entityCache.get(id + destClass);
+		if (result == null) {
+			OCommandRequest query = new OSQLSynchQuery("select from " + destClass + " where id=?");
+			result = orientGraph.command(query).execute(id);
+		}
+		if (result == null) {
+			return;
+		}
+		Iterator<Vertex> it = result.iterator();
+		if (it.hasNext()) {
+			Vertex parent = it.next();
+			LOG.info(entity.getClass().getSimpleName() + ".settingParent(" + v + ").to:" + parent);
+			v.setProperty(propertyName, parent);
+		}
 	}
 
 	@Override
@@ -121,6 +145,9 @@ LOG.info("getVariables:varList"+varList);
 
 		oLinkedClass = getOrCreateClass(schema, "VariableInstanceEntity");
 		getOrCreateLinkedProperty(oClass, "variables", OType.LINKSET, oLinkedClass);
+
+		oLinkedClass = getOrCreateClass(schema, "ExecutionEntity");
+		getOrCreateLinkedProperty(oClass, "parent", OType.LINK, oLinkedClass);
 	}
 }
 

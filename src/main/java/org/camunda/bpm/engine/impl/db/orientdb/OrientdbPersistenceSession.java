@@ -428,10 +428,10 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 				v.setProperty(name, value);
 			}
 			if (id != null) {
-				List<Vertex> vl = entityCache.get(id);
+				List<Vertex> vl = entityCache.get(id+entityName);
 				if( vl == null){
 					vl = new ArrayList<Vertex>();
-					entityCache.put(id, vl);
+					entityCache.put(id+entityName, vl);
 				}
 				vl.add(v);
 			}
@@ -449,13 +449,13 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		Class entityClass = OrientdbSessionFactory.getReplaceClass(entity.getClass());
 		String entityName = entity.getClass().getSimpleName();
 		if (entityName.equals("ExecutionEntity")) {
-			return;
+//			return;
 		}
 		if (entityName.equals("EventSubscriptionEntity")) {
-			return;
+//			return;
 		}
 		if (entityName.equals("VariableInstanceEntity")) {
-			return;
+//			return;
 		}
 		dump("deleteEntity.operation:", operation);
 		dump("deleteEntity.entity:", entity);

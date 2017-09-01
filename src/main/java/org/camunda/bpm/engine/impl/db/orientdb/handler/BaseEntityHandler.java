@@ -564,11 +564,15 @@ public abstract class BaseEntityHandler {
 
 	protected <T> Collection<T> makeCollection(Iterable<T> it1, Iterable<T> it2) {
 		Collection<T> result = new ArrayList<T>();
-		for (T it : it1) {
-			result.add(it);
+		if( it1!=null){
+			for (T it : it1) {
+				result.add(it);
+			}
 		}
-		for (T it : it2) {
-			result.add(it);
+		if( it2!=null){
+			for (T it : it2) {
+				result.add(it);
+			}
 		}
 		return result;
 	}
@@ -600,7 +604,7 @@ public abstract class BaseEntityHandler {
 		String id = getValue(entity, idMethod);
 		String entityName = entity.getClass().getSimpleName();
 		LOG.info(entityName+".insertAdditional(" + id +"):" + v);
-		Iterable<Vertex> result  = entityCache.get(id);
+		Iterable<Vertex> result  = entityCache.get(id+destClass);
 		if (id != null) {
 			OCommandRequest query = new OSQLSynchQuery("select from "+destClass+" where id=?");
 			Iterable<Vertex> result2 = orientGraph.command(query).execute(id);

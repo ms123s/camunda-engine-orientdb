@@ -61,34 +61,6 @@ public class EventSubscriptionEntityHandler extends BaseEntityHandler{
 
 	@Override
 	public void insertAdditional(Vertex v, Object entity, Map<Object, List<Vertex>> entityCache) {
-		String executionId = getValue(entity, "getExecutionId");
-		LOG.info("EventSubscriptionEntity.insertAdditional(" + executionId +"):" + v);
-		Iterable<Vertex> result  = entityCache.get(executionId);
-		if (executionId != null) {
-			OCommandRequest query = new OSQLSynchQuery("select from ExecutionEntity where id=?");
-			Iterable<Vertex> result2 = this.orientGraph.command(query).execute(executionId);
-			if( result2 != null){
-				result = makeCollection( result, result2);
-			}
-		} 
-		LOG.info("EventSubscriptionEntity.resultFromCache(" + executionId +"):" + result);
-		if( result == null){
-			LOG.info("EventSubscriptionEntity.insertAdditional(" + executionId +"):not found");
-			return;
-		}
-		for( Element elem : result ){
-			Iterable<Element> iter = elem.getProperty("eventSubscriptions");
-			if (iter == null) {
-				LOG.info("ExecutionEntity("+elem+").insertAdditional.eventSubscription:" + v);
-				List<Element> l = new ArrayList<Element>();
-				l.add( v );
-				elem.setProperty("eventSubscriptions", l);
-			} else {
-				Collection<Element> col = makeCollection(iter);
-				LOG.info("ExecutionEntity("+elem+").insertAdditional.eventSubscription(" + iter.getClass().getName() + "," + col + "):" + v);
-				col.add(v);
-				elem.setProperty("eventSubscriptions", col);
-			}
-		}
+	  insertAdditional(entity, "getExecutionId", "ExecutionEntity", "eventSubscriptions", v, entityCache);
 	}
 }
