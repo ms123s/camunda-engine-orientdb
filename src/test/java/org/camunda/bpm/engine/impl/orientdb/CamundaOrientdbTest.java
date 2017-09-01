@@ -64,6 +64,7 @@ public class CamundaOrientdbTest {
 	}
 	
 	@Test
+	@Ignore
 	public void testDeployProcess() {
 
 		BpmnModelInstance model = Bpmn.createExecutableProcess("testProcess").done();
@@ -153,6 +154,7 @@ public class CamundaOrientdbTest {
 	}
 
 	@Test
+	@Ignore
 	@Deployment(resources = { "example-sequence.bpmn" })
 	public void testEndProcessByCancelMessageSequence() {
 		RuntimeService runtimeService = processEngineRule.getRuntimeService();
@@ -169,6 +171,7 @@ public class CamundaOrientdbTest {
 	}
 
 	@Test
+	@Ignore
 	@Deployment(resources = { "example-sequence.bpmn" })
 	public void testCorrelateByMessageName() {
 		RuntimeService runtimeService = processEngineRule.getRuntimeService();
@@ -186,6 +189,7 @@ public class CamundaOrientdbTest {
 	}
 
 	@Test
+	@Ignore
 	@Deployment(resources = { "example-sequence.bpmn" })
 	public void testCorrelateByBusinessKey() { 
 		RuntimeService runtimeService = processEngineRule.getRuntimeService();
@@ -207,14 +211,21 @@ public class CamundaOrientdbTest {
 		RuntimeService runtimeService = processEngineRule.getRuntimeService();
 		Map<String, Object> vars = new HashMap<String, Object>();
 		vars.put("testString", "testVarString");
-		vars.put("testBoolean", new Boolean(true));
-		vars.put("testLong", new Long(15));
+		vars.put("bool", new Boolean(true));
+		vars.put("number", 10);
+		vars.put("longNumber", 12L);
+		vars.put("doubleNumber", 12.1);
 
 		ProcessInstance processInstance = runtimeService.startProcessInstanceByKey("Process_1", vars);
 		assertProcessNotEnded(processInstance.getId());
 
 		runtimeService.createMessageCorrelation("Message-Request")
-				.processInstanceVariableEquals("testString", "testVarString").correlate();
+				.processInstanceVariableEquals("testString", "testVarString")
+				.processInstanceVariableEquals("bool", true)
+				.processInstanceVariableEquals("number", 10)
+				.processInstanceVariableEquals("longNumber", 12L)
+				.processInstanceVariableEquals("doubleNumber", 12.1)
+				.correlate();
 		assertProcessNotEnded(processInstance.getId());
 
 		runtimeService.createMessageCorrelation(null).processInstanceVariableEquals("testString", "NonExisting")
@@ -228,6 +239,7 @@ public class CamundaOrientdbTest {
 	}
 
 	@Test
+	@Ignore
 	@Deployment(resources = { "loop.bpmn" })
 	public void testLoop() {
 		RuntimeService runtimeService = processEngineRule.getRuntimeService();
@@ -267,6 +279,7 @@ public class CamundaOrientdbTest {
 	 * Test external task entities
 	 */
 	@Test
+	@Ignore
 	@Deployment(resources = {"external-task.bpmn"})
 	public void testExternalTask() { 
 		ProcessInstance processInstance = processEngineRule.getRuntimeService().startProcessInstanceByKey("externaltask");
@@ -291,6 +304,7 @@ public class CamundaOrientdbTest {
 	}
 	
 	@Test
+	@Ignore
 	@Deployment(resources = {"user-task.bpmn"})
 	public void testUserTask() {
 		ProcessInstance processInstance = processEngineRule.getRuntimeService().startProcessInstanceByKey("user-task");
@@ -318,6 +332,7 @@ public class CamundaOrientdbTest {
 	}
 	
 	@Test
+	@Ignore
 	@Deployment(resources = {"execute-script.bpmn"})
 	public void testExecuteScriptSimple() {
 		touchedFromScript=false;
@@ -350,15 +365,15 @@ public class CamundaOrientdbTest {
 	public boolean areJobsAvailable() {
 		List<Job> list = processEngineRule.getManagementService().createJobQuery().list();
 
-System.err.println("JOB.size:"+list.size());
+		System.err.println("JOB.size:"+list.size());
 		for (Job job : list) {
-System.err.println("JOB:"+job);
+			System.err.println("JOB:"+job);
 			if (!job.isSuspended() && job.getRetries() > 0 && (job.getDuedate() == null || ClockUtil.getCurrentTime().after(job.getDuedate()))) {
-System.err.println("JOB:return true");
+				System.err.println("JOB:return true");
 				return true;
 			}
 		}
-System.err.println("JOB:return false");
+		System.err.println("JOB:return false");
 		return false;
 	}
 
@@ -424,11 +439,9 @@ System.err.println("JOB:return false");
 	}
 
 	public void assertProcessNotEnded(String processInstanceId)  {
-LOG.info("assertProcessNotEnded1:"+processInstanceId);
 		ProcessInstance processInstance = processEngineRule.getProcessEngine().getRuntimeService()
 				.createProcessInstanceQuery().processInstanceId(processInstanceId).singleResult();
 
-LOG.info("assertProcessNotEnded2:"+processInstance);
 		if (processInstance == null) {
 			throw new AssertionFailedError(
 					"Expected not finished process instance '" + processInstanceId + "' but it was not in the db");

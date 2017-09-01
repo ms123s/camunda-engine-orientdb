@@ -15,6 +15,7 @@ import com.tinkerpop.blueprints.Vertex;
 import org.camunda.bpm.engine.impl.QueryOperator;
 import org.camunda.bpm.engine.impl.EventSubscriptionQueryValue;
 import org.camunda.bpm.engine.impl.QueryVariableValue;
+import org.camunda.bpm.engine.impl.SingleQueryVariableValueCondition;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -102,10 +103,24 @@ public class ExecutionEntityHandler extends BaseEntityHandler {
 		List<QueryVariableValue> varList = getValue(parameter, "getQueryVariableValues");
 		if (varList != null) {
 			for (QueryVariableValue var : varList) {
+				LOG.info("QueryVariableValue:" + var);
 				String name = var.getName();
-				String value = String.valueOf(var.getValue());
-				Clause vars = or(new VerbatimClause("variables CONTAINS (name='" + name + "' and textValue='" + value + "')"), 
-												 new VerbatimClause("parent.variables CONTAINS (name='" + name + "' and textValue='" + value + "')"));
+				String op = convertOperator(var.getOperator());
+				LOG.info("   NAME:" + name);
+				LOG.info("   OP:" + op);
+				LOG.info("   VALUE:" + var.getValue());
+
+				SingleQueryVariableValueCondition cond = var.getValueConditions().get(0);
+				LOG.info("    - QVALUE:" + getQuotedValue(cond));
+				LOG.info("    - Type:" + cond.getType());
+				String valueField = getValueField(cond.getType());
+				LOG.info("    - TextValue:" + cond.getTextValue());
+				LOG.info("    - LongValue:" + cond.getLongValue());
+				LOG.info("    - DoubleValue:" + cond.getDoubleValue());
+
+				String value = getQuotedValue(cond);
+				Clause vars = or(new VerbatimClause("variables CONTAINS (name='" + name + "' and " + valueField + " " + op + " " + value + ")"), 
+												 new VerbatimClause("parent.variables CONTAINS (name='" + name + "' and " + valueField + " " + op + " " + value + ")"));
 				clauseList.add(vars);
 			}
 		}
@@ -147,6 +162,59 @@ public class ExecutionEntityHandler extends BaseEntityHandler {
 
 		oLinkedClass = getOrCreateClass(schema, "ExecutionEntity");
 		getOrCreateLinkedProperty(oClass, "parent", OType.LINK, oLinkedClass);
+	}
+
+
+	private String getQuotedValue( SingleQueryVariableValueCondition cond){
+		switch (cond.getType()) {
+		case "string":
+			return "'"+cond.getTextValue()+"'";
+		case "long":
+		case "integer":
+		case "boolean":
+			return String.valueOf(cond.getLongValue());
+		case "double":
+			return String.valueOf(cond.getDoubleValue());
+		default:
+			return "unknow value";
+		}
+	}
+
+	private String getValueField(String type) {
+		switch (type) {
+		case "string":
+			return "textValue";
+		case "long":
+		case "integer":
+		case "boolean":
+			return "longValue";
+		case "double":
+			return "doubleValue";
+		default:
+			return "textValue";
+		}
+	}
+
+	private String convertOperator(QueryOperator operator) {
+		switch (operator) {
+		case GREATER_THAN:
+			return ">";
+		case GREATER_THAN_OR_EQUAL:
+			return ">=";
+		case LESS_THAN:
+			return "<";
+		case LESS_THAN_OR_EQUAL:
+			return "<=";
+		case LIKE:
+			return "LIKE";
+		case NOT_EQUALS:
+			return "!=";
+		case EQUALS:
+			return "=";
+		default:
+			LOG.info("ExecutionEntityHandler.warning:can operator(" + operator + ") not convert");
+			return "=";
+		}
 	}
 }
 
