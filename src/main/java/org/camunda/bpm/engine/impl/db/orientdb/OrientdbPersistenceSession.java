@@ -675,10 +675,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	public void commit() {
 		LOG.info("commitSession:" + sessionId);
 		System.err.println("commitSession:" + sessionId);
-		try{//@@@MS
-			orientGraph.commit();
-		}catch(com.orientechnologies.orient.core.exception.ORecordNotFoundException e){
-		}
+		orientGraph.commit();
 	}
 
 	public void rollback() {

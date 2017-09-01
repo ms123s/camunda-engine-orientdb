@@ -64,7 +64,6 @@ public class CamundaOrientdbTest {
 	}
 	
 	@Test
-	@Ignore
 	public void testDeployProcess() {
 
 		BpmnModelInstance model = Bpmn.createExecutableProcess("testProcess").done();
@@ -129,7 +128,6 @@ public class CamundaOrientdbTest {
 	}
 
 	@Test
-	@Ignore
 	@Deployment(resources = { "example.bpmn" })
 	public void testEndProcessByCancelMessage() {
 		RuntimeService runtimeService = processEngineRule.getRuntimeService();
@@ -142,7 +140,6 @@ public class CamundaOrientdbTest {
 	}
 
 	@Test
-	@Ignore
 	@Deployment(resources = { "example-simple.bpmn" })
 	public void testEndProcessByCancelMessageSimple() {
 		RuntimeService runtimeService = processEngineRule.getRuntimeService();
@@ -156,7 +153,6 @@ public class CamundaOrientdbTest {
 	}
 
 	@Test
-	@Ignore
 	@Deployment(resources = { "example-sequence.bpmn" })
 	public void testEndProcessByCancelMessageSequence() {
 		RuntimeService runtimeService = processEngineRule.getRuntimeService();
@@ -173,7 +169,6 @@ public class CamundaOrientdbTest {
 	}
 
 	@Test
-	@Ignore
 	@Deployment(resources = { "example-sequence.bpmn" })
 	public void testCorrelateByMessageName() {
 		RuntimeService runtimeService = processEngineRule.getRuntimeService();
@@ -191,7 +186,6 @@ public class CamundaOrientdbTest {
 	}
 
 	@Test
-	@Ignore
 	@Deployment(resources = { "example-sequence.bpmn" })
 	public void testCorrelateByBusinessKey() { 
 		RuntimeService runtimeService = processEngineRule.getRuntimeService();
@@ -209,7 +203,7 @@ public class CamundaOrientdbTest {
 
 	@Test
 	@Deployment(resources = { "example-sequence.bpmn" })
-	public void testCorrelateByVariables() { //failed
+	public void testCorrelateByVariables() { 
 		RuntimeService runtimeService = processEngineRule.getRuntimeService();
 		Map<String, Object> vars = new HashMap<String, Object>();
 		vars.put("testString", "testVarString");
@@ -234,7 +228,6 @@ public class CamundaOrientdbTest {
 	}
 
 	@Test
-	@Ignore
 	@Deployment(resources = { "loop.bpmn" })
 	public void testLoop() {
 		RuntimeService runtimeService = processEngineRule.getRuntimeService();
@@ -274,7 +267,6 @@ public class CamundaOrientdbTest {
 	 * Test external task entities
 	 */
 	@Test
-	@Ignore
 	@Deployment(resources = {"external-task.bpmn"})
 	public void testExternalTask() { 
 		ProcessInstance processInstance = processEngineRule.getRuntimeService().startProcessInstanceByKey("externaltask");
@@ -299,7 +291,6 @@ public class CamundaOrientdbTest {
 	}
 	
 	@Test
-	@Ignore
 	@Deployment(resources = {"user-task.bpmn"})
 	public void testUserTask() {
 		ProcessInstance processInstance = processEngineRule.getRuntimeService().startProcessInstanceByKey("user-task");
@@ -327,7 +318,6 @@ public class CamundaOrientdbTest {
 	}
 	
 	@Test
-	@Ignore
 	@Deployment(resources = {"execute-script.bpmn"})
 	public void testExecuteScriptSimple() {
 		touchedFromScript=false;
