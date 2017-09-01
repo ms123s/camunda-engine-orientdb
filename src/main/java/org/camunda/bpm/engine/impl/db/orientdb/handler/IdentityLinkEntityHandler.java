@@ -44,31 +44,8 @@ public class IdentityLinkEntityHandler extends BaseEntityHandler {
 
 	@Override
 	public void insertAdditional(Vertex v, Object entity, Map<Object, List<Vertex>> entityCache) {
-		String processDefId = getValue(entity, "getProcessDefId");
-		String taskId = getValue(entity, "getTaskId");
-		LOG.info("IdentityLinkEntity.insertAdditional(" + processDefId + "," + taskId + "):" + v);
-		Iterable<Vertex> result = entityCache.get(processDefId != null ? processDefId : taskId);
-		if (result == null && processDefId != null) {
-			OCommandRequest query = new OSQLSynchQuery("select from ProcessDefinitionEntity where id=?");
-			result = this.orientGraph.command(query).execute(processDefId);
-		} else if (result == null && taskId != null) {
-			OCommandRequest query = new OSQLSynchQuery("select from TaskEntity where id=?");
-			result = this.orientGraph.command(query).execute(taskId);
-		}
-		for (Element elem : result) {
-			Iterable<Element> iter = elem.getProperty("identityLink");
-			if (iter == null) {
-				LOG.info("IdentityLinkEntity.insertAdditional.identityLink:" + v);
-				List<Element> l = new ArrayList<Element>();
-				l.add( v );
-				elem.setProperty("identityLink", l);
-			} else {
-				Collection<Element> col = makeCollection(iter);
-				LOG.info("IdentityLinkEntity.insertAdditional.identityLink(" + iter.getClass().getName() + "," + col + "):" + v);
-				col.add(v);
-				elem.setProperty("identityLink", col);
-			}
-		}
+	  settingChildren(entity, "getProcessDefId", "ProcessDefinitionEntity", "identityLink", v, entityCache);
+	  settingChildren(entity, "getTaskId", "TaskEntity", "identityLink", v, entityCache);
 	}
 }
 

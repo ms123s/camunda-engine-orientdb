@@ -61,6 +61,6 @@ public class EventSubscriptionEntityHandler extends BaseEntityHandler{
 
 	@Override
 	public void insertAdditional(Vertex v, Object entity, Map<Object, List<Vertex>> entityCache) {
-	  insertAdditional(entity, "getExecutionId", "ExecutionEntity", "eventSubscriptions", v, entityCache);
+	  settingChildren(entity, "getExecutionId", "ExecutionEntity", "eventSubscriptions", v, entityCache);
 	}
 }

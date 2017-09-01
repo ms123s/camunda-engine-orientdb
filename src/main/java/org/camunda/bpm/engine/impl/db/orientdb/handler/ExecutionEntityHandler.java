@@ -74,7 +74,6 @@ public class ExecutionEntityHandler extends BaseEntityHandler {
 			list.add(new CParameter("parentId", EQ, null));
 		}
 		String businessKey = getValue(p, "getBusinessKey");
-		//		LOG.info("ExecutionEntity.getCParameterList.businessKey:" + businessKey);
 		if (businessKey != null) {
 			Iterable<Element> procIterable = this.orientGraph.command(new OSQLSynchQuery<>("select processInstanceId from ExecutionEntity where businessKey=?")).execute(businessKey);
 			Iterator<Element> iter = procIterable.iterator();

@@ -27,6 +27,6 @@ public class VariableInstanceEntityHandler extends BaseEntityHandler{
 	}
 	@Override
 	public void insertAdditional(Vertex v, Object entity, Map<Object, List<Vertex>> entityCache) {
-	  insertAdditional(entity, "getExecutionId", "ExecutionEntity", "variables", v, entityCache);
+	  settingChildren(entity, "getExecutionId", "ExecutionEntity", "variables", v, entityCache);
 	}
 }

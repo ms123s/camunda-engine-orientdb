@@ -600,7 +600,7 @@ public abstract class BaseEntityHandler {
 		LOG.info("   +++" + msg + ":" + rb.toString());
 	}
 
-	public void insertAdditional(Object entity, String idMethod, String destClass, String propertyName, Vertex v, Map<Object, List<Vertex>> entityCache) {
+	public void settingChildren(Object entity, String idMethod, String destClass, String propertyName, Vertex v, Map<Object, List<Vertex>> entityCache) {
 		String id = getValue(entity, idMethod);
 		String entityName = entity.getClass().getSimpleName();
 		LOG.info(entityName+".insertAdditional(" + id +"):" + v);
