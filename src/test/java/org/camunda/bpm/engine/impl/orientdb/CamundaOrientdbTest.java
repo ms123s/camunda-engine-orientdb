@@ -225,6 +225,7 @@ public class CamundaOrientdbTest {
 	}
 
 	@Test
+	@Ignore
 	@Deployment(resources = { "example-sequence.bpmn" })
 	public void testManualCorrelateByVariables() {
 		RuntimeService runtimeService = processEngineRule.getRuntimeService();
@@ -378,15 +379,15 @@ public class CamundaOrientdbTest {
 	public boolean areJobsAvailable() {
 		List<Job> list = processEngineRule.getManagementService().createJobQuery().list();
 
-		System.err.println("JOB.size:" + list.size());
+		LOG.info("JOB.size:" + list.size());
 		for (Job job : list) {
-			System.err.println("JOB:" + job);
+			LOG.info("JOB:" + job);
 			if (!job.isSuspended() && job.getRetries() > 0 && (job.getDuedate() == null || ClockUtil.getCurrentTime().after(job.getDuedate()))) {
-				System.err.println("JOB:return true");
+				LOG.info("JOB:return true");
 				return true;
 			}
 		}
-		System.err.println("JOB:return false");
+		LOG.info("JOB:return false");
 		return false;
 	}
 

@@ -10,7 +10,7 @@ compileJava {
 
 sourceSets.main.groovy.srcDirs += ["src/main/java"]
 ext.camunda_version='7.7.0'
-ext.orientdb_version='2.2.11'
+ext.orientdb_version='2.2.26'
 dependencies {
  	compile files("jars/blueprints-core-2.6.0.jar")
  	compile files("jars/camunda-bpmn-model-${camunda_version}.jar")
