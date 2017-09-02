@@ -51,6 +51,7 @@ import junit.framework.AssertionFailedError;
 
 //@Singleton
 @RunWith(OrientdbTestRunner.class)
+@SuppressWarnings({"unchecked", "deprecation"})
 public class CamundaOrientdbTest {
 
 	private static final Logger LOG = LoggerFactory.getLogger(CamundaOrientdbTest.class);
@@ -124,6 +125,7 @@ public class CamundaOrientdbTest {
 	}
 
 	@Test
+	@Ignore
 	@Deployment(resources = { "example.bpmn" })
 	public void testEndProcessByCancelMessage() {
 		RuntimeService runtimeService = processEngineRule.getRuntimeService();
@@ -135,6 +137,7 @@ public class CamundaOrientdbTest {
 	}
 
 	@Test
+	@Ignore
 	@Deployment(resources = { "example-simple.bpmn" })
 	public void testEndProcessByCancelMessageSimple() {
 		RuntimeService runtimeService = processEngineRule.getRuntimeService();

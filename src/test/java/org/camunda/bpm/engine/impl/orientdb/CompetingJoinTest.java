@@ -21,11 +21,13 @@ import org.camunda.bpm.engine.runtime.Execution;
 import org.camunda.bpm.engine.runtime.ProcessInstance;
 import org.camunda.bpm.engine.test.Deployment;
 import org.slf4j.Logger;
+import org.junit.Ignore;
 
 
 /**
  * @author Tom Baeyens
  */
+@SuppressWarnings({"unchecked", "deprecation"})
 public class CompetingJoinTest extends PluggableProcessEngineTestCase {
 
 private static Logger LOG = ProcessEngineLogger.TEST_LOGGER.getLogger();
@@ -57,8 +59,10 @@ private static Logger LOG = ProcessEngineLogger.TEST_LOGGER.getLogger();
 		}
   }
 
+	@Ignore
 	@Deployment(resources = { "CompetingJoinTest.testCompetingJoins.bpmn20.xml" })
   public void testCompetingJoins() throws Exception {
+
     ProcessInstance processInstance = runtimeService.startProcessInstanceByKey("CompetingJoinsProcess");
     Execution execution1 = runtimeService
       .createExecutionQuery()
@@ -87,7 +91,7 @@ private static Logger LOG = ProcessEngineLogger.TEST_LOGGER.getLogger();
     LOG.info("++++++++++++++++++++++test thread notifies thread 2");
     threadTwo.proceedAndWaitTillDone();
     assertNotNull(threadTwo.exception);
-    assertTextPresent("was updated by another transaction concurrently", threadTwo.exception.getMessage());
+    assertTextPresent("was updated by another transaction concurrently", threadTwo.exception.getMessage()); 
   }
 
 }

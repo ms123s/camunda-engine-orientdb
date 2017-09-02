@@ -432,14 +432,14 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 				v.setProperty("dbRevision", 1);
 			}
 			if (id != null) {
-				List<Vertex> vl = entityCache.get(id + entityName);
+				List<Vertex> vl = this.entityCache.get(id + entityName);
 				if (vl == null) {
 					vl = new ArrayList<Vertex>();
 					entityCache.put(id + entityName, vl);
 				}
 				vl.add(v);
 			}
-			handler.insertAdditional(v, entity, entityCache);
+			handler.insertAdditional(v, entity, this.entityCache);
 			LOG.info("<- insertEntity(" + entityName + "," + n + "," + id + "):ok");
 		} catch (Exception e) {
 			LOG.info("OrientdbPersistenceSession.insertEntity(" + entityName + "):" + e.getMessage());
@@ -453,10 +453,10 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		Class entityClass = OrientdbSessionFactory.getReplaceClass(entity.getClass());
 		String entityName = entity.getClass().getSimpleName();
 		if (entityName.equals("ExecutionEntity")) {
-			//			return;
+						return;
 		}
 		if (entityName.equals("EventSubscriptionEntity")) {
-			//			return;
+						return;
 		}
 		if (entityName.equals("VariableInstanceEntity")) {
 			//			return;
@@ -471,9 +471,9 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		OCommandRequest del = new OCommandSQL("Delete vertex " + entityName + " where id=?");
 		try {
 			String sql = "SELECT FROM " + entityName + " where id='" + id + "'";
-			Vertex dbe = selectBySql(sql);
-			LOG.info("deleteEntity(" + entityName + "," + name + "):dbe:" + dbe);
-			if (dbe == null) {
+			Vertex vertex = selectBySql(sql);
+			LOG.info("deleteEntity(" + entityName + "," + name + "):vertex:" + vertex);
+			if (vertex == null) {
 				operation.setFailed(true);
 				LOG.info("<- deleteEntity(" + entityName + "," + name + "):failed");
 				return;
@@ -508,21 +508,16 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		BaseEntityHandler handler = OrientdbSessionFactory.getEntityHandler(entityClass, this.orientGraph);
 		LOG.info("-> deleteBulk(" + statement + "," + entityName + ").parameter:" + parameter);
 		List<CParameter> parameterList = getCParameterList(statement, parameter, handler);
-		LOG.info("  - CParameterList:" + parameterList);
 
 		if (parameterList.size() > 0) {
-			if (entityName.equals("VariableInstanceEntity")) {
-				//fireEventForVariableInstanceEntityDelete(entityClass, statement, parameterList, handler);
-			}
 			Map<String, Object> queryParams = new HashMap<String, Object>();
 			OCommandRequest up = handler.buildDelete(entityName, statement, parameterList, queryParams);
 
 			String sql = up.toString().replace("sql.DELETE VERTEX", "SELECT FROM");
-			Vertex dbe = selectBySql(sql);
-			LOG.info("deleteBulk(" + entityName + "):dbe:" + dbe);
-			if (dbe == null) {
-				//operation.setFailed(true);
-				LOG.info("<- deleteBulk(" + entityName + "):failed");
+			Vertex vertex = selectBySql(sql);
+			LOG.info("  - deleteBulk(" + entityName + "):vertex:" + vertex);
+			if (vertex == null) {
+				LOG.info("<- deleteBulk(" + entityName + "):not found");
 				return;
 			}
 
@@ -740,6 +735,12 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		} catch (com.orientechnologies.orient.core.exception.ORecordNotFoundException e) {
 			e.printStackTrace();
 			LOG.info("Commit failed:" + e);
+		}
+		for( Object key : this.entityCache.keySet()){
+			List<Vertex> l = this.entityCache.get(key);
+			for( Vertex v : l){
+				LOG.info("insertedEntity:" + v);
+			}
 		}
 	}
 
