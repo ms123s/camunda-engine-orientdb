@@ -93,5 +93,4 @@ private static Logger LOG = ProcessEngineLogger.TEST_LOGGER.getLogger();
     assertNotNull(threadTwo.exception);
     assertTextPresent("was updated by another transaction concurrently", threadTwo.exception.getMessage()); 
   }
-
 }

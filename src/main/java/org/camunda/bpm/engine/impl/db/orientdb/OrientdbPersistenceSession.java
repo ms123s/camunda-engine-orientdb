@@ -303,8 +303,6 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			LOG.info("OrientdbPersistenceSession.selectById:" + e.getMessage());
 			throw new RuntimeException("OrientdbPersistenceSession.selectById(" + entityName + "," + id + ")", e);
 		}
-		//LOG.info("<-selectById(" + entityName + ").return:null");
-		//return null;
 	}
 
 	private void setEntityValues(Class entityClass, Object entity, Map<String, Object> props) throws Exception {
@@ -419,7 +417,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 				String name = (String) m.get("name");
 				Method method = entityClass.getMethod(getter);
 				Object value = method.invoke(entity);
-				if (value != null /*name.equals("id")*/) {
+				if (value != null) {
 					//LOG.info("- Field(" + name + "):" + value);
 				}
 				if (name.equals("id"))
@@ -453,10 +451,10 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		Class entityClass = OrientdbSessionFactory.getReplaceClass(entity.getClass());
 		String entityName = entity.getClass().getSimpleName();
 		if (entityName.equals("ExecutionEntity")) {
-						return;
+			return;
 		}
 		if (entityName.equals("EventSubscriptionEntity")) {
-						return;
+			return;
 		}
 		if (entityName.equals("VariableInstanceEntity")) {
 			//			return;
@@ -513,32 +511,19 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			Map<String, Object> queryParams = new HashMap<String, Object>();
 			OCommandRequest up = handler.buildDelete(entityName, statement, parameterList, queryParams);
 
-			String sql = up.toString().replace("sql.DELETE VERTEX", "SELECT FROM");
-			Vertex vertex = selectBySql(sql);
-			LOG.info("  - deleteBulk(" + entityName + "):vertex:" + vertex);
-			if (vertex == null) {
-				LOG.info("<- deleteBulk(" + entityName + "):not found");
-				return;
-			}
-
 			orientGraph.command(up).execute(queryParams);
 		} else {
 			throw new RuntimeException("OrientdbPersistenceSession.deleteBulk(" + statement + "," + entityName + "):no parameter");
 		}
-		LOG.info("<- deleteBulk ok");
+		LOG.info("<- deleteBulk(" + statement + ") ok");
 	}
 
 	protected void updateBulk(DbBulkOperation operation) {
-		// TODO: implement
-
 	}
 
 	protected void updateEntity(DbEntityOperation operation) {
 		DbEntity entity = operation.getEntity();
 		String entityName = entity.getClass().getSimpleName();
-		if (entityName.equals("VariableInstanceEntity")) {
-			//this.sessionFactory.fireEvent((VariableInstanceEntity) entity, "update");
-		}
 		String id = getValue(entity, "getId");
 		LOG.info("-> updateEntity(" + entityName + "," + id + ")");
 
@@ -736,10 +721,10 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			e.printStackTrace();
 			LOG.info("Commit failed:" + e);
 		}
-		for( Object key : this.entityCache.keySet()){
+		for (Object key : this.entityCache.keySet()) {
 			List<Vertex> l = this.entityCache.get(key);
-			for( Vertex v : l){
-				LOG.info("insertedEntity:" + v);
+			for (Vertex v : l) {
+				LOG.info("insertedEntity(" + sessionId + "):" + v);
 			}
 		}
 	}
