@@ -451,13 +451,13 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		Class entityClass = OrientdbSessionFactory.getReplaceClass(entity.getClass());
 		String entityName = entity.getClass().getSimpleName();
 		if (entityName.equals("ExecutionEntity")) {
-			return;
+			//return;
 		}
 		if (entityName.equals("EventSubscriptionEntity")) {
-			return;
+			//return;
 		}
 		if (entityName.equals("VariableInstanceEntity")) {
-			//			return;
+			//return;
 		}
 		String id = getValue(entity, "getId");
 		String name = null;
