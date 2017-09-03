@@ -608,19 +608,19 @@ public abstract class BaseEntityHandler {
 		}
 		LOG.info(entityName + ".resultFromCache(" + id + "):" + result);
 		if (result == null) {
-			LOG.info(entityName + ".insertAdditional(" + id + "):not found");
+			LOG.info(entityName + ".settingLinksReverse(" + id + "):not found");
 			return;
 		}
 		for (Element elem : result) {
 			Iterable<Element> iter = elem.getProperty(propertyName);
 			if (iter == null) {
-				LOG.info(destClass + "(" + elem + ").insertAdditional." + propertyName + ":" + v);
+				LOG.info(destClass + "(" + elem + ").settingLinksReverse." + propertyName + ":" + v);
 				List<Element> l = new ArrayList<Element>();
 				l.add(v);
 				elem.setProperty(propertyName, l);
 			} else {
 				Collection<Element> col = makeCollection(iter);
-				LOG.info(destClass + "(" + elem + ").insertAdditional." + propertyName + "(" + iter.getClass().getName() + "," + col + "):" + v);
+				LOG.info(destClass + "(" + elem + ").settingLinksReverse." + propertyName + "(" + iter.getClass().getName() + "," + col + "):" + v);
 				col.add(v);
 				elem.setProperty(propertyName, col);
 			}
@@ -646,6 +646,29 @@ public abstract class BaseEntityHandler {
 			LOG.info(entity.getClass().getSimpleName() + ".settingLink(" + v + ").to:" + parent);
 			v.setProperty(propertyName, parent);
 		}
+	}
+
+	public void settingLinks(Object entity, String idMethod, Vertex v, String propertyName, String destClass, String destProperty, Map<Object, List<Vertex>> entityCache) {
+		String id = getValue(entity, idMethod);
+		String entityName = entity.getClass().getSimpleName();
+		LOG.info(entityName + ".settingLinks(" + id + "):" + v);
+		Iterable<Vertex> result = entityCache.get(id + destClass);
+		if (id != null) {
+			String sql = "select from " + destClass + " where "+destProperty+"=?";
+		  LOG.info(entityName + ".sql(" + sql + ")" );
+			OCommandRequest query = new OSQLSynchQuery(sql);
+			Iterable<Vertex> result2 = orientGraph.command(query).execute(id);
+			if (result2 != null) {
+				result = makeCollection(result, result2);
+			}
+		}
+		LOG.info(entityName + ".resultFromCache(" + id + "):" + result);
+		if (result == null) {
+			LOG.info(entityName + ".settingLinks(" + id + "):not found");
+			return;
+		}
+		LOG.info(entity.getClass().getSimpleName() + ".settingLinks(" + v + ").to:" + result);
+		v.setProperty(propertyName, result);
 	}
 
 	protected String getQuotedValue(SingleQueryVariableValueCondition cond) {

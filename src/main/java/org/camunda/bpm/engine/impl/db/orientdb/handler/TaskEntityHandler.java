@@ -59,11 +59,15 @@ public class TaskEntityHandler extends BaseEntityHandler {
 
 		oLinkedClass = getOrCreateClass(schema, "ExecutionEntity");
 		getOrCreateLinkedProperty(oClass, "processInstance", OType.LINK, oLinkedClass);
+
+		//oLinkedClass = getOrCreateClass(schema, "VariableInstanceEntity");
+		//getOrCreateLinkedProperty(oClass, "variable", OType.LINKSET, oLinkedClass);
 	}
 
 	@Override
 	public void insertAdditional(Vertex v, Object entity, Map<Object, List<Vertex>> entityCache) {
 		settingLink(entity, "getProcessInstanceId", "ExecutionEntity", "processInstance", v, entityCache);
+	  //settingLinks(entity, "getProcessInstanceId", v, "variables", "VariableInstanceEntity", "processInstanceId", entityCache);
 	}
 
 	@Override
@@ -86,7 +90,7 @@ public class TaskEntityHandler extends BaseEntityHandler {
 		if (candidateUser != null) {
 			clauseList.add(clause("identityLink.userId", EQ, candidateUser));
 		}
-		List<QueryVariableValue> varList = getValue(parameter, "getQueryVariableValues");
+		List<QueryVariableValue> varList = getValue(parameter, "getVariables");
 		if (varList != null) {
 			for (QueryVariableValue var : varList) {
 
@@ -96,7 +100,7 @@ public class TaskEntityHandler extends BaseEntityHandler {
 				String name = var.getName();
 				String op = convertOperator(var.getOperator());
 
-				Clause vars = or(new VerbatimClause("variables CONTAINS (name='" + name + "' and " + valueField + " " + op + " " + value + ")"), new VerbatimClause("parent.variables CONTAINS (name='" + name + "' and " + valueField + " " + op + " " + value + ")"));
+				Clause vars = new VerbatimClause("processInstance.variables CONTAINS (name='" + name + "' and " + valueField + " " + op + " " + value + ")");
 				clauseList.add(vars);
 			}
 		}
