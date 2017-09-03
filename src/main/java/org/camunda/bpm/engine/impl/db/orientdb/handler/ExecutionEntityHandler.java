@@ -1,30 +1,28 @@
 package org.camunda.bpm.engine.impl.db.orientdb.handler;
 
-import java.util.logging.Logger;
-
 import com.github.raymanrt.orientqb.query.Clause;
+import com.github.raymanrt.orientqb.query.clause.VerbatimClause;
 import com.orientechnologies.orient.core.command.OCommandRequest;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OSchema;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
-import com.github.raymanrt.orientqb.query.clause.VerbatimClause;
 import com.tinkerpop.blueprints.Element;
 import com.tinkerpop.blueprints.impls.orient.OrientGraph;
 import com.tinkerpop.blueprints.Vertex;
-import org.camunda.bpm.engine.impl.QueryOperator;
-import org.camunda.bpm.engine.impl.EventSubscriptionQueryValue;
-import org.camunda.bpm.engine.impl.QueryVariableValue;
-import org.camunda.bpm.engine.impl.SingleQueryVariableValueCondition;
+import java.lang.Iterable;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Iterator;
+import java.util.List;
 import java.util.logging.Logger;
-import java.lang.Iterable;
 import java.util.Map;
 import org.camunda.bpm.engine.impl.db.orientdb.CParameter;
+import org.camunda.bpm.engine.impl.EventSubscriptionQueryValue;
 import org.camunda.bpm.engine.impl.persistence.entity.ExecutionEntity;
+import org.camunda.bpm.engine.impl.QueryOperator;
+import org.camunda.bpm.engine.impl.QueryVariableValue;
+import org.camunda.bpm.engine.impl.SingleQueryVariableValueCondition;
 import static com.github.raymanrt.orientqb.query.Clause.or;
 import static com.github.raymanrt.orientqb.query.Operator.EQ;
 
@@ -110,8 +108,7 @@ public class ExecutionEntityHandler extends BaseEntityHandler {
 				String name = var.getName();
 				String op = convertOperator(var.getOperator());
 
-				Clause vars = or(new VerbatimClause("variables CONTAINS (name='" + name + "' and " + valueField + " " + op + " " + value + ")"), 
-												 new VerbatimClause("parent.variables CONTAINS (name='" + name + "' and " + valueField + " " + op + " " + value + ")"));
+				Clause vars = or(new VerbatimClause("variables CONTAINS (name='" + name + "' and " + valueField + " " + op + " " + value + ")"), new VerbatimClause("parent.variables CONTAINS (name='" + name + "' and " + valueField + " " + op + " " + value + ")"));
 				clauseList.add(vars);
 			}
 		}
@@ -119,28 +116,7 @@ public class ExecutionEntityHandler extends BaseEntityHandler {
 
 	@Override
 	public void insertAdditional(Vertex v, Object entity, Map<Object, List<Vertex>> entityCache) {
-		settingParent(entity, "getParentId", "ExecutionEntity", "parent", v, entityCache);
-	}
-
-	private void settingParent(Object entity, String idMethod, String destClass, String propertyName, Vertex v, Map<Object, List<Vertex>> entityCache) {
-		String id = getValue(entity, idMethod);
-		if (id == null) {
-			return;
-		}
-		Iterable<Vertex> result = entityCache.get(id + destClass);
-		if (result == null) {
-			OCommandRequest query = new OSQLSynchQuery("select from " + destClass + " where id=?");
-			result = orientGraph.command(query).execute(id);
-		}
-		if (result == null) {
-			return;
-		}
-		Iterator<Vertex> it = result.iterator();
-		if (it.hasNext()) {
-			Vertex parent = it.next();
-			LOG.info(entity.getClass().getSimpleName() + ".settingParent(" + v + ").to:" + parent);
-			v.setProperty(propertyName, parent);
-		}
+		settingLink(entity, "getParentId", "ExecutionEntity", "parent", v, entityCache);
 	}
 
 	@Override
@@ -155,57 +131,5 @@ public class ExecutionEntityHandler extends BaseEntityHandler {
 		getOrCreateLinkedProperty(oClass, "parent", OType.LINK, oLinkedClass);
 	}
 
-
-	private String getQuotedValue( SingleQueryVariableValueCondition cond){
-		switch (cond.getType()) {
-		case "string":
-			return "'"+cond.getTextValue()+"'";
-		case "long":
-		case "integer":
-		case "boolean":
-			return String.valueOf(cond.getLongValue());
-		case "double":
-			return String.valueOf(cond.getDoubleValue());
-		default:
-			return "unknow value";
-		}
-	}
-
-	private String getValueField(String type) {
-		switch (type) {
-		case "string":
-			return "textValue";
-		case "long":
-		case "integer":
-		case "boolean":
-			return "longValue";
-		case "double":
-			return "doubleValue";
-		default:
-			return "textValue";
-		}
-	}
-
-	private String convertOperator(QueryOperator operator) {
-		switch (operator) {
-		case GREATER_THAN:
-			return ">";
-		case GREATER_THAN_OR_EQUAL:
-			return ">=";
-		case LESS_THAN:
-			return "<";
-		case LESS_THAN_OR_EQUAL:
-			return "<=";
-		case LIKE:
-			return "LIKE";
-		case NOT_EQUALS:
-			return "!=";
-		case EQUALS:
-			return "=";
-		default:
-			LOG.info("ExecutionEntityHandler.warning:can operator(" + operator + ") not convert");
-			return "=";
-		}
-	}
 }
 

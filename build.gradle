@@ -26,13 +26,14 @@ dependencies {
  	compile files("jars/concurrentlinkedhashmap-lru-1.4.1.jar")
  	compile files("jars/groovy-all-2.4.5.jar")
  	compile files("jars/guava-21.0.jar")
+ 	compile files("jars/h2-1.4.196.jar")
+ 	compile files("jars/java-hamcrest-2.0.0.0.jar")
  	compile files("jars/javassist-3.21.0-GA.jar")
  	compile files("jars/java-uuid-generator-3.1.3.jar")
+  compile files("jars/jcl-over-slf4j-1.7.5.jar")
  	compile files("jars/joda-time-2.6.jar")
  	compile files("jars/junit-4.12.jar")
- 	compile files("jars/java-hamcrest-2.0.0.0.jar")
  	compile files("jars/mybatis-3.2.5.jar")
- 	compile files("jars/h2-1.4.196.jar")
  	compile files("jars/orientdb-client-${orientdb_version}.jar")
  	compile files("jars/orientdb-core-${orientdb_version}.jar")
  	compile files("jars/orientdb-graphdb-${orientdb_version}.jar")
@@ -43,7 +44,6 @@ dependencies {
  	compile files("jars/servlet-api-2.5.jar")
  	compile files("jars/slf4j-api-1.7.21.jar")
   compile files("jars/slf4j-jdk14-1.7.5.jar")
-  compile files("jars/jcl-over-slf4j-1.7.5.jar")
  	compile files("jars/spring-beans-4.3.9.RELEASE.jar")
  	compile files("jars/spring-core-4.3.9.RELEASE.jar")
 }
@@ -51,6 +51,7 @@ dependencies {
 jar {
     manifest { 
         instruction 'Private-Package','com.javacodegeeks.gradle.osgi'
+        instruction 'Import-Package','org.junit*;resolution:=optional,*'
         instruction 'Bundle-Vendor', 'simpl4'
         instruction 'Bundle-Description', 'camunda orientdb support'
         instruction 'Bundle-ManifestVersion', '2'

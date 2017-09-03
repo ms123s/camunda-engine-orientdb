@@ -13,23 +13,22 @@
 
 package org.camunda.bpm.engine.impl.db.orientdb.handler;
 
+import com.github.raymanrt.orientqb.delete.Delete;
 import com.github.raymanrt.orientqb.query.Clause;
 import com.github.raymanrt.orientqb.query.Projection;
 import com.github.raymanrt.orientqb.query.Query;
-import com.github.raymanrt.orientqb.delete.Delete;
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.command.OCommandRequest;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
-import com.orientechnologies.orient.core.metadata.schema.OSchemaProxy;
-import com.orientechnologies.orient.core.metadata.schema.OSchema;
 import com.orientechnologies.orient.core.metadata.schema.OProperty;
+import com.orientechnologies.orient.core.metadata.schema.OSchema;
+import com.orientechnologies.orient.core.metadata.schema.OSchemaProxy;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.sql.OCommandSQL;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
-import com.orientechnologies.orient.core.sql.OCommandSQL;
+import com.tinkerpop.blueprints.Element;
 import com.tinkerpop.blueprints.impls.orient.OrientGraph;
 import com.tinkerpop.blueprints.Vertex;
-import com.tinkerpop.blueprints.Element;
 import java.lang.reflect.*;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,7 +41,11 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.Map;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 import org.camunda.bpm.engine.impl.db.orientdb.CParameter;
+import org.camunda.bpm.engine.impl.QueryOperator;
+import org.camunda.bpm.engine.impl.SingleQueryVariableValueCondition;
 import static com.github.raymanrt.orientqb.query.Clause.and;
 import static com.github.raymanrt.orientqb.query.Clause.clause;
 import static com.github.raymanrt.orientqb.query.Clause.not;
@@ -56,8 +59,6 @@ import static com.github.raymanrt.orientqb.query.Parameter.parameter;
 import static com.github.raymanrt.orientqb.query.Projection.ALL;
 import static com.github.raymanrt.orientqb.query.Projection.projection;
 import static com.github.raymanrt.orientqb.query.Variable.variable;
-import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
 
 /**
  * @author Manfred Sattler
@@ -354,7 +355,7 @@ public abstract class BaseEntityHandler {
 			Method method = obj.getClass().getMethod(methodName, (Class[]) null);
 			return (Any) method.invoke(obj);
 		} catch (Exception e) {
-//			LOG.info("BaseEntityHandler.getValue:" + obj.getClass().getSimpleName() + "." + methodName + " not found");
+			//			LOG.info("BaseEntityHandler.getValue:" + obj.getClass().getSimpleName() + "." + methodName + " not found");
 			return null;
 		}
 	}
@@ -440,7 +441,7 @@ public abstract class BaseEntityHandler {
 				OType oType = (OType) f.get("otype");
 				getOrCreateProperty(oClass, pName, oType);
 			}
-		  getOrCreateProperty(oClass, "dbRevision", OType.INTEGER);
+			getOrCreateProperty(oClass, "dbRevision", OType.INTEGER);
 			createAdditionalProperties(schema, oClass);
 			//m_orientdbService.executeUpdate(orientGraph, "CREATE INDEX History.key ON History ( key ) NOTUNIQUE");
 		} catch (Exception e) {
@@ -557,12 +558,12 @@ public abstract class BaseEntityHandler {
 
 	protected <T> Collection<T> makeCollection(Iterable<T> it1, Iterable<T> it2) {
 		Collection<T> result = new ArrayList<T>();
-		if( it1!=null){
+		if (it1 != null) {
 			for (T it : it1) {
 				result.add(it);
 			}
 		}
-		if( it2!=null){
+		if (it2 != null) {
 			for (T it : it2) {
 				result.add(it);
 			}
@@ -571,7 +572,7 @@ public abstract class BaseEntityHandler {
 	}
 
 	protected Iterable<Element> queryList(String sql, Object... args) {
-		LOG.info("   - queryList:"+sql);
+		LOG.info("   - queryList:" + sql);
 		Iterable<Element> iter = this.orientGraph.command(new OSQLSynchQuery<>(sql)).execute(args);
 		return iter;
 	}
@@ -593,36 +594,109 @@ public abstract class BaseEntityHandler {
 		LOG.info("   +++" + msg + ":" + rb.toString());
 	}
 
-	public void settingChildren(Object entity, String idMethod, String destClass, String propertyName, Vertex v, Map<Object, List<Vertex>> entityCache) {
+	public void settingLinksReverse(Object entity, String idMethod, String destClass, String propertyName, Vertex v, Map<Object, List<Vertex>> entityCache) {
 		String id = getValue(entity, idMethod);
 		String entityName = entity.getClass().getSimpleName();
-		LOG.info(entityName+".insertAdditional(" + id +"):" + v);
-		Iterable<Vertex> result  = entityCache.get(id+destClass);
+		LOG.info(entityName + ".insertAdditional(" + id + "):" + v);
+		Iterable<Vertex> result = entityCache.get(id + destClass);
 		if (id != null) {
-			OCommandRequest query = new OSQLSynchQuery("select from "+destClass+" where id=?");
+			OCommandRequest query = new OSQLSynchQuery("select from " + destClass + " where id=?");
 			Iterable<Vertex> result2 = orientGraph.command(query).execute(id);
-			if( result2 != null){
-				result = makeCollection( result, result2);
+			if (result2 != null) {
+				result = makeCollection(result, result2);
 			}
-		} 
-		LOG.info(entityName+".resultFromCache(" + id +"):" + result);
-		if( result == null){
-			LOG.info(entityName+".insertAdditional(" + id +"):not found");
+		}
+		LOG.info(entityName + ".resultFromCache(" + id + "):" + result);
+		if (result == null) {
+			LOG.info(entityName + ".insertAdditional(" + id + "):not found");
 			return;
 		}
-		for( Element elem : result ){
+		for (Element elem : result) {
 			Iterable<Element> iter = elem.getProperty(propertyName);
 			if (iter == null) {
-				LOG.info(destClass+"("+elem+").insertAdditional."+propertyName+":" + v);
+				LOG.info(destClass + "(" + elem + ").insertAdditional." + propertyName + ":" + v);
 				List<Element> l = new ArrayList<Element>();
-				l.add( v );
+				l.add(v);
 				elem.setProperty(propertyName, l);
 			} else {
 				Collection<Element> col = makeCollection(iter);
-				LOG.info(destClass+"("+elem+").insertAdditional."+propertyName+"(" + iter.getClass().getName() + "," + col + "):" + v);
+				LOG.info(destClass + "(" + elem + ").insertAdditional." + propertyName + "(" + iter.getClass().getName() + "," + col + "):" + v);
 				col.add(v);
 				elem.setProperty(propertyName, col);
 			}
+		}
+	}
+
+	public void settingLink(Object entity, String idMethod, String destClass, String propertyName, Vertex v, Map<Object, List<Vertex>> entityCache) {
+		String id = getValue(entity, idMethod);
+		if (id == null) {
+			return;
+		}
+		Iterable<Vertex> result = entityCache.get(id + destClass);
+		if (result == null) {
+			OCommandRequest query = new OSQLSynchQuery("select from " + destClass + " where id=?");
+			result = orientGraph.command(query).execute(id);
+		}
+		if (result == null) {
+			return;
+		}
+		Iterator<Vertex> it = result.iterator();
+		if (it.hasNext()) {
+			Vertex parent = it.next();
+			LOG.info(entity.getClass().getSimpleName() + ".settingLink(" + v + ").to:" + parent);
+			v.setProperty(propertyName, parent);
+		}
+	}
+
+	protected String getQuotedValue(SingleQueryVariableValueCondition cond) {
+		switch (cond.getType()) {
+		case "string":
+			return "'" + cond.getTextValue() + "'";
+		case "long":
+		case "integer":
+		case "boolean":
+			return String.valueOf(cond.getLongValue());
+		case "double":
+			return String.valueOf(cond.getDoubleValue());
+		default:
+			return "unknow value";
+		}
+	}
+
+	protected String getValueField(String type) {
+		switch (type) {
+		case "string":
+			return "textValue";
+		case "long":
+		case "integer":
+		case "boolean":
+			return "longValue";
+		case "double":
+			return "doubleValue";
+		default:
+			return "textValue";
+		}
+	}
+
+	protected String convertOperator(QueryOperator operator) {
+		switch (operator) {
+		case GREATER_THAN:
+			return ">";
+		case GREATER_THAN_OR_EQUAL:
+			return ">=";
+		case LESS_THAN:
+			return "<";
+		case LESS_THAN_OR_EQUAL:
+			return "<=";
+		case LIKE:
+			return "LIKE";
+		case NOT_EQUALS:
+			return "!=";
+		case EQUALS:
+			return "=";
+		default:
+			LOG.info("ExecutionEntityHandler.warning:can operator(" + operator + ") not convert");
+			return "=";
 		}
 	}
 }

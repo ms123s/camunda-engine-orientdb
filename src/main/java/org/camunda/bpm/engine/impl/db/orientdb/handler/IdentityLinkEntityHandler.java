@@ -44,8 +44,8 @@ public class IdentityLinkEntityHandler extends BaseEntityHandler {
 
 	@Override
 	public void insertAdditional(Vertex v, Object entity, Map<Object, List<Vertex>> entityCache) {
-	  settingChildren(entity, "getProcessDefId", "ProcessDefinitionEntity", "identityLink", v, entityCache);
-	  settingChildren(entity, "getTaskId", "TaskEntity", "identityLink", v, entityCache);
+	  settingLinksReverse(entity, "getProcessDefId", "ProcessDefinitionEntity", "identityLink", v, entityCache);
+	  settingLinksReverse(entity, "getTaskId", "TaskEntity", "identityLink", v, entityCache);
 	}
 }
 
