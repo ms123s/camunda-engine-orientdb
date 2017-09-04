@@ -191,6 +191,9 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 					dump("selectList(" + entityName + ")", entity);
 					fireEntityLoaded(entity);
 					entityList.add(entity);
+					if( isSingleResult(parameter)){
+						break;
+					}
 				}
 				LOG.info("<-selectList3(" + entityName + ").return:" + entityList);
 				return entityList;
@@ -204,6 +207,15 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		return new ArrayList();
 	}
 
+	private boolean isSingleResult( Object parameter){
+		if (parameter instanceof AbstractQuery) {
+			Object res = getValueByField( parameter,"resultType");
+			if( "SINGLE_RESULT".equals(String.valueOf(res))){
+				return true;
+			}
+		}
+		return false;
+	}
 	private List<CParameter> getCParameterList(String statement, Object parameter, BaseEntityHandler handler) {
 		//LOG.info("  - getParameterList(" + statement + "):" + parameter);
 		if (parameter instanceof AbstractQuery) {
@@ -625,6 +637,38 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			return (Any) method.invoke(obj);
 		} catch (Exception e) {
 			throw new RuntimeException("OrientdbPersistenceSession.getValue:" + obj.getClass().getSimpleName() + "." + methodName);
+		}
+	}
+
+	private <Any> Any getValueByField(Object obj, String fieldName) {
+		try {
+			if (obj == null) {
+				LOG.info("OrientdbPersistenceSession.getValueByField(" + fieldName + ") obj is null");
+				return null;
+			}
+			if (obj instanceof Map) {
+				return (Any) ((Map) obj).get(fieldName);
+			}
+			Field field = getField(obj.getClass(),fieldName);
+			field.setAccessible(true);
+			return (Any) field.get(obj);
+		} catch (Exception e) {
+			e.printStackTrace();
+			LOG.info("OrientdbPersistenceSession.getValueByField:" + obj.getClass().getSimpleName() + "." + fieldName + " not found");
+			return null;
+		}
+	}
+
+	private static Field getField(Class clazz, String fieldName) throws NoSuchFieldException {
+		try {
+			return clazz.getDeclaredField(fieldName);
+		} catch (NoSuchFieldException e) {
+			Class superClass = clazz.getSuperclass();
+			if (superClass == null) {
+				throw e;
+			} else {
+				return getField(superClass, fieldName);
+			}
 		}
 	}
 
