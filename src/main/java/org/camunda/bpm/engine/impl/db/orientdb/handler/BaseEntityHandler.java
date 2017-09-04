@@ -121,6 +121,10 @@ public abstract class BaseEntityHandler {
 		return entityClass;
 	}
 
+	public String getKeyForLatestGrouping(){
+		return "key";
+	}
+
 	public CParameter getCParameter(List<CParameter> parameterList, String name) {
 		for (CParameter p : parameterList) {
 			if (p.name.equals(name)) {
@@ -241,8 +245,9 @@ public abstract class BaseEntityHandler {
 		Clause w = and(clauseList.toArray(new Clause[clauseList.size()]));
 		Query q = new Query().from(entityName).where(w);
 		if (isLatest && this.metaByFieldMap.get("version") != null) {
-			q.limit(1);
+			//q.limit(1);
 			q.orderByDesc("version");
+			queryParams.put("_isLatest", new Boolean(true));
 		}
 
 		postProcessQuery(q, statement, parameterList);

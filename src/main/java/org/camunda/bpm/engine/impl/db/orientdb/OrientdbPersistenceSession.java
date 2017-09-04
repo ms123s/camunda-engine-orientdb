@@ -156,11 +156,13 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			LOG.info(" - selectList(" + statement + "):result from callStatementMethod:" + result);
 		}
 
+		boolean isLatest = false;
 		if (result == null) {
 			List<CParameter> parameterList = getCParameterList(statement, parameter, entityHandler);
 			LOG.info("  - CParameterList:" + parameterList);
 			Map<String, Object> queryParams = new HashMap<String, Object>();
 			OCommandRequest query = entityHandler.buildQuery(entityName, statement, parameterList, parameter, queryParams);
+			isLatest = getBoolean(queryParams.remove("_isLatest"));
 
 			result = orientGraph.command(query).execute(queryParams);
 		}
@@ -175,20 +177,32 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			return propsList;
 		}
 		try {
+			Map<Object,Object> uniqueMap = new HashMap<Object,Object>();
 			if (statement.indexOf("IdsBy") > 0) {
 				List<String> idList = new ArrayList<String>();
 				for (Map<String, Object> props : propsList) {
+					Object id = props.get("id");
+					if( isLatest && uniqueMap.get(id) != null){
+						continue;
+					}
+					uniqueMap.put( id, "" );
 					idList.add((String) props.get("id"));
 				}
 				LOG.info("<-selectList2(" + entityName + ").return:" + idList);
 				return idList;
 			} else {
+				
 				List<Object> entityList = new ArrayList<Object>();
 				for (Map<String, Object> props : propsList) {
 					Class subClass = entityHandler.getSubClass(entityClass, props);
 					Object entity = subClass.newInstance();
 					setEntityValues(subClass, entity, props);
 					dump("selectList(" + entityName + ")", entity);
+					Object id = props.get(entityHandler.getKeyForLatestGrouping());
+					if( isLatest && uniqueMap.get(id) != null){
+						continue;
+					}
+					uniqueMap.put( id, "" );
 					fireEntityLoaded(entity);
 					entityList.add(entity);
 					if( isSingleResult(parameter)){
@@ -704,6 +718,13 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		} catch (Exception e) {
 			throw new RuntimeException("OrientdbPersistenceSession.callStatementMethod(" + statement + ") error:", e);
 		}
+	}
+
+	private boolean getBoolean( Object obj){
+		if( obj != null && obj instanceof Boolean ){
+			return (Boolean)obj;
+		}
+		return false;
 	}
 
 	protected String getDbVersion() {
