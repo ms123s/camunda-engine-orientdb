@@ -77,29 +77,29 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		g.getRawGraph().activateOnCurrentThread();
 		this.isOpen = true;
 		sessionId = new java.util.Date().getTime();
-		LOG.info("openSession:" + sessionId);
+		debug("openSession:" + sessionId);
 		System.err.println("openSession:" + sessionId);
 		this.orientGraph.begin();
 	}
 
 	public Object selectOne(String statement, Object parameter) {
-		LOG.info("selectOne:" + statement);
+		debug("selectOne:" + statement);
 		String prefix = getPrefix(statement);
 		String suffix = getSuffix(statement);
 		String entityName = getEntityName(statement, prefix, suffix);
 		Class entityClass = OrientdbSessionFactory.getEntityClass(entityName);
-		LOG.info("->selectOne(" + statement + "," + entityName + "):" + parameter);
+		debug("->selectOne(" + statement + "," + entityName + "):" + parameter);
 
 		BaseEntityHandler entityHandler = OrientdbSessionFactory.getEntityHandler(entityClass, this.orientGraph);
 		boolean isCount = statement.indexOf("Count") > 0;
 
 		List<CParameter> parameterList = getCParameterList(statement, parameter, entityHandler);
-		LOG.info("  - CParameterList:" + parameterList);
+		debug("  - CParameterList:" + parameterList);
 		Map<String, Object> queryParams = new HashMap<String, Object>();
 		OCommandRequest query = entityHandler.buildQuery(entityName, statement, parameterList, parameter, queryParams);
 
 		Iterable<Element> result = orientGraph.command(query).execute(queryParams);
-		LOG.info("  - result:" + result);
+		debug("  - result:" + result);
 		Map<String, Object> props = null;
 		int count = 0;
 		for (Element elem : result) {
@@ -111,23 +111,23 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		}
 		if (count == 0) {
 			if (statement.indexOf("Count") > 0) {
-				LOG.info("<-selectOne(" + entityName + ").count:0");
+				debug("<-selectOne(" + entityName + ").count:0");
 				return new Long(0);
 			} else {
-				LOG.info("<-selectOne(" + entityName + ").return:null");
+				debug("<-selectOne(" + entityName + ").return:null");
 				return null;
 			}
 		}
 		try {
 			if (isCount) {
-				LOG.info("<-selectOne.count(" + entityName + ").return:" + count);
+				debug("<-selectOne.count(" + entityName + ").return:" + count);
 				return new Long(count);
 			}
 			Class subClass = entityHandler.getSubClass(entityClass, props);
 			Object entity = subClass.newInstance();
 			setEntityValues(subClass, entity, props);
 			dump("selectOne(" + entityName + ")", entity);
-			LOG.info("<-selectOne(" + entityName + ").return:" + entity);
+			debug("<-selectOne(" + entityName + ").return:" + entity);
 			fireEntityLoaded(entity);
 			return entity;
 		} catch (Exception e) {
@@ -135,7 +135,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			//			LOG.throwing("OrientdbPersistenceSession", "selectOne", e);
 			e.printStackTrace();
 		}
-		LOG.info("<-selectOne(" + entityName + ").return:null");
+		debug("<-selectOne(" + entityName + ").return:null");
 		return null;
 	}
 
@@ -143,7 +143,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		String prefix = getPrefix(statement);
 		String suffix = getSuffix(statement);
 		String entityName = getEntityName(statement, prefix, suffix);
-		LOG.info("-> selectList(" + statement + "," + entityName + "):" + parameter);
+		debug("-> selectList(" + statement + "," + entityName + "):" + parameter);
 
 		Class entityClass = OrientdbSessionFactory.getEntityClass(entityName);
 		//LOG.info("  - entityClass:" + entityClass);
@@ -153,13 +153,13 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		Method m = getStatementMethod(entityHandler, statement, parameter);
 		if (m != null) {
 			result = callStatementMethod(m, entityHandler, statement, parameter);
-			LOG.info(" - selectList(" + statement + "):result from callStatementMethod:" + result);
+			debug(" - selectList(" + statement + "):result from callStatementMethod:" + result);
 		}
 
 		boolean isLatest = false;
 		if (result == null) {
 			List<CParameter> parameterList = getCParameterList(statement, parameter, entityHandler);
-			LOG.info("  - CParameterList:" + parameterList);
+			debug("  - CParameterList:" + parameterList);
 			Map<String, Object> queryParams = new HashMap<String, Object>();
 			OCommandRequest query = entityHandler.buildQuery(entityName, statement, parameterList, parameter, queryParams);
 			isLatest = getBoolean(queryParams.remove("_isLatest"));
@@ -173,7 +173,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			propsList.add(props);
 		}
 		if (propsList.size() == 0) {
-			LOG.info("<-selectList(" + entityName + ").return:emptyList");
+			debug("<-selectList(" + entityName + ").return:emptyList");
 			return propsList;
 		}
 		try {
@@ -188,7 +188,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 					uniqueMap.put( id, "" );
 					idList.add((String) props.get("id"));
 				}
-				LOG.info("<-selectList2(" + entityName + ").return:" + idList);
+				debug("<-selectList2(" + entityName + ").return:" + idList);
 				return idList;
 			} else {
 				
@@ -209,7 +209,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 						break;
 					}
 				}
-				LOG.info("<-selectList3(" + entityName + ").return:" + entityList);
+				debug("<-selectList3(" + entityName + ").return:" + entityList);
 				return entityList;
 			}
 		} catch (Exception e) {
@@ -217,7 +217,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			//			LOG.throwing("OrientdbPersistenceSession", "selectList", e);
 			e.printStackTrace();
 		}
-		LOG.info("<-selectList4(" + entityName + ").return:emptyList");
+		debug("<-selectList4(" + entityName + ").return:emptyList");
 		return new ArrayList();
 	}
 
@@ -238,7 +238,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			//LOG.info("   - ListQueryParameterObject");
 			if (((ListQueryParameterObject) parameter).getParameter() instanceof String) {
 				Object obj = ((ListQueryParameterObject) parameter).getParameter();
-				LOG.info("  - String1:" + obj);
+				debug("  - String1:" + obj);
 				if (statement.endsWith("ByKey")) {
 					List<CParameter> parameterList = new ArrayList<CParameter>();
 					CParameter p = new CParameter("key", EQ, obj);
@@ -249,13 +249,13 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 				}
 			} else {
 				Map<String, Object> map = (Map<String, Object>) ((ListQueryParameterObject) parameter).getParameter();
-				LOG.info("   - Map1:" + map);
+				debug("   - Map1:" + map);
 				return getCParameterListFromMap(map);
 			}
 		} else {
 			if (parameter instanceof String) {
 				Object obj = parameter;
-				LOG.info("   - String2:" + obj);
+				debug("   - String2:" + obj);
 				List<CParameter> parameterList = new ArrayList<CParameter>();
 				if (statement.endsWith("ByKey")) {
 					parameterList.add(new CParameter("key", EQ, obj));
@@ -279,7 +279,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 				return parameterList;
 			} else {
 				Map<String, Object> map = (Map<String, Object>) parameter;
-				LOG.info("   - Map2:" + map);
+				debug("   - Map2:" + map);
 				return getCParameterListFromMap(map);
 			}
 		}
@@ -301,19 +301,19 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	public <T extends DbEntity> T selectById(Class<T> entityClass, String id) {
 		entityClass = OrientdbSessionFactory.getReplaceClass(entityClass);
 		String entityName = entityClass.getSimpleName();
-		LOG.info("->selectById(" + entityName + "," + entityClass + ").id:" + id);
+		debug("->selectById(" + entityName + "," + entityClass + ").id:" + id);
 		OCommandRequest query = new OSQLSynchQuery("select  from " + entityName + " where id=?");
-		LOG.info("  - query:" + query);
+		debug("  - query:" + query);
 		Iterable<Element> result = orientGraph.command(query).execute(id);
-		LOG.info("  - result:" + result);
+		debug("  - result:" + result);
 		Map<String, Object> props = null;
 		for (Element elem : result) {
-			LOG.info(" selectById.elem" + entityName + "," + id + "):elem:" + elem);
+			debug(" selectById.elem" + entityName + "," + id + "):elem:" + elem);
 			props = ((OrientVertex) elem).getProperties();
 			break;
 		}
 		if (props == null) {
-			LOG.info("<-selectById(" + entityName + "," + id + ").return:null");
+			debug("<-selectById(" + entityName + "," + id + ").return:null");
 			return null;
 		}
 		try {
@@ -322,7 +322,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			T entity = (T) subClass.newInstance();
 			setEntityValues(entityClass, entity, props);
 			dump("selectById(" + entityName + "," + id + ")", entity);
-			LOG.info("<-selectById(" + entityName + "," + id + ").return:" + entity);
+			debug("<-selectById(" + entityName + "," + id + ").return:" + entity);
 			fireEntityLoaded(entity);
 			return entity;
 		} catch (Exception e) {
@@ -347,7 +347,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			if (setter == null) {
 				continue;
 			}
-			//LOG.info("  - Prop(" + name + "):" + value);
+			//debug("  - Prop(" + name + "):" + value);
 			Class type = (Class) m.get("type");
 			Class[] args = new Class[1];
 			args[0] = type;
@@ -360,7 +360,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 				method.setAccessible(true);
 			}
 			if (method == null) {
-				LOG.info("OrientdbPersistenceSession.setEntityValues.method(" + setter + ") is null in " + entityClass.getSimpleName());
+				debug("OrientdbPersistenceSession.setEntityValues.method(" + setter + ") is null in " + entityClass.getSimpleName());
 			} else {
 				method.invoke(entity, value);
 			}
@@ -417,7 +417,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		DbEntity entity = operation.getEntity();
 		Class entityClass = OrientdbSessionFactory.getReplaceClass(entity.getClass());
 		String entityName = entityClass.getSimpleName();
-		LOG.info("-> insertEntity(" + entityName + ")");
+		debug("-> insertEntity(" + entityName + ")");
 
 		dump("insertEntity.operation:", operation);
 		dump("insertEntity.entity:", entity);
@@ -444,7 +444,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 				Method method = entityClass.getMethod(getter);
 				Object value = method.invoke(entity);
 				if (value != null) {
-					//LOG.info("- Field(" + name + "):" + value);
+					//debug("- Field(" + name + "):" + value);
 				}
 				if (name.equals("id"))
 					id = value;
@@ -455,16 +455,17 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			if (entity instanceof HasDbRevision) {
 				v.setProperty("dbRevision", 1);
 			}
-			if (id != null) {
-				List<Vertex> vl = this.entityCache.get(id + entityName);
+			String cacheName = handler.getCacheName(entity, entityName);
+			if (cacheName != null) {
+				List<Vertex> vl = this.entityCache.get(cacheName);
 				if (vl == null) {
 					vl = new ArrayList<Vertex>();
-					entityCache.put(id + entityName, vl);
+					entityCache.put(cacheName, vl);
 				}
 				vl.add(v);
 			}
 			handler.insertAdditional(v, entity, this.entityCache);
-			LOG.info("<- insertEntity(" + entityName + "," + n + "," + id + "):ok");
+			debug("<- insertEntity(" + entityName + "," + n + "," + id + "):ok");
 		} catch (Exception e) {
 			LOG.info("OrientdbPersistenceSession.insertEntity(" + entityName + "):" + e.getMessage());
 			System.err.println("OrientdbPersistenceSession.insertEntity(" + entityName + "):" + e);
@@ -491,26 +492,26 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			name = getValue(entity, "getName");
 		} catch (Exception e) {
 		}
-		LOG.info("-> deleteEntity(" + entityName + "):" + id);
+		debug("-> deleteEntity(" + entityName + "):" + id);
 		OCommandRequest del = new OCommandSQL("Delete vertex " + entityName + " where id=?");
 		try {
 			String sql = "SELECT FROM " + entityName + " where id='" + id + "'";
 			Vertex vertex = selectBySql(sql);
-			LOG.info("deleteEntity(" + entityName + "," + name + "):vertex:" + vertex);
+			debug("deleteEntity(" + entityName + "," + name + "):vertex:" + vertex);
 			if (vertex == null) {
 				operation.setFailed(true);
-				LOG.info("<- deleteEntity(" + entityName + "," + name + "):failed");
+				debug("<- deleteEntity(" + entityName + "," + name + "):failed");
 				return;
 			}
 			orientGraph.command(del).execute(id);
 		} catch (Exception e) {
 			if (entity instanceof HasDbRevision) {
 				operation.setFailed(true);
-				LOG.info("<- deleteEntity(" + entityName + "," + name + "):failed:" + e);
+				debug("<- deleteEntity(" + entityName + "," + name + "):failed:" + e);
 				return;
 			}
 		}
-		LOG.info("<- deleteEntity(" + entityName + "," + name + "):ok");
+		debug("<- deleteEntity(" + entityName + "," + name + "):ok");
 	}
 
 	protected void deleteBulk(DbBulkOperation operation) {
@@ -518,11 +519,11 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		Object parameter = operation.getParameter();
 
 		if (statement.equals("deleteExceptionByteArraysByIds")) {
-			LOG.info("deleteBulk(" + statement + ") not handled!");
+			debug("deleteBulk(" + statement + ") not handled!");
 			return;
 		}
 		if (statement.equals("deleteErrorDetailsByteArraysByIds")) {
-			LOG.info("deleteBulk(" + statement + ") not handled!");
+			debug("deleteBulk(" + statement + ") not handled!");
 			return;
 		}
 
@@ -530,7 +531,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		entityClass = OrientdbSessionFactory.getReplaceClass(entityClass);
 		String entityName = entityClass.getSimpleName();
 		BaseEntityHandler handler = OrientdbSessionFactory.getEntityHandler(entityClass, this.orientGraph);
-		LOG.info("-> deleteBulk(" + statement + "," + entityName + ").parameter:" + parameter);
+		debug("-> deleteBulk(" + statement + "," + entityName + ").parameter:" + parameter);
 		List<CParameter> parameterList = getCParameterList(statement, parameter, handler);
 
 		if (parameterList.size() > 0) {
@@ -541,7 +542,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		} else {
 			throw new RuntimeException("OrientdbPersistenceSession.deleteBulk(" + statement + "," + entityName + "):no parameter");
 		}
-		LOG.info("<- deleteBulk(" + statement + ") ok");
+		debug("<- deleteBulk(" + statement + ") ok");
 	}
 
 	protected void updateBulk(DbBulkOperation operation) {
@@ -551,21 +552,22 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		DbEntity entity = operation.getEntity();
 		String entityName = entity.getClass().getSimpleName();
 		String id = getValue(entity, "getId");
-		LOG.info("-> updateEntity(" + entityName + "," + id + ")");
+		String name = getValueSilent(entity, "getName");
+		debug("-> updateEntity(" + entityName + "," + id +","+name + ")");
 
 		if (entity instanceof HasDbRevision) {
 			HasDbRevision updatedRevision = (HasDbRevision) entity;
 			int oldRevision = updatedRevision.getRevision();
 			Integer dbRevision = updateById(entity, id, operation, updatedRevision.getRevisionNext());
 			if (dbRevision == null || dbRevision != oldRevision) {
-				operation.setFailed(true);
-				LOG.info("<- updateEntity(" + entityName + ").fails:revisions:" + dbRevision + "/" + oldRevision);
+				//operation.setFailed(true);
+				debug("<- updateEntity(" + entityName+","+name + ").fails:revisions:" + dbRevision + "/" + oldRevision);
 				return;
 			}
 		} else {
 			updateById(entity, id, operation, 1);
 		}
-		LOG.info("<- updateEntity(" + entityName + "):ok");
+		debug("<- updateEntity(" + entityName+","+name + "):ok");
 	}
 
 	private Integer updateById(Object entity, String id, DbEntityOperation operation, int revision) {
@@ -575,7 +577,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		Iterable<Element> result = orientGraph.command(query).execute(id);
 		Iterator<Element> it = result.iterator();
 		if (!it.hasNext()) {
-			LOG.info(" - UpdateById(" + entityName + "," + id + ").not found");
+			debug(" - UpdateById(" + entityName + "," + id + ").not found");
 			return -1;
 		}
 		try {
@@ -592,7 +594,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 				Method method = entityClass.getMethod(getter);
 				Object value = method.invoke(entity);
 				if (value != null /*name.equals("id")*/) {
-					//		LOG.info("- Field(" + name + "):" + value);
+					//		debug("- Field(" + name + "):" + value);
 				}
 				e.setProperty(name, value);
 			}
@@ -603,6 +605,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			return oldRev;
 
 		} catch (OConcurrentModificationException e) {
+			LOG.info("OConcurrentModificationException.updateById(" + entityName + "):" + e.getMessage());
 			operation.setFailed(true);
 			return -1;
 		} catch (Exception e) {
@@ -653,11 +656,19 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			throw new RuntimeException("OrientdbPersistenceSession.getValue:" + obj.getClass().getSimpleName() + "." + methodName);
 		}
 	}
+	private <Any> Any getValueSilent(Object obj, String methodName) {
+		try {
+			Method method = obj.getClass().getMethod(methodName, (Class[]) null);
+			return (Any) method.invoke(obj);
+		} catch (Exception e) {
+			return null;
+		}
+	}
 
 	private <Any> Any getValueByField(Object obj, String fieldName) {
 		try {
 			if (obj == null) {
-				LOG.info("OrientdbPersistenceSession.getValueByField(" + fieldName + ") obj is null");
+				debug("OrientdbPersistenceSession.getValueByField(" + fieldName + ") obj is null");
 				return null;
 			}
 			if (obj instanceof Map) {
@@ -691,12 +702,12 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			return;
 		ReflectionToStringBuilder rb = new ReflectionToStringBuilder(o, ToStringStyle.JSON_STYLE);
 		rb.setExcludeNullValues(true);
-		LOG.info("   +++" + msg + ":" + rb.toString());
+		debug("   +++" + msg + ":" + rb.toString());
 	}
 
 	private Method getStatementMethod(Object o, String statement, Object parameter) {
 		if (!(parameter instanceof ListQueryParameterObject)) {
-			LOG.info("getStatementMethod(" + statement + "):Parameter noz ListQueryParameterObject");
+			debug("getStatementMethod(" + statement + "):Parameter noz ListQueryParameterObject");
 			return null;
 		}
 		try {
@@ -710,7 +721,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	}
 
 	private <Any> Any callStatementMethod(Method method, Object o, String statement, Object queryParams) {
-		LOG.info("   - callStatementMethod(" + statement + "):" + method.getName());
+		debug("   - callStatementMethod(" + statement + "):" + method.getName());
 		try {
 			Object[] params = new Object[1];
 			params[0] = queryParams;
@@ -774,11 +785,11 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	}
 
 	public void lock(String statement) {
-		LOG.info("lock:" + statement);
+		debug("lock:" + statement);
 	}
 
 	public void commit() {
-		LOG.info("commitSession:" + sessionId);
+		debug("commitSession:" + sessionId);
 		System.err.println("commitSession:" + sessionId);
 		try {
 			orientGraph.commit();
@@ -789,7 +800,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		for (Object key : this.entityCache.keySet()) {
 			List<Vertex> l = this.entityCache.get(key);
 			for (Vertex v : l) {
-				LOG.info("insertedEntity(" + sessionId + "):" + v);
+				debug("insertedEntity(" + sessionId + "):" + v);
 			}
 		}
 	}
@@ -807,7 +818,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	public void close() {
 		// nothing to do
 		if (this.isOpen) {
-			LOG.info("closeSession:" + sessionId);
+			debug("closeSession:" + sessionId);
 			System.err.println("closeSession:" + sessionId);
 			orientGraph.shutdown();
 		}
@@ -818,12 +829,12 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	}
 
 	public int executeUpdate(String s, Object o) {
-		LOG.info("executeUpdate:" + s + "/" + o);
+		debug("executeUpdate:" + s + "/" + o);
 		throw new RuntimeException("OrientdbPersistenceSession.executeUpdate not implemented");
 	}
 
 	public int executeNonEmptyUpdateStmt(String s, Object o) {
-		LOG.info("executeNonEmptyUpdateStmt(" + s + "):");
+		debug("executeNonEmptyUpdateStmt(" + s + "):");
 		dump("executeNonEmptyUpdateStmt", o);
 		//	throw new RuntimeException("OrientdbPersistenceSession.executeNonEmptyUpdateStmt not implemented");
 		return 0;
@@ -871,6 +882,9 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 
 	public boolean isDmnTablePresent() {
 		return false; // not supported
+	}
+	private void debug(String msg){
+		LOG.info(msg);
 	}
 }
 

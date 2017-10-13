@@ -94,7 +94,7 @@ public class JobEntityHandler extends BaseEntityHandler {
 
 		postProcessQuery(q, statement, parameterList);
 
-		LOG.info("  - query:" + q);
+		debug("  - query:" + q);
 		OCommandRequest query = new OSQLSynchQuery(q.toString());
 		return query;
 	}
@@ -117,9 +117,9 @@ public class JobEntityHandler extends BaseEntityHandler {
 	}
 
 	public Iterable<Element> selectNextJobsToExecute(ListQueryParameterObject query) {
-		LOG.info("selectNextJobsToExecute");
+		debug("selectNextJobsToExecute");
 		Map<String, Object> params = getValue(query, "getParameter");
-		LOG.info("selectNextJobsToExecute(" + params + ")");
+		debug("selectNextJobsToExecute(" + params + ")");
 		Date now = (Date) params.get("now");
 		int maxResults = query.getMaxResults();
 		String orderBy = null;//query.getOrderBy();
@@ -176,6 +176,9 @@ public class JobEntityHandler extends BaseEntityHandler {
 
 			clauseList.add(clause("suspensionState", EQ, 1));
 		}
+	}
+	private void debug(String msg){
+		//LOG.info(msg);
 	}
 }
 

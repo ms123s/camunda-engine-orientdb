@@ -116,6 +116,13 @@ public abstract class BaseEntityHandler {
 
 	public void insertAdditional(Vertex v, Object entity, Map<Object, List<Vertex>> entityCache) {
 	}
+	public String getCacheName(Object entity, String entityName) {
+		String id = getValue(entity, "getId");
+		if( id != null){
+			return id+entityName;
+		}
+		return null;
+	}
 
 	public Class getSubClass(Class entityClass, Map<String, Object> properties) {
 		return entityClass;
@@ -577,7 +584,7 @@ public abstract class BaseEntityHandler {
 	}
 
 	protected Iterable<Element> queryList(String sql, Object... args) {
-		LOG.info("   - queryList:" + sql);
+		debug("   - queryList:" + sql);
 		Iterable<Element> iter = this.orientGraph.command(new OSQLSynchQuery<>(sql)).execute(args);
 		return iter;
 	}
@@ -657,6 +664,7 @@ public abstract class BaseEntityHandler {
 		String id = getValue(entity, idMethod);
 		String entityName = entity.getClass().getSimpleName();
 		LOG.info(entityName + ".settingLinks(" + id + "):" + v);
+		LOG.info(entityName + ".settingLinks(entityCache):" + entityCache);
 		Iterable<Vertex> result = entityCache.get(id + destClass);
 		if (id != null) {
 			String sql = "select from " + destClass + " where "+destProperty+"=?";
@@ -726,6 +734,9 @@ public abstract class BaseEntityHandler {
 			LOG.info("ExecutionEntityHandler.warning:can operator(" + operator + ") not convert");
 			return "=";
 		}
+	}
+	private void debug(String msg){
+		//LOG.info(msg);
 	}
 }
 
