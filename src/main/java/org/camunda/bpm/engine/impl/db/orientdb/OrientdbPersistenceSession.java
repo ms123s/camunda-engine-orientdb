@@ -365,6 +365,11 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 				method.invoke(entity, value);
 			}
 		}
+		String entityName = entityClass.getSimpleName();
+		Integer rev = (Integer)props.get("dbRevision");
+		if( rev != null && rev > 0){
+			setField(entity, "revision", rev);
+		}
 	}
 
 	private String getPrefix(String statement) {
@@ -558,19 +563,19 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		if (entity instanceof HasDbRevision) {
 			HasDbRevision updatedRevision = (HasDbRevision) entity;
 			int oldRevision = updatedRevision.getRevision();
-			Integer dbRevision = updateById(entity, id, operation, updatedRevision.getRevisionNext());
+			Integer dbRevision = updateById(entity, id, operation, oldRevision,updatedRevision.getRevisionNext());
 			if (dbRevision == null || dbRevision != oldRevision) {
-				//operation.setFailed(true);
-				debug("<- updateEntity(" + entityName+","+name + ").fails:revisions:" + dbRevision + "/" + oldRevision);
+				operation.setFailed(true);
+				debug("<- updateEntity(" + entityName+","+id + ").fails:revisions:" + dbRevision + "/" + oldRevision);
 				return;
 			}
 		} else {
-			updateById(entity, id, operation, 1);
+			updateById(entity, id, operation, 1, -1);
 		}
 		debug("<- updateEntity(" + entityName+","+name + "):ok");
 	}
 
-	private Integer updateById(Object entity, String id, DbEntityOperation operation, int revision) {
+	private Integer updateById(Object entity, String id, DbEntityOperation operation, int oldRevision,int revision) {
 		Class entityClass = OrientdbSessionFactory.getReplaceClass(entity.getClass());
 		String entityName = entityClass.getSimpleName();
 		OCommandRequest query = new OSQLSynchQuery("select  from " + entityName + " where id=?");
@@ -601,6 +606,11 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			Integer oldRev = e.getProperty("dbRevision");
 			if (entity instanceof HasDbRevision) {
 				e.setProperty("dbRevision", revision);
+				HasDbRevision r = (HasDbRevision) entity;
+				r.setRevision(revision);
+				if( revision!= -1){
+					debug("    updateById(" + entityName + "," + id + "):new:"+revision+"/old:"+oldRevision+"/oldGet:"+oldRev+"/"+r.getRevision());
+				}
 			}
 			return oldRev;
 
@@ -736,6 +746,33 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			return (Boolean)obj;
 		}
 		return false;
+	}
+
+	private boolean setField(Object targetObject, String fieldName, Object fieldValue) {
+		Field field;
+		try {
+			field = targetObject.getClass().getDeclaredField(fieldName);
+		} catch (NoSuchFieldException e) {
+			field = null;
+		}
+		Class superClass = targetObject.getClass().getSuperclass();
+		while (field == null && superClass != null) {
+			try {
+				field = superClass.getDeclaredField(fieldName);
+			} catch (NoSuchFieldException e) {
+				superClass = superClass.getSuperclass();
+			}
+		}
+		if (field == null) {
+			return false;
+		}
+		field.setAccessible(true);
+		try {
+			field.set(targetObject, fieldValue);
+			return true;
+		} catch (IllegalAccessException e) {
+			return false;
+		}
 	}
 
 	protected String getDbVersion() {
