@@ -50,14 +50,16 @@ public class HistoricProcessInstanceEntityHandler extends BaseEntityHandler{
 				clauseList.add(vars);
 			}
 		}
-		boolean isFinished= getValueByField(parameter, "finished");
+		Boolean isFinished= getValueByField(parameter, "finished");
 		Clause clFin = null;
-		if( isFinished){
-			clFin = new VerbatimClause("(state != 'ACTIVE')" );
-		}else{
-			clFin = new VerbatimClause("(state = 'ACTIVE')" );
+		if( isFinished != null){
+			if( isFinished){
+				clFin = new VerbatimClause("(state != 'ACTIVE')" );
+			}else{
+				clFin = new VerbatimClause("(state = 'ACTIVE')" );
+			}
+			clauseList.add(clFin);
 		}
-		clauseList.add(clFin);
 	}
 	@Override
 	public void insertAdditional(Vertex v, Object entity, Map<Object, List<Vertex>> entityCache) {
