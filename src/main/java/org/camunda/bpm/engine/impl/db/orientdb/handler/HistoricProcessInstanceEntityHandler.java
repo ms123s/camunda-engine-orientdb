@@ -44,20 +44,18 @@ public class HistoricProcessInstanceEntityHandler extends BaseEntityHandler{
 				String name = var.getName();
 				String op = convertOperator(var.getOperator());
 
-/*				Clause vars = or(new VerbatimClause("variables CONTAINS (name='" + name + "' and " + valueField + " " + op + " " + value + ")"), 
-												 new VerbatimClause("parent.variables CONTAINS (name='" + name + "' and " + valueField + " " + op + " " + value + ")"));*/
 				Clause vars = new VerbatimClause("variables CONTAINS (name='" + name + "' and " + valueField + " " + op + " " + value + ")");
 				clauseList.add(vars);
 			}
 		}
 		Boolean isFinished= getValueByField(parameter, "finished");
-		Clause clFin = null;
-		if( isFinished != null){
-			if( isFinished){
-				clFin = new VerbatimClause("(state != 'ACTIVE')" );
-			}else{
-				clFin = new VerbatimClause("(state = 'ACTIVE')" );
-			}
+		Boolean isUnFinished= getValueByField(parameter, "unfinished");
+		if( isFinished != null && isFinished == true){
+			Clause clFin = new VerbatimClause("(state == 'COMPLETED')" );
+			clauseList.add(clFin);
+		}
+		if( isUnFinished != null && isUnFinished == true){
+			Clause clFin = new VerbatimClause("(state == 'ACTIVE')" );
 			clauseList.add(clFin);
 		}
 	}
