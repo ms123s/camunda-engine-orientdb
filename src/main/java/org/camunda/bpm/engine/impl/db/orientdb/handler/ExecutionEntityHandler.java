@@ -82,6 +82,16 @@ public class ExecutionEntityHandler extends BaseEntityHandler {
 				list.add(new CParameter("processInstanceId", EQ, processInstanceId));
 			}
 		}
+		String processDefinitionKey = getValue(p, "getProcessDefinitionKey");
+		if (processDefinitionKey != null) {
+			Iterable<Element> procIterable = this.orientGraph.command(new OSQLSynchQuery<>("select id from ProcessDefinitionEntity where key=?")).execute(processDefinitionKey);
+			Iterator<Element> iter = procIterable.iterator();
+			if (iter.hasNext()) {
+				String processDefinitionId = iter.next().getProperty("id");
+				LOG.info("ExecutionEntity.getCParameterList.processDefinitionId:" + processDefinitionId);
+				list.add(new CParameter("processDefinitionId", EQ, processDefinitionId));
+			}
+		}
 		return list;
 	}
 
