@@ -50,11 +50,13 @@ public class HistoricProcessInstanceEntityHandler extends BaseEntityHandler{
 		}
 		Boolean isFinished= getValueByField(parameter, "finished");
 		Boolean isUnFinished= getValueByField(parameter, "unfinished");
-		if( isFinished != null && isFinished == true){
+		log.info("isUnFinished:" + isUnFinished);
+		log.info("isFinished:" + isFinished);
+		if( isFinished != null && isFinished.booleanValue() == true){
 			Clause clFin = new VerbatimClause("(state == 'COMPLETED')" );
 			clauseList.add(clFin);
 		}
-		if( isUnFinished != null && isUnFinished == true){
+		if( isUnFinished != null && isUnFinished.booleanValue() == true){
 			Clause clFin = new VerbatimClause("(state == 'ACTIVE')" );
 			clauseList.add(clFin);
 		}
