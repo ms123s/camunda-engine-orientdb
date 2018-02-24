@@ -19,3 +19,6 @@ public OrientdbProcessEngineConfiguration() {
 ..
 
 ```
+
+build without test:
+gradle -x test build
