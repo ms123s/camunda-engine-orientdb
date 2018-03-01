@@ -82,14 +82,25 @@ public class TaskEntityHandler extends BaseEntityHandler {
 		if (candidateGroups != null && candidateGroups.size() > 0) {
 			List<Clause> orList = new ArrayList<Clause>();
 			for (String group : candidateGroups) {
-				orList.add(clause("identityLink.groupId", EQ, group));
+//				orList.add(clause("identityLink.groupId", EQ, group));
+				orList.add(new VerbatimClause("identityLink CONTAINS (groupId='" + group + "')"));
 			}
 			clauseList.add(or(orList.toArray(new Clause[orList.size()])));
 		}
 		String candidateUser = getValueByField(parameter, "candidateUser");
 		if (candidateUser != null) {
-			clauseList.add(clause("identityLink.userId", EQ, candidateUser));
+//			clauseList.add(clause("identityLink.userId", EQ, candidateUser));
+			clauseList.add(new VerbatimClause("identityLink CONTAINS (userId='" + candidateUser + "')"));
 		}
+		String businessKey = getValueByField(parameter, "processInstanceBusinessKey");
+		if (businessKey != null) {
+			clauseList.add(clause("processInstance.businessKey", EQ, businessKey));
+		}
+		String businessKeyLike = getValueByField(parameter, "processInstanceBusinessKeyLike");
+		if (businessKeyLike != null) {
+			clauseList.add(clause("processInstance.businessKey", LIKE, businessKeyLike));
+		}
+
 		List<QueryVariableValue> varList = getValue(parameter, "getVariables");
 		if (varList != null) {
 			for (QueryVariableValue var : varList) {
