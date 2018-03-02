@@ -90,6 +90,9 @@ public class ExecutionEntityHandler extends BaseEntityHandler {
 				String processDefinitionId = iter.next().getProperty("id");
 				LOG.info("ExecutionEntity.getCParameterList.processDefinitionId:" + processDefinitionId);
 				list.add(new CParameter("processDefinitionId", EQ, processDefinitionId));
+			}else{
+				LOG.info("ExecutionEntity.getCParameterList.processDefinitionId:notFound");
+				list.add(new CParameter("processDefinitionId", EQ, "__notFound__"));
 			}
 		}
 		return list;

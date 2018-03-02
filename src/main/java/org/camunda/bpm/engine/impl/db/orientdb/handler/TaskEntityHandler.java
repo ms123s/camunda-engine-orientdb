@@ -7,6 +7,8 @@ import com.orientechnologies.orient.core.metadata.schema.OProperty;
 import com.orientechnologies.orient.core.metadata.schema.OSchema;
 import com.orientechnologies.orient.core.metadata.schema.OSchemaProxy;
 import com.orientechnologies.orient.core.metadata.schema.OType;
+import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
+import com.tinkerpop.blueprints.Element;
 import com.tinkerpop.blueprints.impls.orient.OrientGraph;
 import com.tinkerpop.blueprints.Vertex;
 import java.util.ArrayList;
@@ -14,6 +16,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.logging.Logger;
+import java.util.Iterator;
 import java.util.Map;
 import org.camunda.bpm.engine.impl.db.orientdb.CParameter;
 import org.camunda.bpm.engine.impl.persistence.entity.TaskEntity;
@@ -99,6 +102,21 @@ public class TaskEntityHandler extends BaseEntityHandler {
 		String businessKeyLike = getValueByField(parameter, "processInstanceBusinessKeyLike");
 		if (businessKeyLike != null) {
 			clauseList.add(clause("processInstance.businessKey", LIKE, businessKeyLike));
+		}
+
+		String processDefinitionKey = getValueByField(parameter, "processDefinitionKey");
+		LOG.info("TaskEntityHandler.addToClauseList.processDefinitionKey:" + processDefinitionKey);
+		if (processDefinitionKey != null) {
+			Iterable<Element> procIterable = this.orientGraph.command(new OSQLSynchQuery<>("select id from ProcessDefinitionEntity where key=?")).execute(processDefinitionKey);
+			Iterator<Element> iter = procIterable.iterator();
+			if (iter.hasNext()) {
+				String processDefinitionId = iter.next().getProperty("id");
+				LOG.info("TaskEntityHandler.addToClauseList.processDefinitionId:" + processDefinitionId);
+				clauseList.add(clause( "processDefinitionId", EQ, processDefinitionId));
+			}else{
+				LOG.info("TaskEntityHandler.addToClauseList.processDefinitionId:notFound");
+				clauseList.add(clause( "processDefinitionId", EQ, "__notFound__"));
+			}
 		}
 
 		List<QueryVariableValue> varList = getValue(parameter, "getVariables");
