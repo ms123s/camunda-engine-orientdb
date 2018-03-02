@@ -29,6 +29,8 @@ import static com.github.raymanrt.orientqb.query.Operator.GT;
 import static com.github.raymanrt.orientqb.query.Operator.IN;
 import static com.github.raymanrt.orientqb.query.Operator.LIKE;
 import static com.github.raymanrt.orientqb.query.Operator.LT;
+import static com.github.raymanrt.orientqb.query.Operator.NULL;
+import static com.github.raymanrt.orientqb.query.Operator.NOT_NULL;
 
 /**
  * @author Manfred Sattler
@@ -104,6 +106,18 @@ public class TaskEntityHandler extends BaseEntityHandler {
 			clauseList.add(clause("processInstance.businessKey", LIKE, businessKeyLike));
 		}
 
+		Boolean isAssigned= getValueByField(parameter, "assigned");
+		Boolean isUnAssigned= getValueByField(parameter, "unassigned");
+		LOG.info("isUnAssigned:" + isUnAssigned);
+		LOG.info("isAssigned:" + isAssigned);
+		if( isAssigned != null && isAssigned.booleanValue() == true){
+			Clause clFin = clause("assignee", NOT_NULL,"" );
+			clauseList.add(clFin);
+		}
+		if( isUnAssigned != null && isUnAssigned.booleanValue() == true){
+			Clause clFin = clause("assignee", NULL,"" );
+			clauseList.add(clFin);
+		}
 		String processDefinitionKey = getValueByField(parameter, "processDefinitionKey");
 		LOG.info("TaskEntityHandler.addToClauseList.processDefinitionKey:" + processDefinitionKey);
 		if (processDefinitionKey != null) {

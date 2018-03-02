@@ -185,6 +185,7 @@ public abstract class BaseEntityHandler {
 					//LOG.info("getter(" + getter + "," + b + "):null");
 				}
 			}
+//			LOG.info("CParameter("+getter+","+b+"):"+val);
 		}
 		for (Map<String, Object> m : md) {
 			String getter = (String) m.get("getter");
