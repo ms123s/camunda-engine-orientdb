@@ -54,6 +54,9 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 
 import static com.github.raymanrt.orientqb.query.Operator.EQ;
 import static com.github.raymanrt.orientqb.query.Operator.NULL;
+import static com.jcabi.log.Logger.debug;
+import static com.jcabi.log.Logger.error;
+import static com.jcabi.log.Logger.info;
 
 /**
  * @author Manfred Sattler
@@ -921,7 +924,8 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		return false; // not supported
 	}
 	private void debug(String msg){
-		LOG.info(msg);
+		//LOG.fine(msg);
+		com.jcabi.log.Logger.debug(this,msg);
 	}
 }
 

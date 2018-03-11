@@ -46,6 +46,7 @@ dependencies {
   compile files("jars/slf4j-jdk14-1.7.5.jar")
  	compile files("jars/spring-beans-4.3.9.RELEASE.jar")
  	compile files("jars/spring-core-4.3.9.RELEASE.jar")
+ 	compile files("jars/jcabi-1.0.jar")
 }
 
 jar {

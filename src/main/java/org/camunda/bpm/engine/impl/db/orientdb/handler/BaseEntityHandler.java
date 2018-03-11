@@ -152,7 +152,7 @@ public abstract class BaseEntityHandler {
 			if (byString != null) {
 				if (this.metaByFieldMap.get(byString) == null) {
 					byString = byString + "Id";
-					LOG.info("byString3: " + byString);
+					debug("byString3: " + byString);
 					if (this.metaByFieldMap.get(byString) == null) {
 						byString = null;
 					}
@@ -167,7 +167,7 @@ public abstract class BaseEntityHandler {
 		}
 		ReflectionToStringBuilder rb = new ReflectionToStringBuilder(p, ToStringStyle.JSON_STYLE);
 		rb.setExcludeNullValues(true);
-		LOG.info("getCParameterList.Object: " + rb.toString());
+		debug("getCParameterList.Object: " + rb.toString());
 
 		List<CParameter> parameterList = new ArrayList<CParameter>();
 		List<Map<String, Object>> md = getMetadata();
@@ -179,7 +179,7 @@ public abstract class BaseEntityHandler {
 			if (b) {
 				val = getValue(p, getter);
 				if (val != null) {
-					LOG.info("getter(" + getter + "," + b + "):" + val);
+					debug("getter(" + getter + "," + b + "):" + val);
 					parameterList.add(new CParameter((String) m.get("name"), EQ, val));
 				} else {
 					//LOG.info("getter(" + getter + "," + b + "):null");
@@ -197,7 +197,7 @@ public abstract class BaseEntityHandler {
 					val = getValue(p, getter + "Like");
 					if (!"getProcessDefinitionId".equals(getter) &&  val != null ) { //@@@MS HistoricProcessInstanceQueryImpl. getProcessDefinitionIdLike???
 						parameterList.add(new CParameter((String) m.get("name"), LIKE, val));
-						LOG.info("getter(" + getter + "Like," + b + "):" + val);
+						debug("getter(" + getter + "Like," + b + "):" + val);
 					} else {
 						//LOG.info("getter(" + getter + "," + b + ")Like:null");
 					}
@@ -212,7 +212,7 @@ public abstract class BaseEntityHandler {
 			}
 		}
 
-		LOG.info("getCParameterList:" + parameterList);
+		debug("getCParameterList:" + parameterList);
 		return parameterList;
 	}
 
@@ -268,8 +268,8 @@ public abstract class BaseEntityHandler {
 			}
 		}
 
-		LOG.info("  - oquery:" + query);
-		LOG.info("  - oquery.params:" + queryParams);
+		debug("  - oquery:" + query);
+		debug("  - oquery.params:" + queryParams);
 		return query;
 	}
 
@@ -297,7 +297,7 @@ public abstract class BaseEntityHandler {
 		//postProcessQuery(q, statement, parameterList);
 
 		String d = q.toString().replace("DELETE ", "DELETE VERTEX ");
-		LOG.info("  - delete:" + d);
+		debug("  - delete:" + d);
 		OCommandRequest update = new OCommandSQL(d);
 		return update;
 	}
@@ -376,7 +376,7 @@ public abstract class BaseEntityHandler {
 	protected <Any> Any getValueByField(Object obj, String fieldName) {
 		try {
 			if (obj == null) {
-				LOG.info("BaseEntityHandler.getValueByField(" + fieldName + ") obj is null");
+				debug("BaseEntityHandler.getValueByField(" + fieldName + ") obj is null");
 				return null;
 			}
 			if (obj instanceof Map) {
@@ -386,7 +386,7 @@ public abstract class BaseEntityHandler {
 			field.setAccessible(true);
 			return (Any) field.get(obj);
 		} catch (Exception e) {
-			LOG.info("BaseEntityHandler.getValueByField:" + obj.getClass().getSimpleName() + "." + fieldName + " not found");
+			debug("BaseEntityHandler.getValueByField:" + obj.getClass().getSimpleName() + "." + fieldName + " not found");
 			return null;
 		}
 	}
@@ -444,7 +444,7 @@ public abstract class BaseEntityHandler {
 		try {
 			String entityName = this.entityClass.getSimpleName();
 			OSchemaProxy schema = this.orientGraph.getRawGraph().getMetadata().getSchema();
-			LOG.info("createClassAndProperties:" + entityName);
+			debug("createClassAndProperties:" + entityName);
 			OClass oClass = getOrCreateClass(schema, entityName);
 			for (Map<String, Object> f : this.entityMetadata) {
 				String pName = (String) f.get("name");
@@ -536,7 +536,7 @@ public abstract class BaseEntityHandler {
 		map.put("getter", getter);
 		map.put("setter", setter);
 		map.put("otype", OType.getTypeByClass(type));
-		LOG.info("addToMeta:" + map);
+		debug("addToMeta:" + map);
 		this.entityMetadata.add(map);
 	}
 
@@ -599,18 +599,18 @@ public abstract class BaseEntityHandler {
 
 	protected void dump(String msg, Object o) {
 		if (o == null) {
-			LOG.info("   +++" + msg + ":null");
+			debug("   +++" + msg + ":null");
 			return;
 		}
 		ReflectionToStringBuilder rb = new ReflectionToStringBuilder(o, ToStringStyle.JSON_STYLE);
 		rb.setExcludeNullValues(true);
-		LOG.info("   +++" + msg + ":" + rb.toString());
+		debug("   +++" + msg + ":" + rb.toString());
 	}
 
 	public void settingLinksReverse(Object entity, String idMethod, String destClass, String propertyName, Vertex v, Map<Object, List<Vertex>> entityCache) {
 		String id = getValue(entity, idMethod);
 		String entityName = entity.getClass().getSimpleName();
-		LOG.info(entityName + ".insertAdditional(" + id + "):" + v);
+		debug(entityName + ".insertAdditional(" + id + "):" + v);
 		Iterable<Vertex> result = entityCache.get(id + destClass);
 		if (id != null) {
 			OCommandRequest query = new OSQLSynchQuery("select from " + destClass + " where id=?");
@@ -619,21 +619,21 @@ public abstract class BaseEntityHandler {
 				result = makeCollection(result, result2);
 			}
 		}
-		LOG.info(entityName + ".resultFromCache(" + id + "):" + result);
+		debug(entityName + ".resultFromCache(" + id + "):" + result);
 		if (result == null) {
-			LOG.info(entityName + ".settingLinksReverse(" + id + "):not found");
+			debug(entityName + ".settingLinksReverse(" + id + "):not found");
 			return;
 		}
 		for (Element elem : result) {
 			Iterable<Element> iter = elem.getProperty(propertyName);
 			if (iter == null) {
-				LOG.info(destClass + "(" + elem + ").settingLinksReverse." + propertyName + ":" + v);
+				debug(destClass + "(" + elem + ").settingLinksReverse." + propertyName + ":" + v);
 				List<Element> l = new ArrayList<Element>();
 				l.add(v);
 				elem.setProperty(propertyName, l);
 			} else {
 				Collection<Element> col = makeCollection(iter);
-				LOG.info(destClass + "(" + elem + ").settingLinksReverse." + propertyName + "(" + iter.getClass().getName() + "," + col + "):" + v);
+				debug(destClass + "(" + elem + ").settingLinksReverse." + propertyName + "(" + iter.getClass().getName() + "," + col + "):" + v);
 				col.add(v);
 				elem.setProperty(propertyName, col);
 			}
@@ -656,7 +656,7 @@ public abstract class BaseEntityHandler {
 		Iterator<Vertex> it = result.iterator();
 		if (it.hasNext()) {
 			Vertex parent = it.next();
-			LOG.info(entity.getClass().getSimpleName() + ".settingLink(" + v + ").to:" + parent);
+			debug(entity.getClass().getSimpleName() + ".settingLink(" + v + ").to:" + parent);
 			v.setProperty(propertyName, parent);
 		}
 	}
@@ -664,24 +664,24 @@ public abstract class BaseEntityHandler {
 	public void settingLinks(Object entity, String idMethod, Vertex v, String propertyName, String destClass, String destProperty, Map<Object, List<Vertex>> entityCache) {
 		String id = getValue(entity, idMethod);
 		String entityName = entity.getClass().getSimpleName();
-		LOG.info(entityName + ".settingLinks(" + id + "):" + v);
-		LOG.info(entityName + ".settingLinks(entityCache):" + entityCache);
+		debug(entityName + ".settingLinks(" + id + "):" + v);
+		debug(entityName + ".settingLinks(entityCache):" + entityCache);
 		Iterable<Vertex> result = entityCache.get(id + destClass);
 		if (id != null) {
 			String sql = "select from " + destClass + " where "+destProperty+"=?";
-		  LOG.info(entityName + ".sql(" + sql + ")" );
+		  debug(entityName + ".sql(" + sql + ")" );
 			OCommandRequest query = new OSQLSynchQuery(sql);
 			Iterable<Vertex> result2 = orientGraph.command(query).execute(id);
 			if (result2 != null) {
 				result = makeCollection(result, result2);
 			}
 		}
-		LOG.info(entityName + ".resultFromCache(" + id + "):" + result);
+		debug(entityName + ".resultFromCache(" + id + "):" + result);
 		if (result == null) {
-			LOG.info(entityName + ".settingLinks(" + id + "):not found");
+			debug(entityName + ".settingLinks(" + id + "):not found");
 			return;
 		}
-		LOG.info(entity.getClass().getSimpleName() + ".settingLinks(" + v + ").to:" + result);
+		debug(entity.getClass().getSimpleName() + ".settingLinks(" + v + ").to:" + result);
 		v.setProperty(propertyName, result);
 	}
 
@@ -732,12 +732,13 @@ public abstract class BaseEntityHandler {
 		case EQUALS:
 			return "=";
 		default:
-			LOG.info("ExecutionEntityHandler.warning:can operator(" + operator + ") not convert");
+			debug("ExecutionEntityHandler.warning:can operator(" + operator + ") not convert");
 			return "=";
 		}
 	}
 	private void debug(String msg){
-		//LOG.info(msg);
+		//LOG.fine(msg);
+		com.jcabi.log.Logger.debug(this,msg);
 	}
 }
 

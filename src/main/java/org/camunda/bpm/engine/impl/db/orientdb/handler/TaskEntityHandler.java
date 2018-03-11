@@ -108,8 +108,8 @@ public class TaskEntityHandler extends BaseEntityHandler {
 
 		Boolean isAssigned= getValueByField(parameter, "assigned");
 		Boolean isUnAssigned= getValueByField(parameter, "unassigned");
-		LOG.info("isUnAssigned:" + isUnAssigned);
-		LOG.info("isAssigned:" + isAssigned);
+		debug("isUnAssigned:" + isUnAssigned);
+		debug("isAssigned:" + isAssigned);
 		if( isAssigned != null && isAssigned.booleanValue() == true){
 			Clause clFin = clause("assignee", NOT_NULL,"" );
 			clauseList.add(clFin);
@@ -119,16 +119,16 @@ public class TaskEntityHandler extends BaseEntityHandler {
 			clauseList.add(clFin);
 		}
 		String processDefinitionKey = getValueByField(parameter, "processDefinitionKey");
-		LOG.info("TaskEntityHandler.addToClauseList.processDefinitionKey:" + processDefinitionKey);
+		debug("TaskEntityHandler.addToClauseList.processDefinitionKey:" + processDefinitionKey);
 		if (processDefinitionKey != null) {
 			Iterable<Element> procIterable = this.orientGraph.command(new OSQLSynchQuery<>("select id from ProcessDefinitionEntity where key=?")).execute(processDefinitionKey);
 			Iterator<Element> iter = procIterable.iterator();
 			if (iter.hasNext()) {
 				String processDefinitionId = iter.next().getProperty("id");
-				LOG.info("TaskEntityHandler.addToClauseList.processDefinitionId:" + processDefinitionId);
+				debug("TaskEntityHandler.addToClauseList.processDefinitionId:" + processDefinitionId);
 				clauseList.add(clause( "processDefinitionId", EQ, processDefinitionId));
 			}else{
-				LOG.info("TaskEntityHandler.addToClauseList.processDefinitionId:notFound");
+				debug("TaskEntityHandler.addToClauseList.processDefinitionId:notFound");
 				clauseList.add(clause( "processDefinitionId", EQ, "__notFound__"));
 			}
 		}
@@ -147,6 +147,10 @@ public class TaskEntityHandler extends BaseEntityHandler {
 				clauseList.add(vars);
 			}
 		}
+	}
+	private void debug(String msg){
+		//LOG.fine(msg);
+		com.jcabi.log.Logger.debug(this,msg);
 	}
 }
 
