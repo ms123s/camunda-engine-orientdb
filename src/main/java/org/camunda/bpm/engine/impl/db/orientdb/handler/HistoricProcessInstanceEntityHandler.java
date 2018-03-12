@@ -39,10 +39,18 @@ public class HistoricProcessInstanceEntityHandler extends BaseEntityHandler{
 			for (QueryVariableValue var : varList) {
 
 				SingleQueryVariableValueCondition cond = var.getValueConditions().get(0);
+				int op2 = getMatchOrLike( cond );
 				String valueField = getValueField(cond.getType());
 				String value = getQuotedValue(cond);
 				String name = var.getName();
-				String op = convertOperator(var.getOperator());
+				String op = null;
+				if( op2 == 1){
+					op = "MATCHES";
+				}else if( op2 == 2){
+					op = "LIKE";
+				}else{
+					op = convertOperator(var.getOperator());
+				}
 
 				Clause vars = new VerbatimClause("variables CONTAINS (name='" + name + "' and " + valueField + " " + op + " " + value + ")");
 				clauseList.add(vars);

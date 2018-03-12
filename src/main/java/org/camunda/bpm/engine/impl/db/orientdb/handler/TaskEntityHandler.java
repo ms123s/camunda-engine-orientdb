@@ -139,9 +139,17 @@ public class TaskEntityHandler extends BaseEntityHandler {
 
 				SingleQueryVariableValueCondition cond = var.getValueConditions().get(0);
 				String valueField = getValueField(cond.getType());
+				int op2 = getMatchOrLike( cond );
 				String value = getQuotedValue(cond);
 				String name = var.getName();
-				String op = convertOperator(var.getOperator());
+				String op = null;
+				if( op2 == 1){
+					op = "MATCHES";
+				}else if( op2 == 2){
+					op = "LIKE";
+				}else{
+					op = convertOperator(var.getOperator());
+				}
 
 				Clause vars = new VerbatimClause("processInstance.variables CONTAINS (name='" + name + "' and " + valueField + " " + op + " " + value + ")");
 				clauseList.add(vars);

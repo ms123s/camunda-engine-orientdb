@@ -700,6 +700,25 @@ public abstract class BaseEntityHandler {
 		}
 	}
 
+	protected int getMatchOrLike(SingleQueryVariableValueCondition cond) {
+		if( cond.getType().equals("string")){
+			String value = cond.getTextValue();
+			if( value.trim().startsWith("match ")){
+				cond.setTextValue( value.substring (5).trim());
+				return 1;
+			}else if( value.trim().startsWith("matches ")){
+				cond.setTextValue( value.substring (7).trim());
+				return 1;
+			}else if( value.trim().startsWith("like ")){
+				cond.setTextValue( value.substring (4).trim());
+				return 2;
+			}else{
+				return 0;
+			}
+		}
+		return 0;
+	}
+
 	protected String getValueField(String type) {
 		switch (type) {
 		case "string":
