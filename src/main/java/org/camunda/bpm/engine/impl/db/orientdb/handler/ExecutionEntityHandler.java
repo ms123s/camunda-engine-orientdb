@@ -26,6 +26,7 @@ import org.camunda.bpm.engine.impl.SingleQueryVariableValueCondition;
 import static com.github.raymanrt.orientqb.query.Clause.or;
 import static com.github.raymanrt.orientqb.query.Operator.EQ;
 import static com.github.raymanrt.orientqb.query.Clause.clause;
+import org.camunda.bpm.engine.impl.db.orientdb.SingleExpression;
 
 /**
  * @author Manfred Sattler
@@ -121,18 +122,17 @@ public class ExecutionEntityHandler extends BaseEntityHandler {
 			for (QueryVariableValue var : varList) {
 
 				SingleQueryVariableValueCondition cond = var.getValueConditions().get(0);
-				String valueField = getValueField(cond.getType());
-				int op2 = getMatchOrLike( cond );
-				String value = getQuotedValue(cond);
+				SingleExpression ex = getExpression( var, cond );
+				String valueField = ex.getValueField();//getValueField(cond.getType());
+				//String op2 = getInlineOp( cond );
+				String value = ex.getValue();// getQuotedValue(cond);
 				String name = var.getName();
-				String op = null;
-				if( op2 == 1){
-					op = "MATCHES";
-				}else if( op2 == 2){
-					op = "LIKE";
+				String op = ex.getOp();
+				/*if( op2 != null){
+					op = op2;
 				}else{
 					op = convertOperator(var.getOperator());
-				}
+				}*/
 
 				Clause vars = or(new VerbatimClause("variables CONTAINS (name='" + name + "' and " + valueField + " " + op + " " + value + ")"), new VerbatimClause("parent.variables CONTAINS (name='" + name + "' and " + valueField + " " + op + " " + value + ")"));
 				clauseList.add(vars);

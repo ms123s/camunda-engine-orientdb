@@ -21,6 +21,7 @@ import static com.github.raymanrt.orientqb.query.Operator.EQ;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OSchema;
 import com.orientechnologies.orient.core.metadata.schema.OType;
+import org.camunda.bpm.engine.impl.db.orientdb.SingleExpression;
 
 /**
  * @author Manfred Sattler
@@ -39,18 +40,11 @@ public class HistoricProcessInstanceEntityHandler extends BaseEntityHandler{
 			for (QueryVariableValue var : varList) {
 
 				SingleQueryVariableValueCondition cond = var.getValueConditions().get(0);
-				int op2 = getMatchOrLike( cond );
-				String valueField = getValueField(cond.getType());
-				String value = getQuotedValue(cond);
+				SingleExpression ex = getExpression( var, cond );
+				String valueField = ex.getValueField();
+				String value = ex.getValue();
 				String name = var.getName();
-				String op = null;
-				if( op2 == 1){
-					op = "MATCHES";
-				}else if( op2 == 2){
-					op = "LIKE";
-				}else{
-					op = convertOperator(var.getOperator());
-				}
+				String op = ex.getOp();
 
 				Clause vars = new VerbatimClause("variables CONTAINS (name='" + name + "' and " + valueField + " " + op + " " + value + ")");
 				clauseList.add(vars);

@@ -41,11 +41,13 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.Map;
+import java.util.stream.Stream;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.camunda.bpm.engine.impl.db.orientdb.CParameter;
 import org.camunda.bpm.engine.impl.QueryOperator;
 import org.camunda.bpm.engine.impl.SingleQueryVariableValueCondition;
+import org.camunda.bpm.engine.impl.QueryVariableValue;
 import static com.github.raymanrt.orientqb.query.Clause.and;
 import static com.github.raymanrt.orientqb.query.Clause.clause;
 import static com.github.raymanrt.orientqb.query.Clause.not;
@@ -59,6 +61,7 @@ import static com.github.raymanrt.orientqb.query.Parameter.parameter;
 import static com.github.raymanrt.orientqb.query.Projection.ALL;
 import static com.github.raymanrt.orientqb.query.Projection.projection;
 import static com.github.raymanrt.orientqb.query.Variable.variable;
+import org.camunda.bpm.engine.impl.db.orientdb.SingleExpression;
 
 /**
  * @author Manfred Sattler
@@ -685,6 +688,65 @@ public abstract class BaseEntityHandler {
 		v.setProperty(propertyName, result);
 	}
 
+
+	protected SingleExpression  getExpression(QueryVariableValue var, SingleQueryVariableValueCondition cond) {
+		String textValue = cond.getTextValue();
+		if( cond.getType().equals("string")){
+			if (Stream.of("match ", "matches ", "like ", "= ", "> ", "< ", "<= ", ">= ").anyMatch(s -> textValue.toLowerCase().startsWith(s))){
+				int b = textValue.indexOf(" ");
+				String op = textValue.substring(0,b).trim().toUpperCase();
+				if( "MATCH".equals(op)) op = "MATCHES";
+				String val = textValue.substring(b+1).trim();
+				return _getExpression( op, val, "textValue");
+			}
+		}
+		String valueField = getValueField(cond.getType());
+		String value = getQuotedValue(cond);
+		String op = convertOperator(var.getOperator());
+		return new SingleExpression( op, value, valueField);
+	}
+
+	protected SingleExpression  _getExpression(String op, String val, String valueField) {
+		debug("_getExpression("+op+","+val+")");
+		val = val.trim();
+		if( "MATCHES".equals(op) || "LIKE".equals(op)){
+			if( val.startsWith("'") && val.endsWith("'")){
+				return new SingleExpression( op, val, "textValue");
+			}
+			if( val.startsWith("\"") && val.endsWith("\"")){
+				int l = val.length();
+				return new SingleExpression( op, "'" + val.substring(1,l-2)+"'", "textValue");
+			}
+			return new SingleExpression( op, "'" + val + "'", "textValue");
+		}
+		if( val.startsWith("'") && val.endsWith("'")){
+			return new SingleExpression( op, val, "textValue");
+		}else if( val.startsWith("\"") && val.endsWith("\"")){
+			int l = val.length();
+			return new SingleExpression( op, "'" + val.substring(1,l-2)+"'", "textValue");
+		}else if( val.indexOf(".") >=0){
+			try{
+				Object v = Double.parseDouble( val);
+				return new SingleExpression( op, v.toString(), "doubleValue");
+			}catch( Exception e){
+				debug("_getExpression.Exception:"+e);
+				return new SingleExpression( op,"'"+ val+"'", "textValue");
+			}
+		}else if( val.toLowerCase().equals("true") ){
+			return new SingleExpression( op, "1", "longValue");
+		}else if( val.toLowerCase().equals("false")){
+			return new SingleExpression( op, "0", "longValue");
+		}else {
+			try{
+				Object v = Integer.parseInt( val);
+				return new SingleExpression( op, v.toString(), "longValue");
+			}catch( Exception e){
+				debug("_getExpression.Exception:"+e);
+				return new SingleExpression( op,"'"+ val+"'", "textValue");
+			}
+		}
+	}
+
 	protected String getQuotedValue(SingleQueryVariableValueCondition cond) {
 		switch (cond.getType()) {
 		case "string":
@@ -698,25 +760,6 @@ public abstract class BaseEntityHandler {
 		default:
 			return "unknow value";
 		}
-	}
-
-	protected int getMatchOrLike(SingleQueryVariableValueCondition cond) {
-		if( cond.getType().equals("string")){
-			String value = cond.getTextValue();
-			if( value.trim().startsWith("match ")){
-				cond.setTextValue( value.substring (5).trim());
-				return 1;
-			}else if( value.trim().startsWith("matches ")){
-				cond.setTextValue( value.substring (7).trim());
-				return 1;
-			}else if( value.trim().startsWith("like ")){
-				cond.setTextValue( value.substring (4).trim());
-				return 2;
-			}else{
-				return 0;
-			}
-		}
-		return 0;
 	}
 
 	protected String getValueField(String type) {
@@ -755,6 +798,7 @@ public abstract class BaseEntityHandler {
 			return "=";
 		}
 	}
+
 	private void debug(String msg){
 		//LOG.fine(msg);
 		com.jcabi.log.Logger.debug(this,msg);

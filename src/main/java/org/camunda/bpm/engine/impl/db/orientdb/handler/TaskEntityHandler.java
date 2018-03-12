@@ -31,6 +31,7 @@ import static com.github.raymanrt.orientqb.query.Operator.LIKE;
 import static com.github.raymanrt.orientqb.query.Operator.LT;
 import static com.github.raymanrt.orientqb.query.Operator.NULL;
 import static com.github.raymanrt.orientqb.query.Operator.NOT_NULL;
+import org.camunda.bpm.engine.impl.db.orientdb.SingleExpression;
 
 /**
  * @author Manfred Sattler
@@ -138,18 +139,11 @@ public class TaskEntityHandler extends BaseEntityHandler {
 			for (QueryVariableValue var : varList) {
 
 				SingleQueryVariableValueCondition cond = var.getValueConditions().get(0);
-				String valueField = getValueField(cond.getType());
-				int op2 = getMatchOrLike( cond );
-				String value = getQuotedValue(cond);
+				SingleExpression ex = getExpression( var, cond );
+				String valueField = ex.getValueField();
+				String value = ex.getValue();
 				String name = var.getName();
-				String op = null;
-				if( op2 == 1){
-					op = "MATCHES";
-				}else if( op2 == 2){
-					op = "LIKE";
-				}else{
-					op = convertOperator(var.getOperator());
-				}
+				String op = ex.getOp();
 
 				Clause vars = new VerbatimClause("processInstance.variables CONTAINS (name='" + name + "' and " + valueField + " " + op + " " + value + ")");
 				clauseList.add(vars);
