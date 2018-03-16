@@ -26,7 +26,7 @@ public class OrientDB {
 	private OServerAdmin getServerAdmin() {
 		if( serverAdmin != null) return serverAdmin;
 		try{
-			serverAdmin = new OServerAdmin("remote:simpl4.org").connect("root", this.rootPassword);
+			serverAdmin = new OServerAdmin("remote:c1.ms123.org").connect("root", this.rootPassword);
 			LOG.info("OrientDBService.serverAdmin:" + serverAdmin);
 		}catch(Exception e){
      throw new ProcessEngineException("initOriendb failed: " + e.getMessage(), e);
@@ -41,7 +41,7 @@ public class OrientDB {
 			dbCreate(name);
 		}
 		
-		OrientGraphFactory f = new OrientGraphFactory("remote:simpl4.org/" + name, user, pw, true);
+		OrientGraphFactory f = new OrientGraphFactory("remote:c1.ms123.org/" + name, user, pw, true);
 		f.setupPool(1, 20);
 		f.setAutoStartTx(false);
 		LOG.info("getFactory2("+name+")"+f);

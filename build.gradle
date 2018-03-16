@@ -8,6 +8,13 @@ compileJava {
     options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
 }
 
+test {
+    testLogging {
+        outputs.upToDateWhen {false}
+        showStandardStreams = true
+    }
+}
+
 sourceSets.main.groovy.srcDirs += ["src/main/java"]
 ext.camunda_version='7.7.0'
 ext.orientdb_version='2.2.26'
@@ -22,6 +29,7 @@ dependencies {
  	compile files("jars/camunda-engine-${camunda_version}.jar")
  	compile files("jars/camunda-engine-dmn-${camunda_version}.jar")
  	compile files("jars/camunda-xml-model-${camunda_version}.jar")
+ 	compile files("jars/camunda-engine-${camunda_version}-tests.jar")
   compile files("jars/commons-lang3-3.6.jar")
  	compile files("jars/concurrentlinkedhashmap-lru-1.4.1.jar")
  	compile files("jars/groovy-all-2.4.5.jar")
