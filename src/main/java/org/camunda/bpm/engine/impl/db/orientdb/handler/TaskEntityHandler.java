@@ -32,6 +32,7 @@ import static com.github.raymanrt.orientqb.query.Operator.LT;
 import static com.github.raymanrt.orientqb.query.Operator.NULL;
 import static com.github.raymanrt.orientqb.query.Operator.NOT_NULL;
 import org.camunda.bpm.engine.impl.db.orientdb.SingleExpression;
+import org.camunda.bpm.engine.impl.TaskQueryVariableValue;
 
 /**
  * @author Manfred Sattler
@@ -66,14 +67,18 @@ public class TaskEntityHandler extends BaseEntityHandler {
 		oLinkedClass = getOrCreateClass(schema, "ExecutionEntity");
 		getOrCreateLinkedProperty(oClass, "processInstance", OType.LINK, oLinkedClass);
 
-		//oLinkedClass = getOrCreateClass(schema, "VariableInstanceEntity");
-		//getOrCreateLinkedProperty(oClass, "variable", OType.LINKSET, oLinkedClass);
+		oLinkedClass = getOrCreateClass(schema, "VariableInstanceEntity");
+		getOrCreateLinkedProperty(oClass, "variables", OType.LINKSET, oLinkedClass);
 	}
 
 	@Override
 	public void insertAdditional(Vertex v, Object entity, Map<Object, List<Vertex>> entityCache) {
 		settingLink(entity, "getProcessInstanceId", "ExecutionEntity", "processInstance", v, entityCache);
-	  //settingLinks(entity, "getProcessInstanceId", v, "variables", "VariableInstanceEntity", "processInstanceId", entityCache);
+	  settingLinks(entity, "getId", v, "variables", "VariableInstanceEntity", "taskId", entityCache);
+	}
+	@Override
+	public String postProcessQueryLiteral(String q, String statement, List<CParameter> parameterList) {
+		return q.replace("WHERE", " LET $tid = id WHERE "); 	
 	}
 
 	@Override
@@ -88,14 +93,12 @@ public class TaskEntityHandler extends BaseEntityHandler {
 		if (candidateGroups != null && candidateGroups.size() > 0) {
 			List<Clause> orList = new ArrayList<Clause>();
 			for (String group : candidateGroups) {
-//				orList.add(clause("identityLink.groupId", EQ, group));
 				orList.add(new VerbatimClause("identityLink CONTAINS (groupId='" + group + "')"));
 			}
 			clauseList.add(or(orList.toArray(new Clause[orList.size()])));
 		}
 		String candidateUser = getValueByField(parameter, "candidateUser");
 		if (candidateUser != null) {
-//			clauseList.add(clause("identityLink.userId", EQ, candidateUser));
 			clauseList.add(new VerbatimClause("identityLink CONTAINS (userId='" + candidateUser + "')"));
 		}
 		String businessKey = getValueByField(parameter, "processInstanceBusinessKey");
@@ -138,6 +141,11 @@ public class TaskEntityHandler extends BaseEntityHandler {
 		if (varList != null) {
 			for (QueryVariableValue var : varList) {
 
+				boolean isTaskVar = false;
+				if( var instanceof TaskQueryVariableValue){
+					Boolean b = getValueByField(var, "isProcessInstanceVariable");
+					isTaskVar = b == false;
+				}
 				SingleQueryVariableValueCondition cond = var.getValueConditions().get(0);
 				SingleExpression ex = getExpression( var, cond );
 				String valueField = ex.getValueField();
@@ -145,8 +153,13 @@ public class TaskEntityHandler extends BaseEntityHandler {
 				String name = var.getName();
 				String op = ex.getOp();
 
-				Clause vars = new VerbatimClause("processInstance.variables CONTAINS (name='" + name + "' and " + valueField + " " + op + " " + value + ")");
-				clauseList.add(vars);
+				if( isTaskVar ){
+					Clause vars = new VerbatimClause("variables CONTAINS ($tid=taskId and name='" + name + "' and " + valueField + " " + op + " " + value + ")");
+					clauseList.add(vars);
+				}else{
+					Clause vars = new VerbatimClause("processInstance.variables CONTAINS (name='" + name + "' and " + valueField + " " + op + " " + value + ")");
+					clauseList.add(vars);
+				}
 			}
 		}
 	}

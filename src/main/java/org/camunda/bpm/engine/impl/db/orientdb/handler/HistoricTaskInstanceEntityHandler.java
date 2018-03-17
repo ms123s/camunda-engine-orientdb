@@ -60,6 +60,7 @@ public class HistoricTaskInstanceEntityHandler extends BaseEntityHandler{
 		settingLink(entity, "getProcessInstanceId", "HistoricProcessInstanceEntity", "processInstance", v, entityCache);
 	  settingLinks(entity, "getId", v, "variables", "HistoricVariableInstanceEntity", "taskId", entityCache);
 	}
+	@Override
 	public String postProcessQueryLiteral(String q, String statement, List<CParameter> parameterList) {
 		return q.replace("WHERE", " LET $tid = taskId WHERE "); 	
 	}
