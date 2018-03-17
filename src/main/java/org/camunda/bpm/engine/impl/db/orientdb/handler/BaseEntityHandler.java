@@ -116,6 +116,9 @@ public abstract class BaseEntityHandler {
 
 	public void postProcessQuery(Query q, String statement, List<CParameter> parameterList) {
 	}
+	public String postProcessQueryLiteral(String q, String statement, List<CParameter> parameterList) {
+		return q;
+	}
 
 	public void insertAdditional(Vertex v, Object entity, Map<Object, List<Vertex>> entityCache) {
 	}
@@ -262,8 +265,9 @@ public abstract class BaseEntityHandler {
 		}
 
 		postProcessQuery(q, statement, parameterList);
+		String qstr = postProcessQueryLiteral(q.toString(), statement, parameterList);
 
-		OSQLSynchQuery query = new OSQLSynchQuery(q.toString());
+		OSQLSynchQuery query = new OSQLSynchQuery(qstr);
 		boolean hasVar = false;
 		for (CParameter p : parameterList) {
 			if (p.value instanceof Date) {
@@ -645,6 +649,7 @@ public abstract class BaseEntityHandler {
 
 	public void settingLink(Object entity, String idMethod, String destClass, String propertyName, Vertex v, Map<Object, List<Vertex>> entityCache) {
 		String id = getValue(entity, idMethod);
+		debug(entity.getClass().getSimpleName() + ".settingLink(" + idMethod+","+destClass+","+propertyName + "):"+id);
 		if (id == null) {
 			return;
 		}
@@ -653,6 +658,7 @@ public abstract class BaseEntityHandler {
 			OCommandRequest query = new OSQLSynchQuery("select from " + destClass + " where id=?");
 			result = orientGraph.command(query).execute(id);
 		}
+		debug(entity.getClass().getSimpleName() + ".settingLink:"+result);
 		if (result == null) {
 			return;
 		}

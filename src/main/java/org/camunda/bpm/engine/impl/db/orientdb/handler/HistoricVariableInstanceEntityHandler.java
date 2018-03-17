@@ -39,6 +39,7 @@ public class HistoricVariableInstanceEntityHandler extends BaseEntityHandler{
 	@Override
 	public void insertAdditional(Vertex v, Object entity, Map<Object, List<Vertex>> entityCache) {
 	  settingLinksReverse(entity, "getExecutionId", "HistoricProcessInstanceEntity", "variables", v, entityCache);
+	  settingLinksReverse(entity, "getTaskId", "HistoricTaskInstanceEntity", "variables", v, entityCache);
 	}
 	@Override
 	public String getCacheName(Object entity, String entityName) {
