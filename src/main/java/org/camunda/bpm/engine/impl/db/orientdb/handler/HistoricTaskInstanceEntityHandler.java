@@ -65,6 +65,14 @@ public class HistoricTaskInstanceEntityHandler extends BaseEntityHandler{
 	}
 	@Override
 	public void addToClauseList(List<Clause> clauseList, String statement, Object parameter, Map<String, Object> queryParams) {
+		String businessKey = getValueByField(parameter, "processInstanceBusinessKey");
+		if (businessKey != null) {
+			clauseList.add(clause("processInstance.businessKey", EQ, businessKey));
+		}
+		String businessKeyLike = getValueByField(parameter, "processInstanceBusinessKeyLike");
+		if (businessKeyLike != null) {
+			clauseList.add(clause("processInstance.businessKey", LIKE, businessKeyLike));
+		}
 
 		List<QueryVariableValue> varList = getValue(parameter, "getVariables");
 		if (varList != null) {
