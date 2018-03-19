@@ -698,7 +698,7 @@ public abstract class BaseEntityHandler {
 	protected SingleExpression  getExpression(QueryVariableValue var, SingleQueryVariableValueCondition cond) {
 		String textValue = cond.getTextValue();
 		if( cond.getType().equals("string")){
-			if (Stream.of("match ", "matches ", "like ", "= ", "> ", "< ", "<= ", ">= ").anyMatch(s -> textValue.toLowerCase().startsWith(s))){
+			if (Stream.of("match ", "matches ", "like ", "!= ", "= ", "> ", "< ", "<= ", ">= ").anyMatch(s -> textValue.toLowerCase().startsWith(s))){
 				int b = textValue.indexOf(" ");
 				String op = textValue.substring(0,b).trim().toUpperCase();
 				if( "MATCH".equals(op)) op = "MATCHES";
