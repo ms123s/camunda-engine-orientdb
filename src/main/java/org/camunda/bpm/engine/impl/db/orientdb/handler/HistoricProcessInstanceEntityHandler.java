@@ -66,6 +66,7 @@ public class HistoricProcessInstanceEntityHandler extends BaseEntityHandler{
 	@Override
 	public void insertAdditional(Vertex v, Object entity, Map<Object, List<Vertex>> entityCache) {
 	  settingLinks(entity, "getId", v, "variables", "HistoricVariableInstanceEntity", "processInstanceId", entityCache);
+	  settingLinkReverse(entity, "getId","processInstanceId", "HistoricTaskInstanceEntity", "processInstance", v, entityCache);
 	}
 	@Override
 	public void createAdditionalProperties(OSchema schema, OClass oClass) {

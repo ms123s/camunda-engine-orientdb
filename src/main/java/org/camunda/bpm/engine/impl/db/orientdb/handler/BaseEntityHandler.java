@@ -614,6 +614,43 @@ public abstract class BaseEntityHandler {
 		debug("   +++" + msg + ":" + rb.toString());
 	}
 
+	private List<Vertex> getFromCache(String id, String destProperty, String destClass, Map<Object, List<Vertex>> entityCache) {
+		List<Vertex> retList = new ArrayList<Vertex>();
+		for ( Object key : entityCache.keySet() ) {
+			if( (""+key).endsWith( destClass)){
+				for( Vertex v : entityCache.get(key)){
+					String vid = v.getProperty( destProperty);
+					if( vid == id ){
+						retList.add(v);
+					}
+				}
+			}
+		}
+		return retList;
+	}
+
+	public void settingLinkReverse(Object entity, String idMethod,String destProperty, String destClass, String propertyName, Vertex v, Map<Object, List<Vertex>> entityCache) {
+		String id = getValue(entity, idMethod);
+		String entityName = entity.getClass().getSimpleName();
+		debug(entityName + ".settingLinkReverse(" + id+"/"+v+"/"+destClass+ "):" + entityCache);
+		Iterable<Vertex> result = getFromCache(id , destProperty, destClass,entityCache);
+		if (id != null) {
+			OCommandRequest query = new OSQLSynchQuery("select from " + destClass + " where "+destProperty+"=?");
+			Iterable<Vertex> result2 = orientGraph.command(query).execute(id);
+			if (result2 != null) {
+				result = makeCollection(result, result2);
+			}
+		}
+		debug(entityName + ".settingLinkReverse.resultFromCache(" + id + "):" + result);
+		if (result == null) {
+			debug(entityName + ".settingLinkReverse(" + id + "):not found");
+			return;
+		}
+		for (Element elem : result) {
+			debug(destClass + "(" + elem + ").settingLinkReverse." + propertyName + "(" + elem.getClass().getName() +  "):" + elem);
+			elem.setProperty(propertyName, v);
+		}
+	}
 	public void settingLinksReverse(Object entity, String idMethod, String destClass, String propertyName, Vertex v, Map<Object, List<Vertex>> entityCache) {
 		String id = getValue(entity, idMethod);
 		String entityName = entity.getClass().getSimpleName();
