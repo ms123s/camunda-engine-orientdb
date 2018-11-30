@@ -435,7 +435,7 @@ public abstract class BaseEntityHandler {
 	protected void createClassAndProperties() {
 		try {
 			String entityName = this.entityClass.getSimpleName();
-			OSchemaProxy schema = this.orientGraph.getRawGraph().getMetadata().getSchema();
+			OSchema schema = this.orientGraph.getRawGraph().getMetadata().getSchema();
 			LOG.info("createClassAndProperties:" + entityName);
 			OClass oClass = getOrCreateClass(schema, entityName);
 			for (Map<String, Object> f : this.entityMetadata) {

@@ -10,7 +10,8 @@ compileJava {
 
 sourceSets.main.groovy.srcDirs += ["src/main/java"]
 ext.camunda_version='7.7.0'
-ext.orientdb_version='2.2.26'
+//ext.orientdb_version='2.2.26'
+ext.orientdb_version='3.0.8'
 dependencies {
  	compile files("jars/blueprints-core-2.6.0.jar")
  	compile files("jars/camunda-bpmn-model-${camunda_version}.jar")
@@ -42,6 +43,7 @@ dependencies {
  	compile files("jars/orientdb-tools-${orientdb_version}.jar")
  	compile files("jars/reflections-0.9.11.jar")
  	compile files("jars/servlet-api-2.5.jar")
+ 	compile files("jars/jna-4.5.0.jar")
  	compile files("jars/slf4j-api-1.7.21.jar")
   compile files("jars/slf4j-jdk14-1.7.5.jar")
  	compile files("jars/spring-beans-4.3.9.RELEASE.jar")
