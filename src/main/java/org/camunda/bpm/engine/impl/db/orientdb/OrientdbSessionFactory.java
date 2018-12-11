@@ -59,7 +59,7 @@ public class OrientdbSessionFactory implements SessionFactory {
 		try{
 			orientGraph = this.graphFactory.getTx();
 
-			LOG.info("OrientGraphFactory:"+this.variableListeners);
+			debug("OrientGraphFactory:"+this.variableListeners);
 
 			initHandler(orientGraph);
 			initEntityClasses();
@@ -193,14 +193,14 @@ public class OrientdbSessionFactory implements SessionFactory {
 	private static void dump(String msg, Object o) {
 		ReflectionToStringBuilder rb = new ReflectionToStringBuilder(o, ToStringStyle.JSON_STYLE);
 		rb.setExcludeNullValues(true);
-		LOG.info("+++" + msg + ":\n" + rb.toString());
+		//debug("+++" + msg + ":\n" + rb.toString());
 	}
 
 	@SuppressWarnings({ "unchecked" })
 	public void fireEvent(final HistoricVariableUpdateEventEntity hv) {
 		Map<String,Object> properties = new HashMap<String,Object>();
 		ObjectValueCopy.copyProperties( hv, properties);
-		LOG.info("variable.fireEvent:"+ properties);
+		debug("variable.fireEvent:"+ properties);
 		if (variableListeners != null) {
 			for (VariableListener variableListener : variableListeners) {
 				try {
@@ -210,6 +210,9 @@ public class OrientdbSessionFactory implements SessionFactory {
 				}
 			}
 		}
+	}
+	private void debug(String msg){
+		//LOG.info(msg);
 	}
 }
 

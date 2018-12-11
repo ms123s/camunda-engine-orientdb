@@ -261,7 +261,6 @@ public class CamundaOrientdbTest {
 	}
 
 	@Test
-	@Ignore
 	@Deployment(resources = { "loop.bpmn" })
 	public void testLoop() {
 		RuntimeService runtimeService = processEngineRule.getRuntimeService();

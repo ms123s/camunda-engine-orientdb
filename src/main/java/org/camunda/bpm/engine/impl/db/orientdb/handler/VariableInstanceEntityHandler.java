@@ -28,5 +28,6 @@ public class VariableInstanceEntityHandler extends BaseEntityHandler{
 	@Override
 	public void insertAdditional(Vertex v, Object entity, Map<Object, List<Vertex>> entityCache) {
 	  settingLinksReverse(entity, "getExecutionId", "ExecutionEntity", "variables", v, entityCache);
+	  settingLinksReverse(entity, "getTaskId", "TaskEntity", "variables", v, entityCache);
 	}
 }

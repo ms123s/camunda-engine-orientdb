@@ -25,6 +25,8 @@ import org.camunda.bpm.engine.impl.QueryVariableValue;
 import org.camunda.bpm.engine.impl.SingleQueryVariableValueCondition;
 import static com.github.raymanrt.orientqb.query.Clause.or;
 import static com.github.raymanrt.orientqb.query.Operator.EQ;
+import static com.github.raymanrt.orientqb.query.Clause.clause;
+import org.camunda.bpm.engine.impl.db.orientdb.SingleExpression;
 
 /**
  * @author Manfred Sattler
@@ -72,14 +74,17 @@ public class ExecutionEntityHandler extends BaseEntityHandler {
 		if (statement.equals("selectProcessInstanceByQueryCriteria")) {
 			list.add(new CParameter("parentId", EQ, null));
 		}
-		String businessKey = getValue(p, "getBusinessKey");
-		if (businessKey != null) {
-			Iterable<Element> procIterable = this.orientGraph.command(new OSQLSynchQuery<>("select processInstanceId from ExecutionEntity where businessKey=?")).execute(businessKey);
+		String processDefinitionKey = getValue(p, "getProcessDefinitionKey");
+		if (processDefinitionKey != null) {
+			Iterable<Element> procIterable = this.orientGraph.command(new OSQLSynchQuery<>("select id from ProcessDefinitionEntity where key=?")).execute(processDefinitionKey);
 			Iterator<Element> iter = procIterable.iterator();
 			if (iter.hasNext()) {
-				String processInstanceId = iter.next().getProperty("processInstanceId");
-				LOG.info("ExecutionEntity.getCParameterList.processInstanceId:" + processInstanceId);
-				list.add(new CParameter("processInstanceId", EQ, processInstanceId));
+				String processDefinitionId = iter.next().getProperty("id");
+				LOG.info("ExecutionEntity.getCParameterList.processDefinitionId:" + processDefinitionId);
+				list.add(new CParameter("processDefinitionId", EQ, processDefinitionId));
+			}else{
+				LOG.info("ExecutionEntity.getCParameterList.processDefinitionId:notFound");
+				list.add(new CParameter("processDefinitionId", EQ, "__notFound__"));
 			}
 		}
 		return list;
@@ -98,15 +103,30 @@ public class ExecutionEntityHandler extends BaseEntityHandler {
 				}
 			}
 		}
+		String businessKey = getValue(parameter, "getBusinessKey");
+		if (businessKey != null) {
+			Iterable<Element> procIterable = this.orientGraph.command(new OSQLSynchQuery<>("select processInstanceId from ExecutionEntity where businessKey=?")).execute(businessKey);
+			Iterator<Element> iter = procIterable.iterator();
+			List<Clause> orList = new ArrayList<Clause>();
+			while (iter.hasNext()) {
+				String processInstanceId = iter.next().getProperty("processInstanceId");
+				LOG.info("ExecutionEntity.addToClauseList.processInstanceId:" + processInstanceId);
+				orList.add(clause("processInstanceId", EQ, processInstanceId));
+			}
+			if( orList.size() > 0){
+				clauseList.add(or(orList.toArray(new Clause[orList.size()])));
+			}
+		}
 		List<QueryVariableValue> varList = getValue(parameter, "getQueryVariableValues");
 		if (varList != null) {
 			for (QueryVariableValue var : varList) {
 
 				SingleQueryVariableValueCondition cond = var.getValueConditions().get(0);
-				String valueField = getValueField(cond.getType());
-				String value = getQuotedValue(cond);
+				SingleExpression ex = getExpression( var, cond );
+				String valueField = ex.getValueField();
+				String value = ex.getValue();
 				String name = var.getName();
-				String op = convertOperator(var.getOperator());
+				String op = ex.getOp();
 
 				Clause vars = or(new VerbatimClause("variables CONTAINS (name='" + name + "' and " + valueField + " " + op + " " + value + ")"), new VerbatimClause("parent.variables CONTAINS (name='" + name + "' and " + valueField + " " + op + " " + value + ")"));
 				clauseList.add(vars);
