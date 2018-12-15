@@ -15,6 +15,7 @@ import com.github.raymanrt.orientqb.query.clause.VerbatimClause;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Date;
 import com.tinkerpop.blueprints.Vertex;
 import static com.github.raymanrt.orientqb.query.Clause.or;
 import static com.github.raymanrt.orientqb.query.Operator.EQ;
@@ -60,6 +61,25 @@ public class HistoricProcessInstanceEntityHandler extends BaseEntityHandler{
 		}
 		if( isUnFinished != null && isUnFinished.booleanValue() == true){
 			Clause clFin = new VerbatimClause("(state == 'ACTIVE')" );
+			clauseList.add(clFin);
+		}
+		Date startedAfterDate= getValueByField(parameter, "startedAfter");
+		log.info("startedAfterDate:" + startedAfterDate);
+		if( startedAfterDate != null){
+			String startedAfter = startedAfterDate.toInstant().toString();
+			startedAfter = startedAfter.substring(0,10) + " "+ startedAfter.substring(11, 19);
+			log.info("startedAfter:" + startedAfter);
+			Clause clFin = new VerbatimClause("(date(\""+startedAfter+"\") < startTime)" );
+			clauseList.add(clFin);
+		}
+
+		Date startedBeforeDate= getValueByField(parameter, "startedBefore");
+		log.info("startedBeforeDate:" + startedBeforeDate);
+		if( startedBeforeDate != null){
+			String startedBefore = startedBeforeDate.toInstant().toString();
+			startedBefore = startedBefore.substring(0,10) + " "+ startedBefore.substring(11, 19);
+			log.info("startedBefore:" + startedBefore);
+			Clause clFin = new VerbatimClause("(date(\""+startedBefore+"\") > startTime)" );
 			clauseList.add(clFin);
 		}
 	}

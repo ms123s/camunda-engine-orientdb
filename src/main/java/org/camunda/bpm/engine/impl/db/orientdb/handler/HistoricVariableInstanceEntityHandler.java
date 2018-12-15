@@ -35,6 +35,24 @@ public class HistoricVariableInstanceEntityHandler extends BaseEntityHandler{
 			}
 			clauseList.add(or(orList.toArray(new Clause[orList.size()])));
 		}
+		String[] activityInstanceIds = getValueByField(parameter, "activityInstanceIds");
+		log.info("HistoricVariableInstanceEntity.activityInstanceIds:"+activityInstanceIds);
+		if (activityInstanceIds != null && activityInstanceIds.length > 0) {
+			List<Clause> orList = new ArrayList<Clause>();
+			for (String activityInstanceId : activityInstanceIds) {
+				orList.add(clause("activityInstanceId", EQ, activityInstanceId));
+			}
+			clauseList.add(or(orList.toArray(new Clause[orList.size()])));
+		}
+		String[] executionIds = getValueByField(parameter, "executionIds");
+		log.info("HistoricVariableInstanceEntity.executionIds:"+executionIds);
+		if (executionIds != null && executionIds.length > 0) {
+			List<Clause> orList = new ArrayList<Clause>();
+			for (String executionId : executionIds) {
+				orList.add(clause("executionId", EQ, executionId));
+			}
+			clauseList.add(or(orList.toArray(new Clause[orList.size()])));
+		}
 	}
 	@Override
 	public void insertAdditional(Vertex v, Object entity, Map<Object, List<Vertex>> entityCache) {

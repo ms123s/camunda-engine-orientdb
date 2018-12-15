@@ -75,6 +75,7 @@ public class ExecutionEntityHandler extends BaseEntityHandler {
 			list.add(new CParameter("parentId", EQ, null));
 		}
 		String processDefinitionKey = getValue(p, "getProcessDefinitionKey");
+				LOG.info("ExecutionEntity.getCParameterList.processDefinitionKey:" + processDefinitionKey);
 		if (processDefinitionKey != null) {
 			Iterable<Element> procIterable = this.orientGraph.command(new OSQLSynchQuery<>("select id from ProcessDefinitionEntity where key=?")).execute(processDefinitionKey);
 			Iterator<Element> iter = procIterable.iterator();
