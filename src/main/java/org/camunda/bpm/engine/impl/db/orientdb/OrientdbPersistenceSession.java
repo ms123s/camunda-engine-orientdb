@@ -26,6 +26,8 @@ import java.util.Iterator;
 import java.lang.reflect.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.io.ByteArrayInputStream;
+import java.io.ObjectInputStream;
 
 import org.camunda.bpm.engine.OptimisticLockingException;
 import org.camunda.bpm.engine.impl.db.AbstractPersistenceSession;
@@ -437,7 +439,6 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		if (entity instanceof HasDbRevision) {
 			((HasDbRevision) entity).setRevision(1);
 		}
-
 		try {
 			Vertex v = this.orientGraph.addVertex("class:" + entityName);
 			List<Map<String, Object>> entityMeta = handler.getMetadata();
@@ -451,8 +452,16 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 				String name = (String) m.get("name");
 				Method method = entityClass.getMethod(getter);
 				Object value = method.invoke(entity);
-				if (value != null) {
-					//debug("- Field(" + name + "):" + value);
+				if (value != null && false) {
+					if( name.equals("bytes")){
+						try{
+							debug("- Field(" + name + "):" + new ObjectInputStream(new ByteArrayInputStream((byte[])value)).readObject());
+						}catch(Exception e){
+							debug("- Field(" + name + ")not deser:" + value);
+						}
+					}else{
+						debug("- Field(" + name + "):" + value);
+					}
 				}
 				if (name.equals("id"))
 					id = value;
@@ -601,8 +610,16 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 				String name = (String) m.get("name");
 				Method method = entityClass.getMethod(getter);
 				Object value = method.invoke(entity);
-				if (value != null /*name.equals("id")*/) {
-					//		debug("- Field(" + name + "):" + value);
+				if (value != null && false) {
+					if( name.equals("bytes")){
+						try{
+							debug("- Field(" + name + "):" + new ObjectInputStream(new ByteArrayInputStream((byte[])value)).readObject());
+						}catch(Exception e){
+							debug("- Field(" + name + ")not deser:" + value);
+						}
+					}else{
+						debug("- Field(" + name + "):" + value);
+					}
 				}
 				e.setProperty(name, value);
 			}
