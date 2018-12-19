@@ -59,6 +59,7 @@ public class OrientdbProcessEngineConfiguration extends ProcessEngineConfigurati
 		super();
 		createDatabaseFactory("camunda2", "root", "simpl4");
 
+		System.err.println("OrientdbProcessEngineConfiguration1");
 		setHistory(HISTORY_FULL);
 		setCmmnEnabled(false);
 		setDmnEnabled(false);
@@ -79,6 +80,7 @@ public class OrientdbProcessEngineConfiguration extends ProcessEngineConfigurati
 	private void createDatabaseFactory(String database, String user, String pw) {
 		try {
 			Class clazz = Class.forName("org.simpl4.OrientDB");
+   		System.err.println("OrientdbProcessEngineConfiguration2:"+clazz);
 			Object object = clazz.newInstance();
 			Method method = clazz.getMethod("getDatabasePool", new Class[] { String.class, String.class, String.class });
 			databasePool = (ODatabasePool) method.invoke(object, new Object[] { database, user, pw });

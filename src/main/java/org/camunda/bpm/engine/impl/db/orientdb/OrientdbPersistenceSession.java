@@ -489,6 +489,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 				vl.add(v);
 			}
 			handler.insertAdditional(v, entity, this.entityCache);
+			this.databaseSession.save(v);
 			debug("<- insertEntity(" + entityName + "," + n + "," + id + "):ok");
 		} catch (Exception e) {
 			LOG.info("OrientdbPersistenceSession.insertEntity(" + entityName + "):" + e.getMessage());
@@ -639,6 +640,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 					debug("    updateById(" + entityName + "," + id + "):new:"+revision+"/old:"+oldRevision+"/oldGet:"+oldRev+"/"+r.getRevision());
 				}
 			}
+			this.databaseSession.save(e);
 			return oldRev;
 
 		} catch (OConcurrentModificationException e) {
