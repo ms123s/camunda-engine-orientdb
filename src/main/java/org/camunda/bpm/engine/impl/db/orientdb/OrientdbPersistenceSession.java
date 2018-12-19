@@ -614,7 +614,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 					if( name.equals("bytes")){
 						try{
 							debug("- Field(" + name + "):" + new ObjectInputStream(new ByteArrayInputStream((byte[])value)).readObject());
-						}catch(Exception e){
+						}catch(Exception ex){
 							debug("- Field(" + name + ")not deser:" + value);
 						}
 					}else{
