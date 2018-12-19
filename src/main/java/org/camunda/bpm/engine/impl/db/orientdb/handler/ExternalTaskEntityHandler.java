@@ -1,7 +1,7 @@
 package org.camunda.bpm.engine.impl.db.orientdb.handler;
 
 
-import com.tinkerpop.blueprints.impls.orient.OrientGraph;
+import com.orientechnologies.orient.core.db.ODatabaseSession;
 import java.util.Date;
 import java.util.logging.Logger;
 import java.util.Map;
@@ -25,7 +25,7 @@ import static com.github.raymanrt.orientqb.query.Projection.projection;
 public class ExternalTaskEntityHandler extends BaseEntityHandler{
 	private final static Logger log = Logger.getLogger(ExternalTaskEntityHandler.class.getName());
 
-	public ExternalTaskEntityHandler(OrientGraph g) {
+	public ExternalTaskEntityHandler(ODatabaseSession g) {
 		super( g, ExternalTaskEntity.class);
 	}
 	@Override

@@ -27,8 +27,6 @@ import org.camunda.bpm.engine.impl.persistence.StrongUuidGenerator;
 import org.camunda.bpm.engine.impl.interceptor.CommandContextFactory;
 import org.camunda.bpm.engine.ProcessEngineException;
 
-import com.orientechnologies.orient.client.remote.OServerAdmin;
-import com.orientechnologies.orient.core.command.OCommandRequest;
 import com.orientechnologies.orient.core.Orient;
 import com.orientechnologies.orient.core.sql.OCommandSQL;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
@@ -40,6 +38,7 @@ import com.tinkerpop.blueprints.impls.orient.OrientBaseGraph;
 import com.tinkerpop.blueprints.impls.orient.OrientGraph;
 import com.tinkerpop.blueprints.impls.orient.OrientGraphFactory;
 import com.orientechnologies.orient.server.config.OServerUserConfiguration;
+import com.orientechnologies.orient.core.db.ODatabasePool;
 import java.lang.reflect.Method;
 
 /**
@@ -50,7 +49,7 @@ public class OrientdbProcessEngineConfiguration extends ProcessEngineConfigurati
 
 	private static Logger LOG = Logger.getLogger(OrientdbProcessEngineConfiguration.class.getName());
 
-	protected OrientGraphFactory graphFactory;
+	protected ODatabasePool databasePool;
 
 	public static List<String> members = new ArrayList<String>();
 
@@ -81,15 +80,14 @@ public class OrientdbProcessEngineConfiguration extends ProcessEngineConfigurati
 		try {
 			Class clazz = Class.forName("org.simpl4.OrientDB");
 			Object object = clazz.newInstance();
-			Method method = clazz.getMethod("getFactory", new Class[] { String.class, String.class, String.class });
-			graphFactory = (OrientGraphFactory) method.invoke(object, new Object[] { database, user, pw });
-			graphFactory.setStandardElementConstraints(false);
+			Method method = clazz.getMethod("getDatabasePool", new Class[] { String.class, String.class, String.class });
+			databasePool = (ODatabasePool) method.invoke(object, new Object[] { database, user, pw });
 		} catch (Exception e) {
 			throw new RuntimeException("Error createDatabaseFactory", e);
 		}
 	}
 
-	public OrientdbProcessEngineConfiguration(OrientGraphFactory f) {
+	public OrientdbProcessEngineConfiguration(ODatabasePool f) {
 		super();
 
 		setDatabaseFactory( f );
@@ -113,9 +111,9 @@ public class OrientdbProcessEngineConfiguration extends ProcessEngineConfigurati
 		return new CommandContextFactory();
 	}
 
-	private void setDatabaseFactory( OrientGraphFactory f){
-		f.setStandardElementConstraints(false);
-		graphFactory = f;
+	private void setDatabaseFactory( ODatabasePool p){
+		//f.setStandardElementConstraints(false);
+		databasePool = p;
 	}
 
 	protected void init() {
@@ -197,7 +195,7 @@ public class OrientdbProcessEngineConfiguration extends ProcessEngineConfigurati
 
 	@Override
 	protected void initPersistenceProviders() {
-		addSessionFactory(new OrientdbSessionFactory(graphFactory, variableListeners, getHistory()));
+		addSessionFactory(new OrientdbSessionFactory(databasePool, variableListeners, getHistory()));
 		addSessionFactory(new OrientdbPersistenceProviderFactory());
 	}
 

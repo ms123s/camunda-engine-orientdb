@@ -3,7 +3,7 @@ package org.camunda.bpm.engine.impl.db.orientdb.handler;
 import java.util.logging.Logger;
 
 import org.camunda.bpm.engine.impl.persistence.entity.FilterEntity;
-import com.tinkerpop.blueprints.impls.orient.OrientGraph;
+import com.orientechnologies.orient.core.db.ODatabaseSession;
 
 /**
  * @author Manfred Sattler
@@ -11,7 +11,7 @@ import com.tinkerpop.blueprints.impls.orient.OrientGraph;
 public class FilterEntityHandler extends BaseEntityHandler{
 	private final static Logger log = Logger.getLogger(FilterEntityHandler.class.getName());
 
-	public FilterEntityHandler(OrientGraph g) {
+	public FilterEntityHandler(ODatabaseSession g) {
 		super( g, FilterEntity.class);
 	}
 }

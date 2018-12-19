@@ -7,9 +7,9 @@ import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OSchema;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
-import com.tinkerpop.blueprints.Element;
-import com.tinkerpop.blueprints.impls.orient.OrientGraph;
-import com.tinkerpop.blueprints.Vertex;
+import com.orientechnologies.orient.core.db.ODatabaseSession;
+import com.orientechnologies.orient.core.record.OVertex;
+import com.orientechnologies.orient.core.record.OElement;
 import java.lang.Iterable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -27,14 +27,17 @@ import static com.github.raymanrt.orientqb.query.Clause.or;
 import static com.github.raymanrt.orientqb.query.Operator.EQ;
 import static com.github.raymanrt.orientqb.query.Clause.clause;
 import org.camunda.bpm.engine.impl.db.orientdb.SingleExpression;
+import com.orientechnologies.orient.core.db.ODatabaseRecordThreadLocal;
+import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
 
 /**
  * @author Manfred Sattler
  */
+@SuppressWarnings({ "deprecation" })
 public class ExecutionEntityHandler extends BaseEntityHandler {
 	private final static Logger LOG = Logger.getLogger(ExecutionEntityHandler.class.getName());
 
-	public ExecutionEntityHandler(OrientGraph g) {
+	public ExecutionEntityHandler(ODatabaseSession g) {
 		super(g, ExecutionEntity.class);
 	}
 
@@ -77,8 +80,9 @@ public class ExecutionEntityHandler extends BaseEntityHandler {
 		String processDefinitionKey = getValue(p, "getProcessDefinitionKey");
 				LOG.info("ExecutionEntity.getCParameterList.processDefinitionKey:" + processDefinitionKey);
 		if (processDefinitionKey != null) {
-			Iterable<Element> procIterable = this.orientGraph.command(new OSQLSynchQuery<>("select id from ProcessDefinitionEntity where key=?")).execute(processDefinitionKey);
-			Iterator<Element> iter = procIterable.iterator();
+			ODatabaseDocumentInternal currentDatabase = ODatabaseRecordThreadLocal.instance().get();
+			Iterable<OElement> procIterable = currentDatabase.command(new OSQLSynchQuery<>("select id from ProcessDefinitionEntity where key=?")).execute(processDefinitionKey);
+			Iterator<OElement> iter = procIterable.iterator();
 			if (iter.hasNext()) {
 				String processDefinitionId = iter.next().getProperty("id");
 				LOG.info("ExecutionEntity.getCParameterList.processDefinitionId:" + processDefinitionId);
@@ -106,8 +110,9 @@ public class ExecutionEntityHandler extends BaseEntityHandler {
 		}
 		String businessKey = getValue(parameter, "getBusinessKey");
 		if (businessKey != null) {
-			Iterable<Element> procIterable = this.orientGraph.command(new OSQLSynchQuery<>("select processInstanceId from ExecutionEntity where businessKey=?")).execute(businessKey);
-			Iterator<Element> iter = procIterable.iterator();
+			ODatabaseDocumentInternal currentDatabase = ODatabaseRecordThreadLocal.instance().get();
+			Iterable<OElement> procIterable = currentDatabase.command(new OSQLSynchQuery<>("select processInstanceId from ExecutionEntity where businessKey=?")).execute(businessKey);
+			Iterator<OElement> iter = procIterable.iterator();
 			List<Clause> orList = new ArrayList<Clause>();
 			while (iter.hasNext()) {
 				String processInstanceId = iter.next().getProperty("processInstanceId");
@@ -136,7 +141,7 @@ public class ExecutionEntityHandler extends BaseEntityHandler {
 	}
 
 	@Override
-	public void insertAdditional(Vertex v, Object entity, Map<Object, List<Vertex>> entityCache) {
+	public void insertAdditional(OVertex v, Object entity, Map<Object, List<OVertex>> entityCache) {
 		settingLink(entity, "getParentId", "ExecutionEntity", "parent", v, entityCache);
 	}
 

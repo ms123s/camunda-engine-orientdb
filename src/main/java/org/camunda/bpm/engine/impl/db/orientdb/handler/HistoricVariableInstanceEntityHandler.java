@@ -3,8 +3,8 @@ package org.camunda.bpm.engine.impl.db.orientdb.handler;
 import java.util.logging.Logger;
 
 import org.camunda.bpm.engine.impl.persistence.entity.HistoricVariableInstanceEntity;
-import com.tinkerpop.blueprints.impls.orient.OrientGraph;
-import com.tinkerpop.blueprints.Vertex;
+import com.orientechnologies.orient.core.db.ODatabaseSession;
+import com.orientechnologies.orient.core.record.OVertex;
 import java.util.List;
 import java.util.Map;
 import java.util.Collection;
@@ -21,7 +21,7 @@ import static com.github.raymanrt.orientqb.query.Operator.EQ;
 public class HistoricVariableInstanceEntityHandler extends BaseEntityHandler{
 	private final static Logger log = Logger.getLogger(HistoricVariableInstanceEntityHandler.class.getName());
 
-	public HistoricVariableInstanceEntityHandler(OrientGraph g) {
+	public HistoricVariableInstanceEntityHandler(ODatabaseSession g) {
 		super( g, HistoricVariableInstanceEntity.class);
 	}
 	@Override
@@ -55,7 +55,7 @@ public class HistoricVariableInstanceEntityHandler extends BaseEntityHandler{
 		}
 	}
 	@Override
-	public void insertAdditional(Vertex v, Object entity, Map<Object, List<Vertex>> entityCache) {
+	public void insertAdditional(OVertex v, Object entity, Map<Object, List<OVertex>> entityCache) {
 	  settingLinksReverse(entity, "getExecutionId", "HistoricProcessInstanceEntity", "variables", v, entityCache);
 	  settingLinksReverse(entity, "getTaskId", "HistoricTaskInstanceEntity", "variables", v, entityCache);
 	}

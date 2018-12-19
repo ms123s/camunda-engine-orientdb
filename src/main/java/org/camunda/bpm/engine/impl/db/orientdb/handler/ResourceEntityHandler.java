@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.List;
 
 import org.camunda.bpm.engine.impl.persistence.entity.ResourceEntity;
-import com.tinkerpop.blueprints.impls.orient.OrientGraph;
+import com.orientechnologies.orient.core.db.ODatabaseSession;
 import org.camunda.bpm.engine.impl.db.orientdb.CParameter;
 
 /**
@@ -14,7 +14,7 @@ import org.camunda.bpm.engine.impl.db.orientdb.CParameter;
 public class ResourceEntityHandler extends BaseEntityHandler{
 	private final static Logger log = Logger.getLogger(ResourceEntityHandler.class.getName());
 
-	public ResourceEntityHandler(OrientGraph g) {
+	public ResourceEntityHandler(ODatabaseSession g) {
 		super( g, ResourceEntity.class);
 	}
 	@Override

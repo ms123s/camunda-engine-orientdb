@@ -9,14 +9,14 @@ import com.orientechnologies.orient.core.metadata.schema.OProperty;
 import com.orientechnologies.orient.core.metadata.schema.OSchema;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
-import com.tinkerpop.blueprints.impls.orient.OrientGraph;
+import com.orientechnologies.orient.core.db.ODatabaseSession;
 import org.camunda.bpm.engine.impl.db.ListQueryParameterObject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Date;
 import java.util.logging.Logger;
 import java.util.Map;
-import com.tinkerpop.blueprints.Element;
+import com.orientechnologies.orient.core.record.OElement;
 import org.camunda.bpm.engine.impl.db.orientdb.CParameter;
 import org.camunda.bpm.engine.impl.persistence.entity.JobEntity;
 import org.camunda.bpm.engine.impl.persistence.entity.MessageEntity;
@@ -42,7 +42,7 @@ import static org.apache.commons.lang3.StringUtils.isEmpty;
 public class JobEntityHandler extends BaseEntityHandler {
 	private final static Logger LOG = Logger.getLogger(JobEntityHandler.class.getName());
 
-	public JobEntityHandler(OrientGraph g) {
+	public JobEntityHandler(ODatabaseSession g) {
 		super(g, JobEntity.class);
 	}
 
@@ -116,7 +116,7 @@ public class JobEntityHandler extends BaseEntityHandler {
 		return entityClass;
 	}
 
-	public Iterable<Element> selectNextJobsToExecute(ListQueryParameterObject query) {
+	public Iterable<OElement> selectNextJobsToExecute(ListQueryParameterObject query) {
 		debug("selectNextJobsToExecute");
 		Map<String, Object> params = getValue(query, "getParameter");
 		debug("selectNextJobsToExecute(" + params + ")");
@@ -133,7 +133,7 @@ public class JobEntityHandler extends BaseEntityHandler {
 			 " LIMIT ?", now, now, maxResults);
 	}
 
-	public Iterable<Element> selectJobsByConfiguration(ListQueryParameterObject query) {
+	public Iterable<OElement> selectJobsByConfiguration(ListQueryParameterObject query) {
 		Map<String, Object> params = getValue(query, "getParameter");
 		String config = (String) params.get("handlerConfiguration");
 		String followUpConfig = (String) params.get("handlerConfigurationWithFollowUpJobCreatedProperty");

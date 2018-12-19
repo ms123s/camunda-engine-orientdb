@@ -6,8 +6,8 @@ import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OProperty;
 import com.orientechnologies.orient.core.metadata.schema.OSchema;
 import com.orientechnologies.orient.core.metadata.schema.OType;
-import com.tinkerpop.blueprints.impls.orient.OrientGraph;
-import com.tinkerpop.blueprints.Vertex;
+import com.orientechnologies.orient.core.db.ODatabaseSession;
+import com.orientechnologies.orient.core.record.OVertex;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -20,7 +20,7 @@ import org.camunda.bpm.engine.impl.persistence.entity.TimerEntity;
 public class MessageEntityHandler extends BaseEntityHandler{
 	private final static Logger log = Logger.getLogger(MessageEntityHandler.class.getName());
 
-	public MessageEntityHandler(OrientGraph g) {
+	public MessageEntityHandler(ODatabaseSession g) {
 		super( g, MessageEntity.class);
 	}
 	@Override
@@ -31,7 +31,7 @@ public class MessageEntityHandler extends BaseEntityHandler{
 	}
 
 	@Override
-	public void insertAdditional(Vertex v, Object entity, Map<Object, List<Vertex>> entityCache) {
+	public void insertAdditional(OVertex v, Object entity, Map<Object, List<OVertex>> entityCache) {
 		v.setProperty( "type", "MessageEntity");
 	}
 	@Override

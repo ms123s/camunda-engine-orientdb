@@ -9,9 +9,8 @@ import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OSchema;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
-import com.tinkerpop.blueprints.Element;
-import com.tinkerpop.blueprints.impls.orient.OrientGraph;
-import com.tinkerpop.blueprints.Vertex;
+import com.orientechnologies.orient.core.db.ODatabaseSession;
+import com.orientechnologies.orient.core.record.OVertex;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -34,7 +33,7 @@ import static com.github.raymanrt.orientqb.query.Projection.projection;
 public class EventSubscriptionEntityHandler extends BaseEntityHandler{
 	private final static Logger LOG = Logger.getLogger(EventSubscriptionEntityHandler.class.getName());
 
-	public EventSubscriptionEntityHandler(OrientGraph g) {
+	public EventSubscriptionEntityHandler(ODatabaseSession g) {
 		super( g, EventSubscriptionEntity.class);
 	}
 
@@ -60,7 +59,7 @@ public class EventSubscriptionEntityHandler extends BaseEntityHandler{
 	}
 
 	@Override
-	public void insertAdditional(Vertex v, Object entity, Map<Object, List<Vertex>> entityCache) {
+	public void insertAdditional(OVertex v, Object entity, Map<Object, List<OVertex>> entityCache) {
 	  settingLinksReverse(entity, "getExecutionId", "ExecutionEntity", "eventSubscriptions", v, entityCache);
 	}
 }

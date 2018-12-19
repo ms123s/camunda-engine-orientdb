@@ -3,7 +3,7 @@ package org.camunda.bpm.engine.impl.db.orientdb.handler;
 import java.util.logging.Logger;
 
 import org.camunda.bpm.engine.impl.cmmn.entity.repository.CaseDefinitionEntity;
-import com.tinkerpop.blueprints.impls.orient.OrientGraph;
+import com.orientechnologies.orient.core.db.ODatabaseSession;
 
 /**
  * @author Manfred Sattler
@@ -11,7 +11,7 @@ import com.tinkerpop.blueprints.impls.orient.OrientGraph;
 public class CaseDefinitionEntityHandler extends BaseEntityHandler{
 	private final static Logger log = Logger.getLogger(CaseDefinitionEntityHandler.class.getName());
 
-	public CaseDefinitionEntityHandler(OrientGraph g) {
+	public CaseDefinitionEntityHandler(ODatabaseSession g) {
 		super( g, CaseDefinitionEntity.class);
 	}
 }

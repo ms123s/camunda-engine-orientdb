@@ -3,7 +3,7 @@ package org.camunda.bpm.engine.impl.db.orientdb.handler;
 import java.util.logging.Logger;
 
 import com.github.raymanrt.orientqb.query.Query;
-import com.tinkerpop.blueprints.impls.orient.OrientGraph;
+import com.orientechnologies.orient.core.db.ODatabaseSession;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -30,7 +30,7 @@ import static com.github.raymanrt.orientqb.query.Operator.CONTAINS;
 public class ProcessDefinitionEntityHandler extends BaseEntityHandler {
 	private final static Logger log = Logger.getLogger(ProcessDefinitionEntityHandler.class.getName());
 
-	public ProcessDefinitionEntityHandler(OrientGraph g) {
+	public ProcessDefinitionEntityHandler(ODatabaseSession g) {
 		super(g, ProcessDefinitionEntity.class);
 	}
 

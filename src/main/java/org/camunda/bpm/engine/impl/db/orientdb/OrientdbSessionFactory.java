@@ -29,10 +29,11 @@ import org.camunda.bpm.engine.impl.batch.history.*;
 import org.camunda.bpm.engine.impl.dmn.entity.repository.*;
 import org.camunda.bpm.engine.impl.cmmn.entity.repository.*;
 import org.camunda.bpm.engine.impl.cmmn.entity.runtime.*;
-import com.tinkerpop.blueprints.impls.orient.OrientGraph;
 import org.camunda.bpm.engine.impl.cfg.orientdb.VariableListener;
 import com.orientechnologies.orient.core.command.OCommandRequest;
 import com.orientechnologies.orient.core.sql.OCommandSQL;
+import com.orientechnologies.orient.core.db.ODatabasePool;
+import com.orientechnologies.orient.core.db.ODatabaseSession;
 
 import com.tinkerpop.blueprints.impls.orient.OrientGraphFactory;
 import org.camunda.bpm.engine.impl.db.DbEntity;
@@ -46,28 +47,28 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 public class OrientdbSessionFactory implements SessionFactory {
 	private final static Logger LOG = Logger.getLogger(OrientdbSessionFactory.class.getName());
 
-	private OrientGraphFactory graphFactory;
+	private ODatabasePool databasePool;
 	private static Map<Class, BaseEntityHandler> entityHandlerMap;
 	private static Map<String, Class> entityClassMap;
 	private static Map<Class, Class> entityReplaceMap;
 	private List<VariableListener> variableListeners;
 
-	public OrientdbSessionFactory(OrientGraphFactory f, List<VariableListener> vl, String history) {
-		this.graphFactory = f;
+	public OrientdbSessionFactory(ODatabasePool f, List<VariableListener> vl, String history) {
+		this.databasePool = f;
 		this.variableListeners = vl;
-		OrientGraph orientGraph = null;
+		ODatabaseSession databaseSession = null;
 		try{
-			orientGraph = this.graphFactory.getTx();
+			databaseSession = this.databasePool.acquire();
 
 			debug("OrientGraphFactory:"+this.variableListeners);
 
-			initHandler(orientGraph);
+			initHandler(databaseSession);
 			initEntityClasses();
 		}catch(Exception e){
 			LOG.info("OrientGraphFactory():init:"+e);
 			throw new RuntimeException("OrientGraphFactory.init", e);
 		}finally{
-			orientGraph.shutdown();
+			databaseSession.close();
 		}
 		
 	}
@@ -91,85 +92,84 @@ public class OrientdbSessionFactory implements SessionFactory {
 		entityReplaceMap.put(HistoricJobLogEventEntityHandler.class, HistoricJobLogEventHandler.class); //@@@MS Handler???
 	}
 
-	private void initHandler(OrientGraph orientGraph) {
+	private void initHandler(ODatabaseSession databaseSession) {
 		entityHandlerMap = new HashMap<Class, BaseEntityHandler>();
-		entityHandlerMap.put(HistoricDecisionInputInstanceEntity.class, new HistoricDecisionInputInstanceEntityHandler(orientGraph));
-		entityHandlerMap.put(HistoricDetailEventEntity.class, new HistoricDetailEventEntityHandler(orientGraph));
-		entityHandlerMap.put(EventSubscriptionEntity.class, new EventSubscriptionEntityHandler(orientGraph));
-		entityHandlerMap.put(ExecutionEntity.class, new ExecutionEntityHandler(orientGraph));
-		entityHandlerMap.put(GroupEntity.class, new GroupEntityHandler(orientGraph));
-		entityHandlerMap.put(AttachmentEntity.class, new AttachmentEntityHandler(orientGraph));
-		entityHandlerMap.put(AuthorizationEntity.class, new AuthorizationEntityHandler(orientGraph));
-		entityHandlerMap.put(MeterLogEntity.class, new MeterLogEntityHandler(orientGraph));
-		entityHandlerMap.put(MetricIntervalEntity.class, new MetricIntervalEntityHandler(orientGraph));
-		entityHandlerMap.put(HistoricDecisionInstanceEntity.class, new HistoricDecisionInstanceEntityHandler(orientGraph));
-		entityHandlerMap.put(HistoricVariableUpdateEventEntity.class, new HistoricVariableUpdateEventEntityHandler(orientGraph));
-		entityHandlerMap.put(HistoricExternalTaskLogEntity.class, new HistoricExternalTaskLogEntityHandler(orientGraph));
-		entityHandlerMap.put(HistoricCaseActivityInstanceEventEntity.class, new HistoricCaseActivityInstanceEventEntityHandler(orientGraph));
-		entityHandlerMap.put(HistoricTaskInstanceEntity.class, new HistoricTaskInstanceEntityHandler(orientGraph));
-		entityHandlerMap.put(UserOperationLogEntryEventEntity.class, new UserOperationLogEntryEventEntityHandler(orientGraph));
-		entityHandlerMap.put(HistoricActivityInstanceEntity.class, new HistoricActivityInstanceEntityHandler(orientGraph));
-		entityHandlerMap.put(HistoricBatchEntity.class, new HistoricBatchEntityHandler(orientGraph));
-		entityHandlerMap.put(HistoricFormPropertyEventEntity.class, new HistoricFormPropertyEventEntityHandler(orientGraph));
-		entityHandlerMap.put(ExternalTaskEntity.class, new ExternalTaskEntityHandler(orientGraph));
-		entityHandlerMap.put(ProcessDefinitionStatisticsEntity.class, new ProcessDefinitionStatisticsEntityHandler(orientGraph));
-		entityHandlerMap.put(HistoricCaseInstanceEntity.class, new HistoricCaseInstanceEntityHandler(orientGraph));
-		entityHandlerMap.put(HistoricDetailVariableInstanceUpdateEntity.class, new HistoricDetailVariableInstanceUpdateEntityHandler(orientGraph));
-		entityHandlerMap.put(HistoricIncidentEventEntity.class, new HistoricIncidentEventEntityHandler(orientGraph));
-		entityHandlerMap.put(HistoricJobLogEvent.class, new HistoricJobLogEventHandler(orientGraph));
-		entityHandlerMap.put(DecisionDefinitionEntity.class, new DecisionDefinitionEntityHandler(orientGraph));
-		entityHandlerMap.put(HistoricFormPropertyEntity.class, new HistoricFormPropertyEntityHandler(orientGraph));
-		entityHandlerMap.put(HistoricCaseInstanceEventEntity.class, new HistoricCaseInstanceEventEntityHandler(orientGraph));
-		entityHandlerMap.put(HistoricVariableInstanceEntity.class, new HistoricVariableInstanceEntityHandler(orientGraph));
-		entityHandlerMap.put(VariableInstanceEntity.class, new VariableInstanceEntityHandler(orientGraph));
-		entityHandlerMap.put(HistoricTaskInstanceEventEntity.class, new HistoricTaskInstanceEventEntityHandler(orientGraph));
-		entityHandlerMap.put(IncidentEntity.class, new IncidentEntityHandler(orientGraph));
-		entityHandlerMap.put(BatchStatisticsEntity.class, new BatchStatisticsEntityHandler(orientGraph));
-		entityHandlerMap.put(MembershipEntity.class, new MembershipEntityHandler(orientGraph));
-		entityHandlerMap.put(HistoricScopeInstanceEvent.class, new HistoricScopeInstanceEventHandler(orientGraph));
-		entityHandlerMap.put(BatchEntity.class, new BatchEntityHandler(orientGraph));
-		entityHandlerMap.put(CommentEntity.class, new CommentEntityHandler(orientGraph));
-		entityHandlerMap.put(HistoricDecisionOutputInstanceEntity.class, new HistoricDecisionOutputInstanceEntityHandler(orientGraph));
-		entityHandlerMap.put(DeploymentStatisticsEntity.class, new DeploymentStatisticsEntityHandler(orientGraph));
-		entityHandlerMap.put(PropertyEntity.class, new PropertyEntityHandler(orientGraph));
-		entityHandlerMap.put(ResourceEntity.class, new ResourceEntityHandler(orientGraph));
-		entityHandlerMap.put(HistoricDecisionEvaluationEvent.class, new HistoricDecisionEvaluationEventHandler(orientGraph));
-		entityHandlerMap.put(ByteArrayEntity.class, new ByteArrayEntityHandler(orientGraph));
-		entityHandlerMap.put(HistoricProcessInstanceEntity.class, new HistoricProcessInstanceEntityHandler(orientGraph));
-		entityHandlerMap.put(EverLivingJobEntity.class, new EverLivingJobEntityHandler(orientGraph));
-		entityHandlerMap.put(IdentityInfoEntity.class, new IdentityInfoEntityHandler(orientGraph));
-		entityHandlerMap.put(DeploymentEntity.class, new DeploymentEntityHandler(orientGraph));
-		entityHandlerMap.put(JobEntity.class, new JobEntityHandler(orientGraph));
-		entityHandlerMap.put(IdentityLinkEntity.class, new IdentityLinkEntityHandler(orientGraph));
-		entityHandlerMap.put(HistoricActivityInstanceEventEntity.class, new HistoricActivityInstanceEventEntityHandler(orientGraph));
-		entityHandlerMap.put(UserEntity.class, new UserEntityHandler(orientGraph));
-		entityHandlerMap.put(HistoricCaseActivityInstanceEntity.class, new HistoricCaseActivityInstanceEntityHandler(orientGraph));
-		entityHandlerMap.put(TaskEntity.class, new TaskEntityHandler(orientGraph));
-		entityHandlerMap.put(ProcessDefinitionEntity.class, new ProcessDefinitionEntityHandler(orientGraph));
-		entityHandlerMap.put(CaseDefinitionEntity.class, new CaseDefinitionEntityHandler(orientGraph));
-		entityHandlerMap.put(TenantEntity.class, new TenantEntityHandler(orientGraph));
-		entityHandlerMap.put(TenantMembershipEntity.class, new TenantMembershipEntityHandler(orientGraph));
-		entityHandlerMap.put(CaseSentryPartEntity.class, new CaseSentryPartEntityHandler(orientGraph));
-		entityHandlerMap.put(HistoricJobLogEventEntity.class, new HistoricJobLogEventEntityHandler(orientGraph));
-		entityHandlerMap.put(HistoricProcessInstanceEventEntity.class, new HistoricProcessInstanceEventEntityHandler(orientGraph));
-		entityHandlerMap.put(CaseExecutionEntity.class, new CaseExecutionEntityHandler(orientGraph));
-		entityHandlerMap.put(HistoryEvent.class, new HistoryEventHandler(orientGraph));
-		entityHandlerMap.put(HistoricIdentityLinkLogEntity.class, new HistoricIdentityLinkLogEntityHandler(orientGraph));
-		entityHandlerMap.put(MessageEntity.class, new MessageEntityHandler(orientGraph));
-		entityHandlerMap.put(JobDefinitionEntity.class, new JobDefinitionEntityHandler(orientGraph));
-		entityHandlerMap.put(HistoricIdentityLinkLogEventEntity.class, new HistoricIdentityLinkLogEventEntityHandler(orientGraph));
-		entityHandlerMap.put(HistoricIncidentEntity.class, new HistoricIncidentEntityHandler(orientGraph));
-		entityHandlerMap.put(FilterEntity.class, new FilterEntityHandler(orientGraph));
-		entityHandlerMap.put(DecisionRequirementsDefinitionEntity.class, new DecisionRequirementsDefinitionEntityHandler(orientGraph));
-		entityHandlerMap.put(TimerEntity.class, new TimerEntityHandler(orientGraph));
+		entityHandlerMap.put(HistoricDecisionInputInstanceEntity.class, new HistoricDecisionInputInstanceEntityHandler(databaseSession));
+		entityHandlerMap.put(HistoricDetailEventEntity.class, new HistoricDetailEventEntityHandler(databaseSession));
+		entityHandlerMap.put(EventSubscriptionEntity.class, new EventSubscriptionEntityHandler(databaseSession));
+		entityHandlerMap.put(ExecutionEntity.class, new ExecutionEntityHandler(databaseSession));
+		entityHandlerMap.put(GroupEntity.class, new GroupEntityHandler(databaseSession));
+		entityHandlerMap.put(AttachmentEntity.class, new AttachmentEntityHandler(databaseSession));
+		entityHandlerMap.put(AuthorizationEntity.class, new AuthorizationEntityHandler(databaseSession));
+		entityHandlerMap.put(MeterLogEntity.class, new MeterLogEntityHandler(databaseSession));
+		entityHandlerMap.put(MetricIntervalEntity.class, new MetricIntervalEntityHandler(databaseSession));
+		entityHandlerMap.put(HistoricDecisionInstanceEntity.class, new HistoricDecisionInstanceEntityHandler(databaseSession));
+		entityHandlerMap.put(HistoricVariableUpdateEventEntity.class, new HistoricVariableUpdateEventEntityHandler(databaseSession));
+		entityHandlerMap.put(HistoricExternalTaskLogEntity.class, new HistoricExternalTaskLogEntityHandler(databaseSession));
+		entityHandlerMap.put(HistoricCaseActivityInstanceEventEntity.class, new HistoricCaseActivityInstanceEventEntityHandler(databaseSession));
+		entityHandlerMap.put(HistoricTaskInstanceEntity.class, new HistoricTaskInstanceEntityHandler(databaseSession));
+		entityHandlerMap.put(UserOperationLogEntryEventEntity.class, new UserOperationLogEntryEventEntityHandler(databaseSession));
+		entityHandlerMap.put(HistoricActivityInstanceEntity.class, new HistoricActivityInstanceEntityHandler(databaseSession));
+		entityHandlerMap.put(HistoricBatchEntity.class, new HistoricBatchEntityHandler(databaseSession));
+		entityHandlerMap.put(HistoricFormPropertyEventEntity.class, new HistoricFormPropertyEventEntityHandler(databaseSession));
+		entityHandlerMap.put(ExternalTaskEntity.class, new ExternalTaskEntityHandler(databaseSession));
+		entityHandlerMap.put(ProcessDefinitionStatisticsEntity.class, new ProcessDefinitionStatisticsEntityHandler(databaseSession));
+		entityHandlerMap.put(HistoricCaseInstanceEntity.class, new HistoricCaseInstanceEntityHandler(databaseSession));
+		entityHandlerMap.put(HistoricDetailVariableInstanceUpdateEntity.class, new HistoricDetailVariableInstanceUpdateEntityHandler(databaseSession));
+		entityHandlerMap.put(HistoricIncidentEventEntity.class, new HistoricIncidentEventEntityHandler(databaseSession));
+		entityHandlerMap.put(HistoricJobLogEvent.class, new HistoricJobLogEventHandler(databaseSession));
+		entityHandlerMap.put(DecisionDefinitionEntity.class, new DecisionDefinitionEntityHandler(databaseSession));
+		entityHandlerMap.put(HistoricFormPropertyEntity.class, new HistoricFormPropertyEntityHandler(databaseSession));
+		entityHandlerMap.put(HistoricCaseInstanceEventEntity.class, new HistoricCaseInstanceEventEntityHandler(databaseSession));
+		entityHandlerMap.put(HistoricVariableInstanceEntity.class, new HistoricVariableInstanceEntityHandler(databaseSession));
+		entityHandlerMap.put(VariableInstanceEntity.class, new VariableInstanceEntityHandler(databaseSession));
+		entityHandlerMap.put(HistoricTaskInstanceEventEntity.class, new HistoricTaskInstanceEventEntityHandler(databaseSession));
+		entityHandlerMap.put(IncidentEntity.class, new IncidentEntityHandler(databaseSession));
+		entityHandlerMap.put(BatchStatisticsEntity.class, new BatchStatisticsEntityHandler(databaseSession));
+		entityHandlerMap.put(MembershipEntity.class, new MembershipEntityHandler(databaseSession));
+		entityHandlerMap.put(HistoricScopeInstanceEvent.class, new HistoricScopeInstanceEventHandler(databaseSession));
+		entityHandlerMap.put(BatchEntity.class, new BatchEntityHandler(databaseSession));
+		entityHandlerMap.put(CommentEntity.class, new CommentEntityHandler(databaseSession));
+		entityHandlerMap.put(HistoricDecisionOutputInstanceEntity.class, new HistoricDecisionOutputInstanceEntityHandler(databaseSession));
+		entityHandlerMap.put(DeploymentStatisticsEntity.class, new DeploymentStatisticsEntityHandler(databaseSession));
+		entityHandlerMap.put(PropertyEntity.class, new PropertyEntityHandler(databaseSession));
+		entityHandlerMap.put(ResourceEntity.class, new ResourceEntityHandler(databaseSession));
+		entityHandlerMap.put(HistoricDecisionEvaluationEvent.class, new HistoricDecisionEvaluationEventHandler(databaseSession));
+		entityHandlerMap.put(ByteArrayEntity.class, new ByteArrayEntityHandler(databaseSession));
+		entityHandlerMap.put(HistoricProcessInstanceEntity.class, new HistoricProcessInstanceEntityHandler(databaseSession));
+		entityHandlerMap.put(EverLivingJobEntity.class, new EverLivingJobEntityHandler(databaseSession));
+		entityHandlerMap.put(IdentityInfoEntity.class, new IdentityInfoEntityHandler(databaseSession));
+		entityHandlerMap.put(DeploymentEntity.class, new DeploymentEntityHandler(databaseSession));
+		entityHandlerMap.put(JobEntity.class, new JobEntityHandler(databaseSession));
+		entityHandlerMap.put(IdentityLinkEntity.class, new IdentityLinkEntityHandler(databaseSession));
+		entityHandlerMap.put(HistoricActivityInstanceEventEntity.class, new HistoricActivityInstanceEventEntityHandler(databaseSession));
+		entityHandlerMap.put(UserEntity.class, new UserEntityHandler(databaseSession));
+		entityHandlerMap.put(HistoricCaseActivityInstanceEntity.class, new HistoricCaseActivityInstanceEntityHandler(databaseSession));
+		entityHandlerMap.put(TaskEntity.class, new TaskEntityHandler(databaseSession));
+		entityHandlerMap.put(ProcessDefinitionEntity.class, new ProcessDefinitionEntityHandler(databaseSession));
+		entityHandlerMap.put(CaseDefinitionEntity.class, new CaseDefinitionEntityHandler(databaseSession));
+		entityHandlerMap.put(TenantEntity.class, new TenantEntityHandler(databaseSession));
+		entityHandlerMap.put(TenantMembershipEntity.class, new TenantMembershipEntityHandler(databaseSession));
+		entityHandlerMap.put(CaseSentryPartEntity.class, new CaseSentryPartEntityHandler(databaseSession));
+		entityHandlerMap.put(HistoricJobLogEventEntity.class, new HistoricJobLogEventEntityHandler(databaseSession));
+		entityHandlerMap.put(HistoricProcessInstanceEventEntity.class, new HistoricProcessInstanceEventEntityHandler(databaseSession));
+		entityHandlerMap.put(CaseExecutionEntity.class, new CaseExecutionEntityHandler(databaseSession));
+		entityHandlerMap.put(HistoryEvent.class, new HistoryEventHandler(databaseSession));
+		entityHandlerMap.put(HistoricIdentityLinkLogEntity.class, new HistoricIdentityLinkLogEntityHandler(databaseSession));
+		entityHandlerMap.put(MessageEntity.class, new MessageEntityHandler(databaseSession));
+		entityHandlerMap.put(JobDefinitionEntity.class, new JobDefinitionEntityHandler(databaseSession));
+		entityHandlerMap.put(HistoricIdentityLinkLogEventEntity.class, new HistoricIdentityLinkLogEventEntityHandler(databaseSession));
+		entityHandlerMap.put(HistoricIncidentEntity.class, new HistoricIncidentEntityHandler(databaseSession));
+		entityHandlerMap.put(FilterEntity.class, new FilterEntityHandler(databaseSession));
+		entityHandlerMap.put(DecisionRequirementsDefinitionEntity.class, new DecisionRequirementsDefinitionEntityHandler(databaseSession));
+		entityHandlerMap.put(TimerEntity.class, new TimerEntityHandler(databaseSession));
 	}
 
-	public static BaseEntityHandler getEntityHandler(Class entityClass, OrientGraph orientGraph) {
+	public static BaseEntityHandler getEntityHandler(Class entityClass, ODatabaseSession databaseSession) {
 		BaseEntityHandler bh = entityHandlerMap.get(entityClass);
 		if( bh == null){
 			throw new RuntimeException("OrientdbSessionFactory.getEntityHandler:entityClass("+entityClass+"):not found");
 		}
-		bh.setOrientGraph( orientGraph);
 		return bh;
 	}
 
@@ -187,7 +187,7 @@ public class OrientdbSessionFactory implements SessionFactory {
 	}
 
 	public Session openSession() {
-		return new OrientdbPersistenceSession(graphFactory.getTx(), this);
+		return new OrientdbPersistenceSession(databasePool.acquire(), this);
 	}
 
 	private static void dump(String msg, Object o) {

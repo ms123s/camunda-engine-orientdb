@@ -6,12 +6,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.ArrayList;
 import org.camunda.bpm.engine.impl.persistence.entity.TimerEntity;
-import com.tinkerpop.blueprints.impls.orient.OrientGraph;
+import com.orientechnologies.orient.core.db.ODatabaseSession;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OSchema;
 import com.orientechnologies.orient.core.metadata.schema.OProperty;
 import com.orientechnologies.orient.core.metadata.schema.OType;
-import com.tinkerpop.blueprints.Vertex;
+import com.orientechnologies.orient.core.record.OVertex;
 
 /**
  * @author Manfred Sattler
@@ -19,7 +19,7 @@ import com.tinkerpop.blueprints.Vertex;
 public class TimerEntityHandler extends BaseEntityHandler{
 	private final static Logger log = Logger.getLogger(TimerEntityHandler.class.getName());
 
-	public TimerEntityHandler(OrientGraph g) {
+	public TimerEntityHandler(ODatabaseSession g) {
 		super( g, TimerEntity.class);
 	}
 
@@ -31,7 +31,7 @@ public class TimerEntityHandler extends BaseEntityHandler{
 	}
 
 	@Override
-	public void insertAdditional(Vertex v, Object entity, Map<Object, List<Vertex>> entityCache) {
+	public void insertAdditional(OVertex v, Object entity, Map<Object, List<OVertex>> entityCache) {
 		v.setProperty( "type", "TimerEntity");
 	}
 	@Override

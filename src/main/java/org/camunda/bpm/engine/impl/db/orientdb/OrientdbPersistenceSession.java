@@ -44,13 +44,12 @@ import org.camunda.bpm.engine.impl.history.event.HistoricVariableUpdateEventEnti
 
 import com.orientechnologies.orient.core.exception.OConcurrentModificationException;
 import static org.camunda.bpm.engine.impl.util.EnsureUtil.ensureNotNull;
-import com.tinkerpop.blueprints.impls.orient.OrientGraph;
-import com.tinkerpop.blueprints.Vertex;
+import com.orientechnologies.orient.core.db.ODatabaseSession;
+import com.orientechnologies.orient.core.record.OElement;
+import com.orientechnologies.orient.core.record.OVertex;
 import com.orientechnologies.orient.core.command.OCommandRequest;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
 import com.orientechnologies.orient.core.sql.OCommandSQL;
-import com.tinkerpop.blueprints.Element;
-import com.tinkerpop.blueprints.impls.orient.OrientVertex;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
@@ -63,7 +62,7 @@ import static com.jcabi.log.Logger.info;
 /**
  * @author Manfred Sattler
  */
-@SuppressWarnings({ "unchecked", "rawtypes" })
+@SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
 public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 
 	private final static Logger LOG = Logger.getLogger(OrientdbPersistenceSession.class.getName());
@@ -72,19 +71,19 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	private List<String> prefixList = new ArrayList<>(Arrays.asList("selectLatest", "select"));
 	private List<String> suffixList = new ArrayList<>(Arrays.asList("CountBy", "IdsBy", "By"));
 	OrientdbSessionFactory sessionFactory;
-	private Map<Object, List<Vertex>> entityCache = new HashMap<Object, List<Vertex>>();
+	private Map<Object, List<OVertex>> entityCache = new HashMap<Object, List<OVertex>>();
 
-	protected OrientGraph orientGraph;
+	protected ODatabaseSession databaseSession;
 
-	public OrientdbPersistenceSession(OrientGraph g, OrientdbSessionFactory sf) {
-		this.orientGraph = g;
+	public OrientdbPersistenceSession(ODatabaseSession g, OrientdbSessionFactory sf) {
+		this.databaseSession = g;
 		this.sessionFactory = sf;
-		g.getRawGraph().activateOnCurrentThread();
+		g.activateOnCurrentThread();
 		this.isOpen = true;
 		sessionId = new java.util.Date().getTime();
 		debug("openSession:" + sessionId);
 		System.err.println("openSession:" + sessionId);
-		this.orientGraph.begin();
+		this.databaseSession.begin();
 	}
 
 	public Object selectOne(String statement, Object parameter) {
@@ -95,7 +94,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		Class entityClass = OrientdbSessionFactory.getEntityClass(entityName);
 		debug("->selectOne(" + statement + "," + entityName + "):" + parameter);
 
-		BaseEntityHandler entityHandler = OrientdbSessionFactory.getEntityHandler(entityClass, this.orientGraph);
+		BaseEntityHandler entityHandler = OrientdbSessionFactory.getEntityHandler(entityClass, this.databaseSession);
 		boolean isCount = statement.indexOf("Count") > 0;
 
 		List<CParameter> parameterList = getCParameterList(statement, parameter, entityHandler);
@@ -103,13 +102,13 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		Map<String, Object> queryParams = new HashMap<String, Object>();
 		OCommandRequest query = entityHandler.buildQuery(entityName, statement, parameterList, parameter, queryParams);
 
-		Iterable<Element> result = orientGraph.command(query).execute(queryParams);
+		Iterable<OElement> result = databaseSession.command(query).execute(queryParams);
 		debug("  - result:" + result);
 		Map<String, Object> props = null;
 		int count = 0;
-		for (Element elem : result) {
+		for (OElement elem : result) {
 			count++;
-			props = ((OrientVertex) elem).getProperties();
+			props = getProperties(elem);
 			if (!isCount) {
 				break;
 			}
@@ -153,8 +152,8 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		Class entityClass = OrientdbSessionFactory.getEntityClass(entityName);
 		//LOG.info("  - entityClass:" + entityClass);
 
-		Iterable<Element> result = null;
-		BaseEntityHandler entityHandler = OrientdbSessionFactory.getEntityHandler(entityClass, this.orientGraph);
+		Iterable<OElement> result = null;
+		BaseEntityHandler entityHandler = OrientdbSessionFactory.getEntityHandler(entityClass, this.databaseSession);
 		Method m = getStatementMethod(entityHandler, statement, parameter);
 		if (m != null) {
 			result = callStatementMethod(m, entityHandler, statement, parameter);
@@ -169,12 +168,12 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			OCommandRequest query = entityHandler.buildQuery(entityName, statement, parameterList, parameter, queryParams);
 			isLatest = getBoolean(queryParams.remove("_isLatest"));
 
-			result = orientGraph.command(query).execute(queryParams);
+			result = databaseSession.command(query).execute(queryParams);
 		}
 
 		List<Map<String, Object>> propsList = new ArrayList<Map<String, Object>>();
-		for (Element elem : result) {
-			Map<String, Object> props = ((OrientVertex) elem).getProperties();
+		for (OElement elem : result) {
+			Map<String, Object> props = getProperties(elem);
 			propsList.add(props);
 		}
 		if (propsList.size() == 0) {
@@ -309,12 +308,12 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		debug("->selectById(" + entityName + "," + entityClass + ").id:" + id);
 		OCommandRequest query = new OSQLSynchQuery("select  from " + entityName + " where id=?");
 		debug("  - query:" + query);
-		Iterable<Element> result = orientGraph.command(query).execute(id);
+		Iterable<OElement> result = databaseSession.command(query).execute(id);
 		debug("  - result:" + result);
 		Map<String, Object> props = null;
-		for (Element elem : result) {
+		for (OElement elem : result) {
 			debug(" selectById.elem" + entityName + "," + id + "):elem:" + elem);
-			props = ((OrientVertex) elem).getProperties();
+			props = getProperties(elem);
 			break;
 		}
 		if (props == null) {
@@ -322,7 +321,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			return null;
 		}
 		try {
-			BaseEntityHandler entityHandler = OrientdbSessionFactory.getEntityHandler(entityClass, this.orientGraph);
+			BaseEntityHandler entityHandler = OrientdbSessionFactory.getEntityHandler(entityClass, this.databaseSession);
 			Class subClass = entityHandler.getSubClass(entityClass, props);
 			T entity = (T) subClass.newInstance();
 			setEntityValues(entityClass, entity, props);
@@ -336,8 +335,16 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		}
 	}
 
+	private Map<String,Object> getProperties( OElement elem ){
+		Map<String,Object> map = new HashMap<String,Object>();
+		for( String name : elem.getPropertyNames()){
+			map.put( name, elem.getProperty(name));
+		}
+		return map;
+	}
+
 	private void setEntityValues(Class entityClass, Object entity, Map<String, Object> props) throws Exception {
-		BaseEntityHandler handler = OrientdbSessionFactory.getEntityHandler(entityClass, this.orientGraph);
+		BaseEntityHandler handler = OrientdbSessionFactory.getEntityHandler(entityClass, this.databaseSession);
 		List<Map<String, Object>> entityMeta = handler.getMetadata();
 		for (Map<String, Object> m : entityMeta) {
 			String name = (String) m.get("name");
@@ -434,13 +441,13 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		if (entityName.equals("HistoricVariableUpdateEventEntity")) {
 			this.sessionFactory.fireEvent((HistoricVariableUpdateEventEntity) entity);
 		}
-		BaseEntityHandler handler = OrientdbSessionFactory.getEntityHandler(entityClass, this.orientGraph);
+		BaseEntityHandler handler = OrientdbSessionFactory.getEntityHandler(entityClass, this.databaseSession);
 
 		if (entity instanceof HasDbRevision) {
 			((HasDbRevision) entity).setRevision(1);
 		}
 		try {
-			Vertex v = this.orientGraph.addVertex("class:" + entityName);
+			OVertex v = this.databaseSession.newVertex(entityName);
 			List<Map<String, Object>> entityMeta = handler.getMetadata();
 			Object id = null;
 			Object n = null;
@@ -474,9 +481,9 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			}
 			String cacheName = handler.getCacheName(entity, entityName);
 			if (cacheName != null) {
-				List<Vertex> vl = this.entityCache.get(cacheName);
+				List<OVertex> vl = this.entityCache.get(cacheName);
 				if (vl == null) {
-					vl = new ArrayList<Vertex>();
+					vl = new ArrayList<OVertex>();
 					entityCache.put(cacheName, vl);
 				}
 				vl.add(v);
@@ -513,14 +520,14 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		OCommandRequest del = new OCommandSQL("Delete vertex " + entityName + " where id=?");
 		try {
 			String sql = "SELECT FROM " + entityName + " where id='" + id + "'";
-			Vertex vertex = selectBySql(sql);
+			OVertex vertex = selectBySql(sql);
 			debug("deleteEntity(" + entityName + "," + name + "):vertex:" + vertex);
 			if (vertex == null) {
 				operation.setFailed(true);
 				debug("<- deleteEntity(" + entityName + "," + name + "):failed");
 				return;
 			}
-			orientGraph.command(del).execute(id);
+			databaseSession.command(del).execute(id);
 		} catch (Exception e) {
 			if (entity instanceof HasDbRevision) {
 				operation.setFailed(true);
@@ -547,7 +554,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		Class entityClass = operation.getEntityType();
 		entityClass = OrientdbSessionFactory.getReplaceClass(entityClass);
 		String entityName = entityClass.getSimpleName();
-		BaseEntityHandler handler = OrientdbSessionFactory.getEntityHandler(entityClass, this.orientGraph);
+		BaseEntityHandler handler = OrientdbSessionFactory.getEntityHandler(entityClass, this.databaseSession);
 		debug("-> deleteBulk(" + statement + "," + entityName + ").parameter:" + parameter);
 		List<CParameter> parameterList = getCParameterList(statement, parameter, handler);
 
@@ -555,7 +562,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			Map<String, Object> queryParams = new HashMap<String, Object>();
 			OCommandRequest up = handler.buildDelete(entityName, statement, parameterList, queryParams);
 
-			orientGraph.command(up).execute(queryParams);
+			databaseSession.command(up).execute(queryParams);
 		} else {
 			throw new RuntimeException("OrientdbPersistenceSession.deleteBulk(" + statement + "," + entityName + "):no parameter");
 		}
@@ -591,16 +598,16 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		Class entityClass = OrientdbSessionFactory.getReplaceClass(entity.getClass());
 		String entityName = entityClass.getSimpleName();
 		OCommandRequest query = new OSQLSynchQuery("select  from " + entityName + " where id=?");
-		Iterable<Element> result = orientGraph.command(query).execute(id);
-		Iterator<Element> it = result.iterator();
+		Iterable<OElement> result = databaseSession.command(query).execute(id);
+		Iterator<OElement> it = result.iterator();
 		if (!it.hasNext()) {
 			debug(" - UpdateById(" + entityName + "," + id + ").not found");
 			return -1;
 		}
 		try {
-			Element e = it.next();
+			OElement e = it.next();
 
-			BaseEntityHandler handler = OrientdbSessionFactory.getEntityHandler(entityClass, this.orientGraph);
+			BaseEntityHandler handler = OrientdbSessionFactory.getEntityHandler(entityClass, this.databaseSession);
 			List<Map<String, Object>> entityMeta = handler.getMetadata();
 			for (Map<String, Object> m : entityMeta) {
 				if (m.get("namedId") != null) {
@@ -644,12 +651,12 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		}
 	}
 
-	private Vertex selectBySql(String sql) {
+	private OVertex selectBySql(String sql) {
 		OCommandRequest query = new OSQLSynchQuery(sql);
-		Iterable<Vertex> result = orientGraph.command(query).execute();
-		Iterator<Vertex> it = result.iterator();
+		Iterable<OVertex> result = databaseSession.command(query).execute();
+		Iterator<OVertex> it = result.iterator();
 		if (it.hasNext()) {
-			Vertex v = it.next();
+			OVertex v = it.next();
 			return v;
 		}
 		return null;
@@ -658,10 +665,10 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	private Object fireEventForVariableInstanceEntityDelete(Class entityClass, String statement, List<CParameter> parameterList, BaseEntityHandler handler) {
 		Map<String, Object> queryParams = new HashMap<String, Object>();
 		OCommandRequest query = handler.buildQuery(entityClass.getSimpleName(), statement, parameterList, null, queryParams);
-		Iterable<Element> result = orientGraph.command(query).execute(queryParams);
+		Iterable<OElement> result = databaseSession.command(query).execute(queryParams);
 		Map<String, Object> props = null;
-		for (Element elem : result) {
-			props = ((OrientVertex) elem).getProperties();
+		for (OElement elem : result) {
+			props = getProperties(elem);
 			break;
 		}
 
@@ -849,21 +856,21 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		debug("commitSession:" + sessionId);
 		System.err.println("commitSession:" + sessionId);
 		try {
-			orientGraph.commit();
+			databaseSession.commit();
 		} catch (com.orientechnologies.orient.core.exception.ORecordNotFoundException e) {
 			e.printStackTrace();
 			LOG.info("Commit failed:" + e);
 		}
 		for (Object key : this.entityCache.keySet()) {
-			List<Vertex> l = this.entityCache.get(key);
-			for (Vertex v : l) {
+			List<OVertex> l = this.entityCache.get(key);
+			for (OVertex v : l) {
 				debug("insertedEntity(" + sessionId + "):" + v);
 			}
 		}
 	}
 
 	public void rollback() {
-		orientGraph.rollback();
+		databaseSession.rollback();
 		LOG.info("rollbackSession:" + sessionId);
 		System.err.println("rollbackSession:" + sessionId);
 	}
@@ -877,7 +884,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		if (this.isOpen) {
 			debug("closeSession:" + sessionId);
 			System.err.println("closeSession:" + sessionId);
-			orientGraph.shutdown();
+			databaseSession.close();
 		}
 		this.isOpen = false;
 	}

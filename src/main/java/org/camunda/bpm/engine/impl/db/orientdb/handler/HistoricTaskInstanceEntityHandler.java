@@ -3,7 +3,7 @@ package org.camunda.bpm.engine.impl.db.orientdb.handler;
 import java.util.logging.Logger;
 
 import org.camunda.bpm.engine.impl.persistence.entity.HistoricTaskInstanceEntity;
-import com.tinkerpop.blueprints.impls.orient.OrientGraph;
+import com.orientechnologies.orient.core.db.ODatabaseSession;
 import com.github.raymanrt.orientqb.query.Clause;
 import com.github.raymanrt.orientqb.query.clause.VerbatimClause;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
@@ -12,9 +12,9 @@ import com.orientechnologies.orient.core.metadata.schema.OSchema;
 import com.orientechnologies.orient.core.metadata.schema.OSchemaProxy;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
-import com.tinkerpop.blueprints.Element;
-import com.tinkerpop.blueprints.impls.orient.OrientGraph;
-import com.tinkerpop.blueprints.Vertex;
+import com.orientechnologies.orient.core.db.ODatabaseSession;
+import com.orientechnologies.orient.core.record.OElement;
+import com.orientechnologies.orient.core.record.OVertex;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -44,7 +44,7 @@ import org.camunda.bpm.engine.impl.TaskQueryVariableValue;
 public class HistoricTaskInstanceEntityHandler extends BaseEntityHandler{
 	private final static Logger log = Logger.getLogger(HistoricTaskInstanceEntityHandler.class.getName());
 
-	public HistoricTaskInstanceEntityHandler(OrientGraph g) {
+	public HistoricTaskInstanceEntityHandler(ODatabaseSession g) {
 		super( g, HistoricTaskInstanceEntity.class);
 	}
 	@Override
@@ -56,7 +56,7 @@ public class HistoricTaskInstanceEntityHandler extends BaseEntityHandler{
 	}
 
 	@Override
-	public void insertAdditional(Vertex v, Object entity, Map<Object, List<Vertex>> entityCache) {
+	public void insertAdditional(OVertex v, Object entity, Map<Object, List<OVertex>> entityCache) {
 		settingLink(entity, "getProcessInstanceId", "HistoricProcessInstanceEntity", "processInstance", v, entityCache);
 	  settingLinks(entity, "getId", v, "variables", "HistoricVariableInstanceEntity", "taskId", entityCache);
 	}

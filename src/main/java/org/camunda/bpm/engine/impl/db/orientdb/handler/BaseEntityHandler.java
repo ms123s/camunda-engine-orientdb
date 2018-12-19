@@ -26,9 +26,9 @@ import com.orientechnologies.orient.core.metadata.schema.OSchemaProxy;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.sql.OCommandSQL;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
-import com.tinkerpop.blueprints.Element;
-import com.tinkerpop.blueprints.impls.orient.OrientGraph;
-import com.tinkerpop.blueprints.Vertex;
+import com.orientechnologies.orient.core.db.ODatabaseSession;
+import com.orientechnologies.orient.core.record.OElement;
+import com.orientechnologies.orient.core.record.OVertex;
 import java.lang.reflect.*;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -62,22 +62,22 @@ import static com.github.raymanrt.orientqb.query.Projection.ALL;
 import static com.github.raymanrt.orientqb.query.Projection.projection;
 import static com.github.raymanrt.orientqb.query.Variable.variable;
 import org.camunda.bpm.engine.impl.db.orientdb.SingleExpression;
+import com.orientechnologies.orient.core.db.ODatabaseRecordThreadLocal;
+import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
 
 /**
  * @author Manfred Sattler
  */
-@SuppressWarnings({ "unchecked", "rawtypes" })
+@SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
 public abstract class BaseEntityHandler {
 
 	private final static Logger LOG = Logger.getLogger(BaseEntityHandler.class.getName());
-	protected OrientGraph orientGraph;
 	protected Class entityClass;
 	private List<Map<String, Object>> entityMetadata = new ArrayList<Map<String, Object>>();
 	private Map<String, Map> metaByFieldMap = new HashMap<String, Map>();
 
-	public BaseEntityHandler(OrientGraph g, Class ec) {
+	public BaseEntityHandler(ODatabaseSession g, Class ec) {
 		this.entityClass = ec;
-		this.orientGraph = g;
 		this.entityMetadata = this.buildMetadata(ec);
 		this.modifyMetadata();
 		this.buildMetaFieldMap();
@@ -85,7 +85,7 @@ public abstract class BaseEntityHandler {
 		for (Map<String, Object> m : this.entityMetadata) {
 			//LOG.info("  - "+ m );
 		}
-		createClassAndProperties();
+		createClassAndProperties(g);
 	}
 
 	private void buildMetaFieldMap() {
@@ -96,10 +96,6 @@ public abstract class BaseEntityHandler {
 
 	public List<Map<String, Object>> getMetadata() {
 		return this.entityMetadata;
-	}
-
-	public void setOrientGraph(OrientGraph orientGraph) {
-		this.orientGraph = orientGraph;
 	}
 
 	public void modifyMetadata() {
@@ -120,7 +116,7 @@ public abstract class BaseEntityHandler {
 		return q;
 	}
 
-	public void insertAdditional(Vertex v, Object entity, Map<Object, List<Vertex>> entityCache) {
+	public void insertAdditional(OVertex v, Object entity, Map<Object, List<OVertex>> entityCache) {
 	}
 	public String getCacheName(Object entity, String entityName) {
 		String id = getValue(entity, "getId");
@@ -447,10 +443,10 @@ public abstract class BaseEntityHandler {
 
 	private List<String> notRestrictedList = new ArrayList<>(Arrays.asList("IdentityLinkEntity", "DeploymentEntity", "ProcessDefinitionEntity", "PropertyEntity", "ResourceEntity"));
 
-	protected void createClassAndProperties() {
+	protected void createClassAndProperties(ODatabaseSession dbSession) {
 		try {
 			String entityName = this.entityClass.getSimpleName();
-			OSchema schema = this.orientGraph.getRawGraph().getMetadata().getSchema();
+			OSchema schema = dbSession.getMetadata().getSchema();
 			debug("createClassAndProperties:" + entityName);
 			OClass oClass = getOrCreateClass(schema, entityName);
 			for (Map<String, Object> f : this.entityMetadata) {
@@ -463,7 +459,7 @@ public abstract class BaseEntityHandler {
 			}
 			getOrCreateProperty(oClass, "dbRevision", OType.INTEGER);
 			createAdditionalProperties(schema, oClass);
-			//m_orientdbService.executeUpdate(orientGraph, "CREATE INDEX History.key ON History ( key ) NOTUNIQUE");
+			//m_orientdbService.executeUpdate(databaseSession, "CREATE INDEX History.key ON History ( key ) NOTUNIQUE");
 		} catch (Exception e) {
 			throw new RuntimeException("BaseEntityHandler.createClassAndProperties", e);
 		}
@@ -547,7 +543,7 @@ public abstract class BaseEntityHandler {
 		this.entityMetadata.add(map);
 	}
 
-	private void executeUpdate(OrientGraph graph, String sql, Object... args) {
+	private void executeUpdate(ODatabaseSession graph, String sql, Object... args) {
 		OCommandRequest update = new OCommandSQL(sql);
 		graph.command(update).execute(args);
 	}
@@ -591,9 +587,10 @@ public abstract class BaseEntityHandler {
 		return result;
 	}
 
-	protected Iterable<Element> queryList(String sql, Object... args) {
+	protected Iterable<OElement> queryList(String sql, Object... args) {
 		debug("   - queryList:" + sql);
-		Iterable<Element> iter = this.orientGraph.command(new OSQLSynchQuery<>(sql)).execute(args);
+		ODatabaseDocumentInternal currentDatabase = ODatabaseRecordThreadLocal.instance().get();
+		Iterable<OElement> iter = currentDatabase.command(new OSQLSynchQuery<>(sql)).execute(args);
 		return iter;
 	}
 
@@ -614,11 +611,11 @@ public abstract class BaseEntityHandler {
 		debug("   +++" + msg + ":" + rb.toString());
 	}
 
-	private List<Vertex> getFromCache(String id, String destProperty, String destClass, Map<Object, List<Vertex>> entityCache) {
-		List<Vertex> retList = new ArrayList<Vertex>();
+	private List<OVertex> getFromCache(String id, String destProperty, String destClass, Map<Object, List<OVertex>> entityCache) {
+		List<OVertex> retList = new ArrayList<OVertex>();
 		for ( Object key : entityCache.keySet() ) {
 			if( (""+key).endsWith( destClass)){
-				for( Vertex v : entityCache.get(key)){
+				for( OVertex v : entityCache.get(key)){
 					String vid = v.getProperty( destProperty);
 					if( vid == id ){
 						retList.add(v);
@@ -629,14 +626,15 @@ public abstract class BaseEntityHandler {
 		return retList;
 	}
 
-	public void settingLinkReverse(Object entity, String idMethod,String destProperty, String destClass, String propertyName, Vertex v, Map<Object, List<Vertex>> entityCache) {
+	public void settingLinkReverse(Object entity, String idMethod,String destProperty, String destClass, String propertyName, OVertex v, Map<Object, List<OVertex>> entityCache) {
 		String id = getValue(entity, idMethod);
 		String entityName = entity.getClass().getSimpleName();
 		debug(entityName + ".settingLinkReverse(" + id+"/"+v+"/"+destClass+ "):" + entityCache);
-		Iterable<Vertex> result = getFromCache(id , destProperty, destClass,entityCache);
+		Iterable<OVertex> result = getFromCache(id , destProperty, destClass,entityCache);
+		ODatabaseDocumentInternal currentDatabase = ODatabaseRecordThreadLocal.instance().get();
 		if (id != null) {
 			OCommandRequest query = new OSQLSynchQuery("select from " + destClass + " where "+destProperty+"=?");
-			Iterable<Vertex> result2 = orientGraph.command(query).execute(id);
+			Iterable<OVertex> result2 = currentDatabase.command(query).execute(id);
 			if (result2 != null) {
 				result = makeCollection(result, result2);
 			}
@@ -646,19 +644,20 @@ public abstract class BaseEntityHandler {
 			debug(entityName + ".settingLinkReverse(" + id + "):not found");
 			return;
 		}
-		for (Element elem : result) {
+		for (OElement elem : result) {
 			debug(destClass + "(" + elem + ").settingLinkReverse." + propertyName + "(" + elem.getClass().getName() +  "):" + elem);
 			elem.setProperty(propertyName, v);
 		}
 	}
-	public void settingLinksReverse(Object entity, String idMethod, String destClass, String propertyName, Vertex v, Map<Object, List<Vertex>> entityCache) {
+	public void settingLinksReverse(Object entity, String idMethod, String destClass, String propertyName, OVertex v, Map<Object, List<OVertex>> entityCache) {
 		String id = getValue(entity, idMethod);
 		String entityName = entity.getClass().getSimpleName();
 		debug(entityName + ".insertAdditional(" + id + "):" + v);
-		Iterable<Vertex> result = entityCache.get(id + destClass);
+		Iterable<OVertex> result = entityCache.get(id + destClass);
+		ODatabaseDocumentInternal currentDatabase = ODatabaseRecordThreadLocal.instance().get();
 		if (id != null) {
 			OCommandRequest query = new OSQLSynchQuery("select from " + destClass + " where id=?");
-			Iterable<Vertex> result2 = orientGraph.command(query).execute(id);
+			Iterable<OVertex> result2 = currentDatabase.command(query).execute(id);
 			if (result2 != null) {
 				result = makeCollection(result, result2);
 			}
@@ -668,15 +667,15 @@ public abstract class BaseEntityHandler {
 			debug(entityName + ".settingLinksReverse(" + id + "):not found");
 			return;
 		}
-		for (Element elem : result) {
-			Iterable<Element> iter = elem.getProperty(propertyName);
+		for (OElement elem : result) {
+			Iterable<OElement> iter = elem.getProperty(propertyName);
 			if (iter == null) {
 				debug(destClass + "(" + elem + ").settingLinksReverse." + propertyName + ":" + v);
-				List<Element> l = new ArrayList<Element>();
+				List<OElement> l = new ArrayList<OElement>();
 				l.add(v);
 				elem.setProperty(propertyName, l);
 			} else {
-				Collection<Element> col = makeCollection(iter);
+				Collection<OElement> col = makeCollection(iter);
 				debug(destClass + "(" + elem + ").settingLinksReverse." + propertyName + "(" + iter.getClass().getName() + "," + col + "):" + v);
 				col.add(v);
 				elem.setProperty(propertyName, col);
@@ -684,40 +683,42 @@ public abstract class BaseEntityHandler {
 		}
 	}
 
-	public void settingLink(Object entity, String idMethod, String destClass, String propertyName, Vertex v, Map<Object, List<Vertex>> entityCache) {
+	public void settingLink(Object entity, String idMethod, String destClass, String propertyName, OVertex v, Map<Object, List<OVertex>> entityCache) {
 		String id = getValue(entity, idMethod);
 		debug(entity.getClass().getSimpleName() + ".settingLink(" + idMethod+","+destClass+","+propertyName + "):"+id);
 		if (id == null) {
 			return;
 		}
-		Iterable<Vertex> result = entityCache.get(id + destClass);
+		Iterable<OVertex> result = entityCache.get(id + destClass);
 		if (result == null) {
 			OCommandRequest query = new OSQLSynchQuery("select from " + destClass + " where id=?");
-			result = orientGraph.command(query).execute(id);
+			ODatabaseDocumentInternal currentDatabase = ODatabaseRecordThreadLocal.instance().get();
+			result = currentDatabase.command(query).execute(id);
 		}
 		debug(entity.getClass().getSimpleName() + ".settingLink:"+result);
 		if (result == null) {
 			return;
 		}
-		Iterator<Vertex> it = result.iterator();
+		Iterator<OVertex> it = result.iterator();
 		if (it.hasNext()) {
-			Vertex parent = it.next();
+			OVertex parent = it.next();
 			debug(entity.getClass().getSimpleName() + ".settingLink(" + v + ").to:" + parent);
 			v.setProperty(propertyName, parent);
 		}
 	}
 
-	public void settingLinks(Object entity, String idMethod, Vertex v, String propertyName, String destClass, String destProperty, Map<Object, List<Vertex>> entityCache) {
+	public void settingLinks(Object entity, String idMethod, OVertex v, String propertyName, String destClass, String destProperty, Map<Object, List<OVertex>> entityCache) {
 		String id = getValue(entity, idMethod);
 		String entityName = entity.getClass().getSimpleName();
 		debug(entityName + ".settingLinks(" + id + "):" + v);
 		debug(entityName + ".settingLinks(entityCache):" + entityCache);
-		Iterable<Vertex> result = entityCache.get(id + destClass);
+		Iterable<OVertex> result = entityCache.get(id + destClass);
 		if (id != null) {
 			String sql = "select from " + destClass + " where "+destProperty+"=?";
 		  debug(entityName + ".sql(" + sql + ")" );
 			OCommandRequest query = new OSQLSynchQuery(sql);
-			Iterable<Vertex> result2 = orientGraph.command(query).execute(id);
+			ODatabaseDocumentInternal currentDatabase = ODatabaseRecordThreadLocal.instance().get();
+			Iterable<OVertex> result2 = currentDatabase.command(query).execute(id);
 			if (result2 != null) {
 				result = makeCollection(result, result2);
 			}

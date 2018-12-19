@@ -3,7 +3,7 @@ package org.camunda.bpm.engine.impl.db.orientdb.handler;
 import java.util.logging.Logger;
 
 import org.camunda.bpm.engine.impl.persistence.entity.HistoricProcessInstanceEntity;
-import com.tinkerpop.blueprints.impls.orient.OrientGraph;
+import com.orientechnologies.orient.core.db.ODatabaseSession;
 import org.camunda.bpm.engine.impl.db.orientdb.CParameter;
 import org.camunda.bpm.engine.impl.EventSubscriptionQueryValue;
 import org.camunda.bpm.engine.impl.persistence.entity.ExecutionEntity;
@@ -16,7 +16,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Date;
-import com.tinkerpop.blueprints.Vertex;
+import com.orientechnologies.orient.core.record.OElement;
+import com.orientechnologies.orient.core.record.OVertex;
 import static com.github.raymanrt.orientqb.query.Clause.or;
 import static com.github.raymanrt.orientqb.query.Operator.EQ;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
@@ -30,7 +31,7 @@ import org.camunda.bpm.engine.impl.db.orientdb.SingleExpression;
 public class HistoricProcessInstanceEntityHandler extends BaseEntityHandler{
 	private final static Logger log = Logger.getLogger(HistoricProcessInstanceEntityHandler.class.getName());
 
-	public HistoricProcessInstanceEntityHandler(OrientGraph g) {
+	public HistoricProcessInstanceEntityHandler(ODatabaseSession g) {
 		super( g, HistoricProcessInstanceEntity.class);
 	}
 
@@ -84,7 +85,7 @@ public class HistoricProcessInstanceEntityHandler extends BaseEntityHandler{
 		}
 	}
 	@Override
-	public void insertAdditional(Vertex v, Object entity, Map<Object, List<Vertex>> entityCache) {
+	public void insertAdditional(OVertex v, Object entity, Map<Object, List<OVertex>> entityCache) {
 	  settingLinks(entity, "getId", v, "variables", "HistoricVariableInstanceEntity", "processInstanceId", entityCache);
 	  settingLinkReverse(entity, "getId","processInstanceId", "HistoricTaskInstanceEntity", "processInstance", v, entityCache);
 	}
