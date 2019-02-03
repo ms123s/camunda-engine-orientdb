@@ -20,10 +20,12 @@ import com.github.raymanrt.orientqb.query.Query;
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.command.OCommandRequest;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
+import com.orientechnologies.orient.core.metadata.schema.OClass.INDEX_TYPE;
 import com.orientechnologies.orient.core.metadata.schema.OProperty;
 import com.orientechnologies.orient.core.metadata.schema.OSchema;
 import com.orientechnologies.orient.core.metadata.schema.OSchemaProxy;
 import com.orientechnologies.orient.core.metadata.schema.OType;
+import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.OCommandSQL;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
 import com.orientechnologies.orient.core.db.ODatabaseSession;
@@ -86,6 +88,7 @@ public abstract class BaseEntityHandler {
 			//LOG.info("  - "+ m );
 		}
 		createClassAndProperties(g);
+		createIndexes(g);
 	}
 
 	private void buildMetaFieldMap() {
@@ -501,6 +504,19 @@ public abstract class BaseEntityHandler {
 			prop = oClass.createProperty(propertyName, type, linkedClass);
 		}
 		return prop;
+	}
+
+	protected void createIndexes(ODatabaseSession dbSession){
+		OSchema schema = dbSession.getMetadata().getSchema();
+		createIndex(schema,"HistoricProcessInstanceEntity", new String[] {"businessKey","state","startTime"});
+		createIndex(schema,"HistoricVariableInstanceEntity", new String[] {"processInstanceId"});
+	}
+
+	protected void createIndex(OSchema schema,String className, String[] fields){
+		OClass oClass = schema.getClass(className);
+		if( oClass.getClassIndex(className+".index1") == null){
+			oClass.createIndex(className+".index1", OClass.INDEX_TYPE.NOTUNIQUE, null, fields);
+		}
 	}
 
 	protected void removeByGetter(String getter) {
