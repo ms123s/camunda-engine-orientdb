@@ -27,7 +27,7 @@ public class HistoricVariableInstanceEntityHandler extends BaseEntityHandler{
 	@Override
 	public void addToClauseList(List<Clause> clauseList, String statement, Object parameter, Map<String, Object> queryParams) {
 		String[] taskIds = getValueByField(parameter, "taskIds");
-		log.info("HistoricVariableInstanceEntity.taskIds:"+taskIds);
+		debug("HistoricVariableInstanceEntity.taskIds:"+taskIds);
 		if (taskIds != null && taskIds.length > 0) {
 			List<Clause> orList = new ArrayList<Clause>();
 			for (String taskId : taskIds) {
@@ -36,7 +36,7 @@ public class HistoricVariableInstanceEntityHandler extends BaseEntityHandler{
 			clauseList.add(or(orList.toArray(new Clause[orList.size()])));
 		}
 		String[] activityInstanceIds = getValueByField(parameter, "activityInstanceIds");
-		log.info("HistoricVariableInstanceEntity.activityInstanceIds:"+activityInstanceIds);
+		debug("HistoricVariableInstanceEntity.activityInstanceIds:"+activityInstanceIds);
 		if (activityInstanceIds != null && activityInstanceIds.length > 0) {
 			List<Clause> orList = new ArrayList<Clause>();
 			for (String activityInstanceId : activityInstanceIds) {
@@ -45,7 +45,7 @@ public class HistoricVariableInstanceEntityHandler extends BaseEntityHandler{
 			clauseList.add(or(orList.toArray(new Clause[orList.size()])));
 		}
 		String[] executionIds = getValueByField(parameter, "executionIds");
-		log.info("HistoricVariableInstanceEntity.executionIds:"+executionIds);
+		debug("HistoricVariableInstanceEntity.executionIds:"+executionIds);
 		if (executionIds != null && executionIds.length > 0) {
 			List<Clause> orList = new ArrayList<Clause>();
 			for (String executionId : executionIds) {
@@ -66,5 +66,8 @@ public class HistoricVariableInstanceEntityHandler extends BaseEntityHandler{
 			return id+entityName;
 		}
 		return null;
+	}
+	private void debug(String msg){
+		//LOG.info(msg);
 	}
 }

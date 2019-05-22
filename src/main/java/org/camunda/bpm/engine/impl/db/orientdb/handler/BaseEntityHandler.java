@@ -510,29 +510,29 @@ public abstract class BaseEntityHandler {
 		OSchema schema = dbSession.getMetadata().getSchema();
 		String entityName = this.entityClass.getSimpleName();
 		if( entityName.equals( "HistoricProcessInstanceEntity")){
-			createIndex(schema,"HistoricProcessInstanceEntity", "index1", new String[] {"businessKey","state","startTime"});
-			createIndex(schema,"HistoricProcessInstanceEntity", "id", new String[] {"id"});
+			createIndex(schema,"HistoricProcessInstanceEntity", "index1", OClass.INDEX_TYPE.NOTUNIQUE,new String[] {"businessKey","state","startTime"});
+			createIndex(schema,"HistoricProcessInstanceEntity", "id", OClass.INDEX_TYPE.UNIQUE,new String[] {"id"});
 		}
 		if( entityName.equals( "HistoricVariableInstanceEntity")){
-			createIndex(schema,"HistoricVariableInstanceEntity", "processInstanceId", new String[] {"processInstanceId"});
-			createIndex(schema,"HistoricVariableInstanceEntity", "taskId", new String[] {"taskId"});
-			createIndex(schema,"HistoricVariableInstanceEntity", "id", new String[] {"id"});
+			createIndex(schema,"HistoricVariableInstanceEntity", "processInstanceId", OClass.INDEX_TYPE.NOTUNIQUE,new String[] {"processInstanceId"});
+			createIndex(schema,"HistoricVariableInstanceEntity", "taskId", OClass.INDEX_TYPE.NOTUNIQUE,new String[] {"taskId"});
+			createIndex(schema,"HistoricVariableInstanceEntity", "id", OClass.INDEX_TYPE.UNIQUE,new String[] {"id"});
 		}
 		if( entityName.equals( "HistoricActivityInstanceEntity")){
-			createIndex(schema,"HistoricActivityInstanceEntity", "id", new String[] {"id"});
+			createIndex(schema,"HistoricActivityInstanceEntity", "id", OClass.INDEX_TYPE.UNIQUE,new String[] {"id"});
 		}
 		if( entityName.equals( "HistoricTaskInstanceEntity")){
-			createIndex(schema,"HistoricTaskInstanceEntity", "id", new String[] {"id"});
+			createIndex(schema,"HistoricTaskInstanceEntity", "id", OClass.INDEX_TYPE.UNIQUE,new String[] {"id"});
 		}
 		if( entityName.equals( "ByteArrayEntity")){
-			createIndex(schema,"ByteArrayEntity", "id", new String[] {"id"});
+			createIndex(schema,"ByteArrayEntity", "id", OClass.INDEX_TYPE.UNIQUE,new String[] {"id"});
 		}
 	}
 
-	protected void createIndex(OSchema schema,String className, String indexName, String[] fields){
+	protected void createIndex(OSchema schema,String className, String indexName, OClass.INDEX_TYPE iType, String[] fields){
 		OClass oClass = schema.getClass(className);
 		if( oClass.getClassIndex(className+"."+indexName) == null){
-			oClass.createIndex(className+"."+indexName, OClass.INDEX_TYPE.NOTUNIQUE, null, fields);
+			oClass.createIndex(className+"."+indexName, iType, null, fields);
 		}
 	}
 

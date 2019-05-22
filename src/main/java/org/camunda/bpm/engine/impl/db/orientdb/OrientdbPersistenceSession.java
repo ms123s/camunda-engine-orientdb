@@ -82,7 +82,6 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		this.isOpen = true;
 		sessionId = new java.util.Date().getTime();
 		debug("openSession:" + sessionId);
-		System.err.println("openSession:" + sessionId);
 		this.databaseSession.begin();
 	}
 
@@ -856,7 +855,6 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 
 	public void commit() {
 		debug("commitSession:" + sessionId);
-		System.err.println("commitSession:" + sessionId);
 		try {
 			databaseSession.commit();
 		} catch (com.orientechnologies.orient.core.exception.ORecordNotFoundException e) {
@@ -874,7 +872,6 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	public void rollback() {
 		databaseSession.rollback();
 		LOG.info("rollbackSession:" + sessionId);
-		System.err.println("rollbackSession:" + sessionId);
 	}
 
 	public void flush() {
@@ -885,7 +882,6 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		// nothing to do
 		if (this.isOpen) {
 			debug("closeSession:" + sessionId);
-			System.err.println("closeSession:" + sessionId);
 			databaseSession.close();
 		}
 		this.isOpen = false;

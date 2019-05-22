@@ -178,7 +178,7 @@ public class JobEntityHandler extends BaseEntityHandler {
 		}
 	}
 	private void debug(String msg){
-		//LOG.info(msg);
+		com.jcabi.log.Logger.debug(this,msg);
 	}
 }
 
