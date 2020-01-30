@@ -230,7 +230,7 @@ public abstract class BaseEntityHandler {
 		}
 	}
 
-	public OCommandRequest buildQuery(String entityName, String statement, List<CParameter> parameterList, Object parameter, Map<String, Object> queryParams) {
+	public String buildQuery(String entityName, String statement, List<CParameter> parameterList, Object parameter, Map<String, Object> queryParams) {
 		modifyCParameterList(statement, parameterList);
 		checkParameterList(parameterList);
 
@@ -266,7 +266,6 @@ public abstract class BaseEntityHandler {
 		postProcessQuery(q, statement, parameterList);
 		String qstr = postProcessQueryLiteral(q.toString(), statement, parameterList);
 
-		OSQLSynchQuery query = new OSQLSynchQuery(qstr);
 		boolean hasVar = false;
 		for (CParameter p : parameterList) {
 			if (p.value instanceof Date) {
@@ -274,9 +273,9 @@ public abstract class BaseEntityHandler {
 			}
 		}
 
-		debug("  - oquery:" + query);
+		debug("  - oquery:" + qstr);
 		debug("  - oquery.params:" + queryParams);
-		return query;
+		return qstr;
 	}
 
 	public OCommandRequest buildDelete(String entityName, String statement, List<CParameter> parameterList, Map<String, Object> queryParams) {

@@ -52,6 +52,7 @@ import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
 import com.orientechnologies.orient.core.sql.OCommandSQL;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
+import com.orientechnologies.orient.core.sql.executor.OResultSet;
 
 import static com.github.raymanrt.orientqb.query.Operator.EQ;
 import static com.github.raymanrt.orientqb.query.Operator.NULL;
@@ -99,13 +100,13 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		List<CParameter> parameterList = getCParameterList(statement, parameter, entityHandler);
 		debug("  - CParameterList:" + parameterList);
 		Map<String, Object> queryParams = new HashMap<String, Object>();
-		OCommandRequest query = entityHandler.buildQuery(entityName, statement, parameterList, parameter, queryParams);
-
-		Iterable<OElement> result = databaseSession.command(query).execute(queryParams);
-		debug("  - result:" + result);
+		String query = entityHandler.buildQuery(entityName, statement, parameterList, parameter, queryParams);
+    OResultSet rs = databaseSession.command(query,queryParams);
+		debug("  - result:" + rs);
 		Map<String, Object> props = null;
 		int count = 0;
-		for (OElement elem : result) {
+    while( rs.hasNext()){
+      OElement elem = rs.next().toElement();
 			count++;
 			props = getProperties(elem);
 			if (!isCount) {
@@ -164,10 +165,15 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			List<CParameter> parameterList = getCParameterList(statement, parameter, entityHandler);
 			debug("  - CParameterList:" + parameterList);
 			Map<String, Object> queryParams = new HashMap<String, Object>();
-			OCommandRequest query = entityHandler.buildQuery(entityName, statement, parameterList, parameter, queryParams);
+			String query = entityHandler.buildQuery(entityName, statement, parameterList, parameter, queryParams);
 			isLatest = getBoolean(queryParams.remove("_isLatest"));
-
-			result = databaseSession.command(query).execute(queryParams);
+      OResultSet rs = databaseSession.command(query,queryParams);
+      List<OElement> l = new ArrayList();
+      while( rs.hasNext()){
+        OElement e = rs.next().toElement();
+        l.add(e);
+      }
+      result = l;
 		}
 
 		List<Map<String, Object>> propsList = new ArrayList<Map<String, Object>>();
@@ -665,10 +671,11 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 
 	private Object fireEventForVariableInstanceEntityDelete(Class entityClass, String statement, List<CParameter> parameterList, BaseEntityHandler handler) {
 		Map<String, Object> queryParams = new HashMap<String, Object>();
-		OCommandRequest query = handler.buildQuery(entityClass.getSimpleName(), statement, parameterList, null, queryParams);
-		Iterable<OElement> result = databaseSession.command(query).execute(queryParams);
+		String query = handler.buildQuery(entityClass.getSimpleName(), statement, parameterList, null, queryParams);
+    OResultSet rs = databaseSession.command(query,queryParams);
 		Map<String, Object> props = null;
-		for (OElement elem : result) {
+    while( rs.hasNext()){
+      OElement elem = rs.next().toElement();
 			props = getProperties(elem);
 			break;
 		}
@@ -857,9 +864,8 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		debug("commitSession:" + sessionId);
 		try {
 			databaseSession.commit();
-		} catch (com.orientechnologies.orient.core.exception.ORecordNotFoundException e) {
-			e.printStackTrace();
-			LOG.info("Commit failed:" + e);
+		} catch (Exception e) {
+      error(this, "commit("+sessionId+").error:%[exception]s",e);
 		}
 		for (Object key : this.entityCache.keySet()) {
 			List<OVertex> l = this.entityCache.get(key);

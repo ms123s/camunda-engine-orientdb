@@ -67,7 +67,7 @@ public class JobEntityHandler extends BaseEntityHandler {
 	}
 
 	@Override
-	public OCommandRequest buildQuery(String entityName, String statement, List<CParameter> parameterList, Object parameter, Map<String, Object> queryParams) {
+	public String buildQuery(String entityName, String statement, List<CParameter> parameterList, Object parameter, Map<String, Object> queryParams) {
 		modifyCParameterList(statement, parameterList);
 
 		CParameter ph = getCParameter(parameterList, "handlerConfigurationWithFollowUpJobCreatedProperty");
@@ -95,8 +95,7 @@ public class JobEntityHandler extends BaseEntityHandler {
 		postProcessQuery(q, statement, parameterList);
 
 		debug("  - query:" + q);
-		OCommandRequest query = new OSQLSynchQuery(q.toString());
-		return query;
+		return q.toString();
 	}
 
 	@Override
