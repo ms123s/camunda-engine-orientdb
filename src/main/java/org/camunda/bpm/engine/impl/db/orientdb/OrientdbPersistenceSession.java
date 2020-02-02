@@ -98,7 +98,6 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		boolean isCount = statement.indexOf("Count") > 0;
 
 		List<CParameter> parameterList = getCParameterList(statement, parameter, entityHandler);
-		debug("  - CParameterList:" + parameterList);
 		Map<String, Object> queryParams = new HashMap<String, Object>();
 		String query = entityHandler.buildQuery(entityName, statement, parameterList, parameter, queryParams);
     OResultSet rs = databaseSession.command(query,queryParams);
@@ -163,7 +162,6 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		boolean isLatest = false;
 		if (result == null) {
 			List<CParameter> parameterList = getCParameterList(statement, parameter, entityHandler);
-			debug("  - CParameterList:" + parameterList);
 			Map<String, Object> queryParams = new HashMap<String, Object>();
 			String query = entityHandler.buildQuery(entityName, statement, parameterList, parameter, queryParams);
 			isLatest = getBoolean(queryParams.remove("_isLatest"));
@@ -247,7 +245,6 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			//LOG.info("   - ListQueryParameterObject");
 			if (((ListQueryParameterObject) parameter).getParameter() instanceof String) {
 				Object obj = ((ListQueryParameterObject) parameter).getParameter();
-				debug("  - String1:" + obj);
 				if (statement.endsWith("ByKey")) {
 					List<CParameter> parameterList = new ArrayList<CParameter>();
 					CParameter p = new CParameter("key", EQ, obj);
@@ -258,7 +255,6 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 				}
 			} else {
 				Map<String, Object> map = (Map<String, Object>) ((ListQueryParameterObject) parameter).getParameter();
-				debug("   - Map1:" + map);
 				return getCParameterListFromMap(map);
 			}
 		} else {

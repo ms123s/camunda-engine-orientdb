@@ -184,7 +184,6 @@ public abstract class BaseEntityHandler {
 			if (b) {
 				val = getValue(p, getter);
 				if (val != null) {
-					debug("getter(" + getter + "," + b + "):" + val);
 					parameterList.add(new CParameter((String) m.get("name"), EQ, val));
 				} else {
 					//LOG.info("getter(" + getter + "," + b + "):null");
@@ -202,7 +201,6 @@ public abstract class BaseEntityHandler {
 					val = getValue(p, getter + "Like");
 					if (!"getProcessDefinitionId".equals(getter) &&  val != null ) { //@@@MS HistoricProcessInstanceQueryImpl. getProcessDefinitionIdLike???
 						parameterList.add(new CParameter((String) m.get("name"), LIKE, val));
-						debug("getter(" + getter + "Like," + b + "):" + val);
 					} else {
 						//LOG.info("getter(" + getter + "," + b + ")Like:null");
 					}

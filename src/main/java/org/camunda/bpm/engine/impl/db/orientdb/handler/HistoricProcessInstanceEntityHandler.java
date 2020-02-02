@@ -54,8 +54,6 @@ public class HistoricProcessInstanceEntityHandler extends BaseEntityHandler{
 		}
 		Boolean isFinished= getValueByField(parameter, "finished");
 		Boolean isUnFinished= getValueByField(parameter, "unfinished");
-		log.info("isUnFinished:" + isUnFinished);
-		log.info("isFinished:" + isFinished);
 		if( isFinished != null && isFinished.booleanValue() == true){
 			Clause clFin = new VerbatimClause("(state == 'COMPLETED')" );
 			clauseList.add(clFin);
@@ -65,21 +63,17 @@ public class HistoricProcessInstanceEntityHandler extends BaseEntityHandler{
 			clauseList.add(clFin);
 		}
 		Date startedAfterDate= getValueByField(parameter, "startedAfter");
-		log.info("startedAfterDate:" + startedAfterDate);
 		if( startedAfterDate != null){
 			String startedAfter = startedAfterDate.toInstant().toString();
 			startedAfter = startedAfter.substring(0,10) + " "+ startedAfter.substring(11, 19);
-			log.info("startedAfter:" + startedAfter);
 			Clause clFin = new VerbatimClause("(date(\""+startedAfter+"\") < startTime)" );
 			clauseList.add(clFin);
 		}
 
 		Date startedBeforeDate= getValueByField(parameter, "startedBefore");
-		log.info("startedBeforeDate:" + startedBeforeDate);
 		if( startedBeforeDate != null){
 			String startedBefore = startedBeforeDate.toInstant().toString();
 			startedBefore = startedBefore.substring(0,10) + " "+ startedBefore.substring(11, 19);
-			log.info("startedBefore:" + startedBefore);
 			Clause clFin = new VerbatimClause("(date(\""+startedBefore+"\") > startTime)" );
 			clauseList.add(clFin);
 		}
