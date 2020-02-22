@@ -24,15 +24,16 @@ public class ObjectValueCopy  {
 			String getter = m.getName();
 			String baseName = getBaseName(getter);
 			String prefix = getGetterPrefix(getter);
-			if (!Modifier.isStatic(m.getModifiers()) && prefix != null && isPrimitiveOrPrimitiveWrapperOrString(returnType)) {
+      Object value = null;
+			if (!Modifier.isStatic(m.getModifiers()) && prefix != null && isPrimitiveOrPrimitiveWrapperOrString(returnType) && !baseName.equals("eventOfType")) {
 				try{
 					Method method = clazz.getMethod(getter);
-					Object value = method.invoke(o);
+					value = method.invoke(o);
 					if (value != null ) {
 						properties.put( baseName, value);
 					}
 				}catch(Exception e){
-					LOG.info("Exception("+baseName+"):"+e);
+					LOG.info("ObjectValueCopy.Exception("+baseName+","+value+").failed:"+e);
 				}
 			}
 		}

@@ -526,14 +526,14 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			debug("deleteEntity(" + entityName + "," + name + "):vertex:" + vertex);
 			if (vertex == null) {
 				operation.setFailed(true);
-				debug("<- deleteEntity(" + entityName + "," + name + "):failed");
+				info("<- deleteEntity(" + entityName + "," + name + ").failed:vertex is not found");
 				return;
 			}
 			databaseSession.command(del).execute(id);
 		} catch (Exception e) {
 			if (entity instanceof HasDbRevision) {
 				operation.setFailed(true);
-				debug("<- deleteEntity(" + entityName + "," + name + "):failed:" + e);
+				info("<- deleteEntity(" + entityName + "," + name + ").failed:" + e);
 				return;
 			}
 		}
@@ -587,7 +587,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			Integer dbRevision = updateById(entity, id, operation, oldRevision,updatedRevision.getRevisionNext());
 			if (dbRevision == null || dbRevision != oldRevision) {
 				operation.setFailed(true);
-				debug("<- updateEntity(" + entityName+","+id + ").fails:revisions:" + dbRevision + "/" + oldRevision);
+				info("<- updateEntity(" + entityName+","+id + ").failed:revisions:" + dbRevision + "/" + oldRevision);
 				return;
 			}
 		} else {
@@ -645,11 +645,11 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 			return oldRev;
 
 		} catch (OConcurrentModificationException e) {
-			LOG.info("OConcurrentModificationException.updateById(" + entityName + "):" + e.getMessage());
+			info("OConcurrentModificationException.updateById(" + entityName + ").failed:" + e.getMessage());
 			operation.setFailed(true);
 			return -1;
 		} catch (Exception e) {
-			LOG.info("OrientdbPersistenceSession.updateById(" + entityName + "):" + e.getMessage());
+			info("OrientdbPersistenceSession.updateById(" + entityName + ").failed:" + e.getMessage());
 			throw new RuntimeException("OrientdbPersistenceSession.updateById(" + entityName + ")", e);
 		}
 	}
@@ -684,7 +684,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 				return entity;
 			}
 		} catch (Exception e) {
-			LOG.info("OrientdbPersistenceSession.getVariableInstanceEntity:" + e);
+			info("OrientdbPersistenceSession.getVariableInstanceEntity.failed:" + e);
 		}
 		return null;
 	}
@@ -947,8 +947,10 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	public boolean isDmnTablePresent() {
 		return false; // not supported
 	}
+	private void info(String msg){
+		com.jcabi.log.Logger.info(this,msg);
+	}
 	private void debug(String msg){
-		//LOG.fine(msg);
 		com.jcabi.log.Logger.debug(this,msg);
 	}
 }
