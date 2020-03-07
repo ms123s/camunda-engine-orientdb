@@ -155,7 +155,7 @@ public class OrientdbProcessEngineConfiguration extends ProcessEngineConfigurati
 		//    initJpa();
 		initDelegateInterceptor();
 		initEventHandlers();
-		//    initFailedJobCommandFactory();
+		initFailedJobCommandFactory();
 		initProcessApplicationManager();
 		initCorrelationHandler();
 		initIncidentHandlers();

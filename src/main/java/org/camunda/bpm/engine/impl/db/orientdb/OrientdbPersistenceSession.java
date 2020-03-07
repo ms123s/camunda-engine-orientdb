@@ -280,6 +280,8 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 					parameterList.add(new CParameter("processInstanceId", EQ, obj));
 				} else if (statement.endsWith("deleteDeployment")) {
 					parameterList.add(new CParameter("id", EQ, obj));
+				} else if (statement.endsWith("deleteByteArrayNoRevisionCheck")) {
+					parameterList.add(new CParameter("id", EQ, obj));
 				}
 				return parameterList;
 			} else {
@@ -860,6 +862,8 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 		debug("commitSession:" + sessionId);
 		try {
 			databaseSession.commit();
+		//} catch (com.orientechnologies.orient.core.exception.OConcurrentModificationException ce) {  //@@@MS must be more testet
+    // throw new org.camunda.bpm.engine.OptimisticLockingException("was updated by another transaction concurrently");
 		} catch (Exception e) {
       error(this, "commit("+sessionId+").error:%[exception]s",e);
 		}
@@ -872,6 +876,7 @@ public class OrientdbPersistenceSession extends AbstractPersistenceSession {
 	}
 
 	public void rollback() {
+		databaseSession.activateOnCurrentThread();
 		databaseSession.rollback();
 		LOG.info("rollbackSession:" + sessionId);
 	}
