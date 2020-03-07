@@ -13,7 +13,7 @@ public class OrientDB {
 
 	public synchronized ODatabasePool getDatabasePool(String db,String username, String pw ) {
 		if( orientDB == null){
-			orientDB = new com.orientechnologies.orient.core.db.OrientDB("remote:192.168.2.243", "root", rootPassword, OrientDBConfig.defaultConfig());
+			orientDB = new com.orientechnologies.orient.core.db.OrientDB("remote:192.168.2.97", "root", rootPassword, OrientDBConfig.defaultConfig());
 		}
 		if (!orientDB.exists(db)) {
 			orientDB.create(db,ODatabaseType.PLOCAL);
