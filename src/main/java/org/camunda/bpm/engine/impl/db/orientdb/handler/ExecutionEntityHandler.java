@@ -78,17 +78,17 @@ public class ExecutionEntityHandler extends BaseEntityHandler {
 			list.add(new CParameter("parentId", EQ, null));
 		}
 		String processDefinitionKey = getValue(p, "getProcessDefinitionKey");
-				LOG.info("ExecutionEntity.getCParameterList.processDefinitionKey:" + processDefinitionKey);
+				LOG.fine("ExecutionEntity.getCParameterList.processDefinitionKey:" + processDefinitionKey);
 		if (processDefinitionKey != null) {
 			ODatabaseDocumentInternal currentDatabase = ODatabaseRecordThreadLocal.instance().get();
 			Iterable<OElement> procIterable = currentDatabase.command(new OSQLSynchQuery<>("select id from ProcessDefinitionEntity where key=?")).execute(processDefinitionKey);
 			Iterator<OElement> iter = procIterable.iterator();
 			if (iter.hasNext()) {
 				String processDefinitionId = iter.next().getProperty("id");
-				LOG.info("ExecutionEntity.getCParameterList.processDefinitionId:" + processDefinitionId);
+				LOG.fine("ExecutionEntity.getCParameterList.processDefinitionId:" + processDefinitionId);
 				list.add(new CParameter("processDefinitionId", EQ, processDefinitionId));
 			}else{
-				LOG.info("ExecutionEntity.getCParameterList.processDefinitionId:notFound");
+				LOG.fine("ExecutionEntity.getCParameterList.processDefinitionId:notFound");
 				list.add(new CParameter("processDefinitionId", EQ, "__notFound__"));
 			}
 		}
