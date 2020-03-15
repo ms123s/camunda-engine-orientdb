@@ -30,7 +30,9 @@ public class HistoricVariableInstanceEntityHandler extends BaseEntityHandler{
 		List<CParameter> list = super.getCParameterList(statement, p);
 		if (statement.equals("selectHistoricVariableInstanceByQueryCriteria")) {
 		  String varName= getValueByField(p, "variableName");
-			list.add(new CParameter("name", EQ, varName));
+      if( varName != null){
+			  list.add(new CParameter("name", EQ, varName));
+      }
 		}
 		return list;
 	}
