@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Collection;
 import java.util.ArrayList;
 import com.github.raymanrt.orientqb.query.Clause;
+import org.camunda.bpm.engine.impl.db.orientdb.CParameter;
 import static com.github.raymanrt.orientqb.query.Clause.and;
 import static com.github.raymanrt.orientqb.query.Clause.clause;
 import static com.github.raymanrt.orientqb.query.Clause.or;
@@ -23,6 +24,15 @@ public class HistoricVariableInstanceEntityHandler extends BaseEntityHandler{
 
 	public HistoricVariableInstanceEntityHandler(ODatabaseSession g) {
 		super( g, HistoricVariableInstanceEntity.class);
+	}
+	@Override
+	public List<CParameter> getCParameterList(String statement, Object p) {
+		List<CParameter> list = super.getCParameterList(statement, p);
+		if (statement.equals("selectHistoricVariableInstanceByQueryCriteria")) {
+		  String varName= getValueByField(p, "variableName");
+			list.add(new CParameter("name", EQ, varName));
+		}
+		return list;
 	}
 	@Override
 	public void addToClauseList(List<Clause> clauseList, String statement, Object parameter, Map<String, Object> queryParams) {
@@ -68,6 +78,6 @@ public class HistoricVariableInstanceEntityHandler extends BaseEntityHandler{
 		return null;
 	}
 	private void debug(String msg){
-		//LOG.info(msg);
+		com.jcabi.log.Logger.debug(this,msg);
 	}
 }
